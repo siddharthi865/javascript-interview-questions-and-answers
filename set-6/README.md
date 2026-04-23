@@ -1,51 +1,41 @@
-# Set 1
+# Set 6
 
-## Question 1.
+## Question 1. What is a JavaScript engine? Give examples.
 
-## Question 2.
+## Question 2. What is the difference between client-side and server-side JavaScript?
 
-## Question 3.
+## Question 3. How does typeof operator work? Give examples.
 
-## Question 4.
+## Question 4. Explain the difference between undefined and undeclared variables.
 
-## Question 5.
+## Question 5. What is the difference between primitive and reference data types?
 
-## Question 6.
+## Question 6. How does Infinity work in JavaScript?
 
-## Question 7.
+## Question 7. Difference between mutable and immutable objects.
 
-## Question 8.
+## Question 8. What is the difference between a function and a method?
 
-## Question 9.
+## Question 9. How to check if a variable is an array?
 
-## Question 10.
+## Question 10. Difference between isArray() and instanceof Array.
 
-## Question 11.
+## Question 11. Explain string methods like split(), join(), includes().
 
-## Question 12.
+## Question 12. What is the difference between substr(), substring(), and slice()?
 
-## Question 13.
+## Question 13. Difference between push() and concat() in arrays.
 
-## Question 14.
+## Question 14. How to reverse an array in JavaScript?
 
-## Question 15.
+## Question 15. What is the difference between pop() and shift()?
 
-## Question 16.
+## Question 16. How to find the largest number in an array?
 
-## Question 17.
+## Question 17. Difference between indexOf() and findIndex().
 
-## Question 18.
+## Question 18. Explain truthy and falsy values with examples.
 
-## Question 19.
+## Question 19. How to convert a string to number in JavaScript?
 
-## Question 20.
-
-## Question 21.
-
-## Question 22.
-
-## Question 23.
-
-## Question 24.
-
-## Question 25.
+## Question 20. How to convert a number to a string in JavaScript?
