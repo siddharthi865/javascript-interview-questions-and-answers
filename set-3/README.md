@@ -25,6 +25,158 @@
 
 ## Question 1. What are IIFEs (Immediately Invoked Function Expressions)?
 
+> An IIFE (Immediately Invoked Function Expression) is a JavaScript function that is defined and executed immediately after it is created.
+
+### Detailed Explanation
+
+An **IIFE** is a function expression that runs as soon as it is defined. It is commonly used to create a **private scope** and avoid polluting the global namespace.
+
+### Basic Syntax
+
+```javascript
+(function () {
+  console.log("I run immediately!");
+})();
+```
+
+Or using arrow functions:
+
+```javascript
+(() => {
+  console.log("I run immediately too!");
+})();
+```
+
+The key idea is:
+
+- The function is wrapped in parentheses → turns it into an expression
+- The final `()` immediately invokes it
+
+### Why IIFEs are used
+
+#### 1. Creating a private scope (data encapsulation)
+
+Before ES6 modules, IIFEs were used to avoid global variable pollution.
+
+```javascript
+(function () {
+  let secret = "hidden";
+  console.log(secret);
+})();
+
+console.log(secret); // ❌ ReferenceError: secret is not defined
+```
+
+`secret` is not accessible outside the function.
+
+#### 2. Avoiding global namespace pollution
+
+```javascript
+(function () {
+  let counter = 0;
+
+  function increment() {
+    counter++;
+    console.log(counter);
+  }
+
+  increment();
+  increment();
+})();
+```
+
+Here, `counter` and `increment` do not leak into the global scope.
+
+#### 3. Module pattern (pre-ES6)
+
+IIFEs were widely used to simulate modules:
+
+```javascript
+const module = (function () {
+  let privateValue = 10;
+
+  function getValue() {
+    return privateValue;
+  }
+
+  return {
+    getValue,
+  };
+})();
+
+console.log(module.getValue()); // 10
+```
+
+### How it works (conceptually)
+
+JavaScript treats:
+
+- `function foo() {}` → function declaration
+- `(function foo() {})` → function expression
+
+Only expressions can be immediately executed, so we wrap it in `()` to convert it.
+
+### Common Pitfalls
+
+#### 1. Forgetting parentheses
+
+```javascript
+function () {
+  console.log("error");
+}();
+```
+
+❌ Syntax Error — function declaration cannot be invoked directly.
+
+#### 2. Misunderstanding scope
+
+Variables declared inside IIFE are not accessible outside:
+
+```javascript
+(function () {
+  var x = 10;
+})();
+
+console.log(x); // ❌ ReferenceError
+```
+
+### Modern JavaScript perspective
+
+With ES6+, IIFEs are less necessary because we now have:
+
+- `let` and `const` (block scope)
+- ES Modules (`import/export`)
+- Block scopes `{}`
+
+Example replacement:
+
+```javascript
+{
+  let x = 10;
+  console.log(x);
+}
+
+console.log(x); // ❌ not accessible
+```
+
+### IIFE vs Modules
+
+| Feature         | IIFE    | ES Modules |
+| --------------- | ------- | ---------- |
+| Scope isolation | Yes     | Yes        |
+| Reusability     | Limited | High       |
+| Imports/exports | No      | Yes        |
+| Modern usage    | Rare    | Standard   |
+
+### Summary
+
+An IIFE is:
+
+- A function that runs immediately after definition
+- Used for creating private scope
+- Helpful in avoiding global variables
+- Mostly replaced today by ES modules and block scope
+
 ## Question 2. Difference between shallow and deep copy of objects
 
 ## Question 3. Explain prototypes and prototype chain
