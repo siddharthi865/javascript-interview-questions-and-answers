@@ -25,6 +25,143 @@
 
 ## Question 1. How do you select elements using document.querySelector and getElementById?
 
+> `document.getElementById()` selects an element by its unique `id`, while `document.querySelector()` selects the first element that matches a CSS selector (id, class, tag, etc.).
+
+### **Detailed Explanation**
+
+In JavaScript, DOM selection is fundamental for manipulating HTML elements. The two most commonly used methods are:
+
+#### 1. `document.getElementById()`
+
+##### **What it does**
+
+- Selects a single element by its **unique `id` attribute**
+- Returns **one DOM element or `null` if not found**
+
+##### **Syntax**
+
+```javascript
+document.getElementById("myId");
+```
+
+##### **Example**
+
+```html
+<h1 id="title">Hello</h1>
+```
+
+```javascript
+const heading = document.getElementById("title");
+heading.textContent = "Updated Title";
+```
+
+##### **Key Points**
+
+- Very fast (optimized internally by browsers)
+- Only works with **id**
+- Returns a **single element**
+
+#### 2. `document.querySelector()`
+
+##### **What it does**
+
+- Selects the **first element matching a CSS selector**
+- Can select by:
+  - id (`#id`)
+  - class (`.class`)
+  - tag (`div`, `p`)
+  - complex selectors (`div p`, `.container .item`, etc.)
+
+##### **Syntax**
+
+```javascript
+document.querySelector("selector");
+```
+
+##### **Examples**
+
+###### By ID
+
+```javascript
+const heading = document.querySelector("#title");
+```
+
+###### By Class
+
+```javascript
+const box = document.querySelector(".box");
+```
+
+###### By Tag
+
+```javascript
+const firstDiv = document.querySelector("div");
+```
+
+###### Complex selector
+
+```javascript
+const item = document.querySelector(".menu li.active");
+```
+
+### **Key Differences**
+
+| Feature       | getElementById | querySelector          |
+| ------------- | -------------- | ---------------------- |
+| Selector type | Only `id`      | Any CSS selector       |
+| Return value  | Single element | First matching element |
+| Performance   | Faster         | Slightly slower        |
+| Flexibility   | Low            | Very high              |
+
+### **Practical Comparison Example**
+
+```html
+<div id="box1" class="box">Box 1</div>
+<div class="box">Box 2</div>
+```
+
+```javascript
+document.getElementById("box1"); // selects Box 1
+document.querySelector("#box1"); // selects Box 1
+
+document.querySelector(".box"); // selects ONLY Box 1 (first match)
+```
+
+### **Common Pitfalls**
+
+#### 1. `querySelector` returns only the first match
+
+```javascript
+document.querySelector(".box"); // NOT all boxes
+```
+
+To select multiple elements:
+
+```javascript
+document.querySelectorAll(".box");
+```
+
+#### 2. Forgetting `#` or `.` in querySelector
+
+```javascript
+document.querySelector("title"); // selects tag, not id
+document.querySelector("#title"); // correct for id
+```
+
+### **Best Practices**
+
+- Use `getElementById()` when selecting by id → **faster and clearer intent**
+- Use `querySelector()` when you need **flexible or complex selections**
+- Use `querySelectorAll()` when working with multiple elements
+
+### **Interview Tip**
+
+A strong answer highlights:
+
+- `getElementById` = direct, optimized, id-only
+- `querySelector` = flexible CSS-based selector engine
+- Trade-off: performance vs flexibility
+
 ## Question 2. How to add/remove classes dynamically in JS?
 
 ## Question 3. What are JavaScript objects?
