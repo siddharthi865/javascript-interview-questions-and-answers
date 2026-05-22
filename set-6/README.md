@@ -25,6 +25,102 @@
 
 ## Question 1. What is a JavaScript engine? Give examples
 
+> A JavaScript engine is a program or interpreter that executes JavaScript code by converting it into machine code that the computer can understand and run.
+
+### Detailed Explanation
+
+A JavaScript engine is the **core component inside browsers and runtime environments (like Node.js)** that takes your JavaScript source code and executes it efficiently.
+
+Since JavaScript is a high-level language, it cannot run directly on hardware. The engine is responsible for:
+
+#### 1. Parsing
+
+- Converts JavaScript code into an **Abstract Syntax Tree (AST)**
+- Checks for syntax errors
+
+#### 2. Compilation (Modern engines use JIT compilation)
+
+- JavaScript is usually **Just-In-Time (JIT) compiled**
+- Converts JS into optimized machine code at runtime
+- Improves performance significantly
+
+#### 3. Execution
+
+- Executes the compiled machine code
+- Manages memory (via garbage collection)
+
+#### 4. Optimization
+
+- Detects frequently used code paths
+- Re-optimizes for better performance
+
+### Popular JavaScript Engines
+
+#### In Browsers
+
+- **V8** → Used in Google Chrome, Microsoft Edge
+- **SpiderMonkey** → Used in Mozilla Firefox
+- **JavaScriptCore (Nitro)** → Used in Safari
+
+#### Outside Browsers
+
+- **Node.js uses V8 engine** (same as Chrome)
+
+### Example (How it works conceptually)
+
+```javascript
+function add(a, b) {
+  return a + b;
+}
+
+console.log(add(2, 3));
+```
+
+#### What the engine does
+
+1. Parses the code into AST
+2. Compiles it into optimized machine code
+3. Executes `add(2, 3)`
+4. Outputs `5`
+
+### Key Concepts
+
+#### 1. JIT Compilation
+
+Modern engines don’t just interpret code—they compile it at runtime for speed.
+
+#### 2. Memory Management
+
+- JavaScript engines use **Garbage Collection**
+- Automatically frees unused memory
+
+#### 3. Event Loop Integration
+
+The engine works with:
+
+- Call Stack
+- Heap
+- Callback Queue / Microtask Queue
+
+### Common Pitfalls / Misconceptions
+
+#### ❌ JavaScript engine ≠ JavaScript runtime
+
+- Engine: executes JS (e.g., V8)
+- Runtime: includes engine + APIs (e.g., browser APIs or Node.js environment)
+
+#### ❌ JavaScript is not purely interpreted anymore
+
+- Modern engines use **hybrid interpretation + compilation (JIT)**
+
+### Best Practice Insight
+
+Understanding engines helps in:
+
+- Writing **performance-optimized code**
+- Avoiding memory leaks
+- Understanding async behavior and event loop
+
 ## Question 2. What is the difference between client-side and server-side JavaScript?
 
 ## Question 3. How does typeof operator work? Give examples
