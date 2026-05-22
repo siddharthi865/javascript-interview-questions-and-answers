@@ -25,6 +25,205 @@
 
 ## Question 1. What are the main features of JavaScript?
 
+> JavaScript is a high-level, interpreted, dynamically typed, object-based scripting language used mainly for web development. Its main features include dynamic typing, first-class functions, prototype-based inheritance, asynchronous programming, and cross-platform support.
+
+### Detailed Explanation
+
+JavaScript is one of the core technologies of the web (along with HTML and CSS). It runs in browsers and also on servers (via Node.js). Its design makes it flexible, dynamic, and well-suited for both frontend and backend development.
+
+Here are the **main features of JavaScript** explained in an interview-friendly way:
+
+#### 1. Lightweight and Interpreted Language
+
+JavaScript is not compiled ahead of time like Java or C++.
+
+- It is interpreted (or JIT-compiled in modern engines like V8).
+- Runs directly in the browser or runtime environments.
+
+```js
+console.log("Hello, JavaScript!");
+```
+
+Benefit: Fast development and instant execution in browsers.
+
+#### 2. Dynamic Typing
+
+Variables are not bound to a fixed type.
+
+```js
+let value = 10; // number
+value = "hello"; // now string
+```
+
+Benefit:
+
+- Flexible and fast to write
+- Less boilerplate
+
+Pitfall:
+
+- Can lead to runtime type errors
+
+#### 3. Object-Based (Prototype-Based Inheritance)
+
+JavaScript uses prototypes instead of classical inheritance.
+
+```js
+function Person(name) {
+  this.name = name;
+}
+
+Person.prototype.greet = function () {
+  return `Hello, ${this.name}`;
+};
+
+const p1 = new Person("Alice");
+console.log(p1.greet());
+```
+
+Key concept:
+
+- Objects inherit directly from other objects via prototypes
+- ES6 classes are syntactic sugar over prototypes
+
+#### 4. First-Class and Higher-Order Functions
+
+Functions are treated like variables.
+
+```js
+function greet(name) {
+  return `Hello ${name}`;
+}
+
+function process(fn) {
+  return fn("John");
+}
+
+console.log(process(greet));
+```
+
+Enables:
+
+- Functional programming
+- Callbacks
+- Higher-order utilities like `map`, `filter`, `reduce`
+
+#### 5. Asynchronous & Non-blocking Behavior
+
+JavaScript can handle asynchronous operations efficiently using:
+
+- Callbacks
+- Promises
+- async/await
+- Event loop
+
+```js
+console.log("Start");
+
+setTimeout(() => {
+  console.log("Async task");
+}, 1000);
+
+console.log("End");
+```
+
+Output:
+
+```terminal
+Start
+End
+Async task
+```
+
+Key concept:
+
+- Event loop handles async tasks without blocking main thread
+
+#### 6. Cross-Platform Compatibility
+
+JavaScript runs in:
+
+- Browsers (Chrome, Firefox, Safari, etc.)
+- Servers (Node.js)
+- Mobile apps (React Native)
+- Desktop apps (Electron)
+
+Benefit: One language everywhere (full-stack capability)
+
+#### 7. Event-Driven Programming
+
+JavaScript reacts to user actions and events.
+
+```js
+button.addEventListener("click", () => {
+  console.log("Button clicked!");
+});
+```
+
+Core idea:
+
+- Everything is driven by events (clicks, inputs, timers)
+
+#### 8. Rich Ecosystem & Libraries
+
+JavaScript has a massive ecosystem:
+
+- React, Angular, Vue (frontend)
+- Express, NestJS (backend)
+- npm ecosystem (largest package registry)
+
+#### 9. Single-Threaded but Concurrency-Friendly
+
+JavaScript runs on a single thread but handles concurrency using:
+
+- Event loop
+- Callback queue
+- Microtasks (Promises)
+
+Benefit:
+
+- Simplified execution model
+- Efficient handling of I/O operations
+
+#### 10. Modern ES6+ Features
+
+Modern JavaScript includes powerful features:
+
+- let/const
+- Arrow functions
+- Classes
+- Modules
+- Destructuring
+- Spread/rest operators
+
+```js
+const user = { name: "John", age: 25 };
+const { name } = user;
+```
+
+### Common Pitfalls (Interview Insight)
+
+- Type coercion surprises:
+
+```js
+console.log("5" + 2); // "52"
+console.log("5" - 2); // 3
+```
+
+- Hoisting confusion
+- `this` binding issues
+- Callback hell (before Promises)
+
+### Summary
+
+JavaScript is:
+
+- Flexible (dynamic typing, first-class functions)
+- Powerful (async + event-driven model)
+- Universal (runs everywhere)
+- Prototype-based (not class-based OOP internally)
+- Highly ecosystem-driven
+
 ## Question 2. Difference between JavaScript, Java, and ECMAScript
 
 ## Question 3. Explain var, let, and const with examples
