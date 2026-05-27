@@ -25,6 +25,158 @@
 
 ## Question 1. Explain parseInt() vs Number()
 
+> `parseInt()` converts a string to an integer by parsing from left to right until it hits a non-numeric character, while `Number()` converts the entire value strictly into a number (integer or float). `Number()` is more strict; `parseInt()` is more permissive but can lead to unexpected results.
+
+### Detailed Explanation
+
+In JavaScript, both `parseInt()` and `Number()` are used for type conversion from strings (or other types) into numbers, but they behave very differently in terms of parsing strategy, strictness, and use cases.
+
+### 1. `parseInt()`
+
+#### What it does
+
+- Parses a string **character by character from left to right**
+- Stops when it encounters a non-numeric character
+- Returns an **integer only**
+
+#### Syntax
+
+```js
+parseInt(string, radix);
+```
+
+#### Example
+
+```js
+parseInt("42"); // 42
+parseInt("42px"); // 42  (stops at 'p')
+parseInt("10.99"); // 10  (stops at '.')
+parseInt("  56abc"); // 56
+```
+
+#### Radix (important point)
+
+Always specify radix (base), especially for older browsers:
+
+```js
+parseInt("101", 2); // 5 (binary)
+parseInt("10", 10); // 10 (decimal)
+```
+
+#### Key characteristics of `parseInt()`
+
+- Converts to **integer only**
+- Ignores trailing non-numeric characters
+- Can produce unexpected results if input is malformed
+- Allows partial parsing
+
+#### Pitfall
+
+```js
+parseInt("08"); // In old JS engines could behave unexpectedly without radix
+```
+
+Best practice:
+
+```js
+parseInt("08", 10);
+```
+
+### 2. `Number()`
+
+#### What it does
+
+- Converts the **entire value strictly into a number**
+- Supports integers, floats, exponential notation
+- Returns `NaN` if conversion fails
+
+#### Example
+
+```js
+Number("42"); // 42
+Number("10.99"); // 10.99
+Number("42px"); // NaN
+Number("  56  "); // 56
+Number(true); // 1
+Number(false); // 0
+```
+
+#### Key characteristics of `Number()`
+
+- Strict conversion (no partial parsing)
+- Supports decimals
+- Converts booleans and other types too
+- Returns `NaN` if the entire value is not valid
+
+#### Pitfall
+
+```js
+Number("42px"); // NaN (unlike parseInt)
+```
+
+### 3. Key Differences
+
+| Feature                         | parseInt()                 | Number()                  |
+| ------------------------------- | -------------------------- | ------------------------- |
+| Parsing style                   | Stops at invalid character | Strict full conversion    |
+| Decimal support                 | ❌ (truncates)             | ✅                        |
+| Returns NaN for partial strings | ❌                         | ✅                        |
+| Accepts "42px"                  | ✅ → 42                    | ❌ → NaN                  |
+| Boolean conversion              | ❌                         | ✅                        |
+| Recommended for                 | extracting integers        | strict numeric conversion |
+
+### 4. When to use what?
+
+#### Use `parseInt()` when
+
+- You are extracting numbers from strings
+- You expect mixed input like `"100px"`
+- You only need integers
+
+```js
+parseInt("200px", 10); // 200
+```
+
+#### Use `Number()` when
+
+- You need strict validation
+- You expect clean numeric input
+- You need decimal support
+
+```js
+Number("123.45"); // 123.45
+Number("123px"); // NaN (good for validation)
+```
+
+### 5. Edge Case Comparison
+
+```js
+parseInt("12.34"); // 12
+Number("12.34"); // 12.34
+```
+
+```js
+parseInt("abc"); // NaN
+Number("abc"); // NaN
+```
+
+```js
+parseInt(true); // NaN
+Number(true); // 1
+```
+
+### 6. Best Practices (Interview Tip)
+
+- Always pass radix to `parseInt`
+- Prefer `Number()` for clean numeric validation
+- Avoid `parseInt()` for decimals or precise numeric parsing
+- Be aware of implicit coercion pitfalls
+
+### Final Summary
+
+- `parseInt()` = **loose parsing, integer-focused, stops early**
+- `Number()` = **strict conversion, supports full numeric types**
+
 ## Question 2. What are template literals? Give examples with variables
 
 ## Question 3. Difference between alert(), prompt(), and confirm()
