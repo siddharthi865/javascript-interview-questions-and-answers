@@ -25,6 +25,303 @@
 
 ## Question 1. How to implement debounced input handlers efficiently
 
+> A debounced input handler delays execution of a function until the user stops typing (or triggering events) for a specified amount of time. This is commonly used for search boxes, API calls, autosave, resize events, and validation to avoid excessive executions.
+
+A clean and efficient debounce implementation in JavaScript typically uses `setTimeout` and `clearTimeout`.
+
+### Basic Debounce Implementation
+
+```js
+function debounce(fn, delay) {
+  let timer;
+
+  return function (...args) {
+    clearTimeout(timer);
+
+    timer = setTimeout(() => {
+      fn.apply(this, args);
+    }, delay);
+  };
+}
+```
+
+Usage:
+
+```js
+function handleSearch(event) {
+  console.log("Searching:", event.target.value);
+}
+
+const debouncedSearch = debounce(handleSearch, 300);
+
+document.getElementById("search").addEventListener("input", debouncedSearch);
+```
+
+### How It Works
+
+Every time the input event fires:
+
+1. Existing timer is cleared
+2. A new timer starts
+3. Function executes only after no new events occur within `delay`
+
+This prevents running expensive operations on every keystroke.
+
+### Why Debouncing Is Important
+
+Without debouncing:
+
+```txt
+User types "javascript"
+→ 10 API requests
+```
+
+With debouncing:
+
+```txt
+User types "javascript"
+(wait 300ms)
+→ 1 API request
+```
+
+This improves:
+
+- Performance
+- Network efficiency
+- UI responsiveness
+- Server load
+
+### Real Example: Search API
+
+```js
+async function fetchResults(query) {
+  const response = await fetch(`/search?q=${query}`);
+  const data = await response.json();
+
+  console.log(data);
+}
+
+const debouncedFetch = debounce(fetchResults, 500);
+
+input.addEventListener("input", (e) => {
+  debouncedFetch(e.target.value);
+});
+```
+
+### Preserving `this` Context
+
+Using `fn.apply(this, args)` is important because the returned function may be used as a method or event handler.
+
+Bad version:
+
+```js
+fn(args);
+```
+
+Good version:
+
+```js
+fn.apply(this, args);
+```
+
+This preserves:
+
+- method context
+- DOM event context
+- object instance references
+
+### Advanced Debounce with Immediate Execution
+
+Sometimes you want the function to execute immediately on the first call and then ignore repeated calls until delay passes.
+
+Example:
+
+```js
+function debounce(fn, delay, immediate = false) {
+  let timer;
+
+  return function (...args) {
+    const callNow = immediate && !timer;
+
+    clearTimeout(timer);
+
+    timer = setTimeout(() => {
+      timer = null;
+
+      if (!immediate) {
+        fn.apply(this, args);
+      }
+    }, delay);
+
+    if (callNow) {
+      fn.apply(this, args);
+    }
+  };
+}
+```
+
+Usage:
+
+```js
+const debounced = debounce(saveDraft, 1000, true);
+```
+
+### Debounce vs Throttle
+
+Many interviewers ask this follow-up.
+
+| Feature   | Debounce         | Throttle           |
+| --------- | ---------------- | ------------------ |
+| Execution | After inactivity | At fixed intervals |
+| Best For  | Search input     | Scroll/resize      |
+| Example   | API search       | Infinite scroll    |
+
+Debounce:
+
+```txt
+----typing----[execute once]
+```
+
+Throttle:
+
+```txt
+--execute--execute--execute--
+```
+
+### Efficient Modern Pattern with AbortController
+
+For search inputs, debouncing alone is not enough. You should also cancel old requests.
+
+```js
+function debounce(fn, delay) {
+  let timer;
+
+  return (...args) => {
+    clearTimeout(timer);
+
+    timer = setTimeout(() => {
+      fn(...args);
+    }, delay);
+  };
+}
+
+let controller;
+
+const search = debounce(async (query) => {
+  if (controller) {
+    controller.abort();
+  }
+
+  controller = new AbortController();
+
+  try {
+    const response = await fetch(`/search?q=${query}`, {
+      signal: controller.signal,
+    });
+
+    const data = await response.json();
+
+    console.log(data);
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error(err);
+    }
+  }
+}, 300);
+```
+
+This prevents race conditions where slower old responses overwrite newer results.
+
+### React Example (Common Frontend Interview Question)
+
+Using debounce with React hooks:
+
+```js
+import { useMemo } from "react";
+
+function SearchBox() {
+  const debouncedSearch = useMemo(() => {
+    return debounce((value) => {
+      console.log(value);
+    }, 300);
+  }, []);
+
+  return <input onChange={(e) => debouncedSearch(e.target.value)} />;
+}
+```
+
+Why `useMemo`?
+
+Without it:
+
+- debounce gets recreated every render
+- timer state resets
+- debouncing breaks
+
+### Common Pitfalls
+
+#### 1. Recreating Debounced Function
+
+Bad:
+
+```js
+input.addEventListener("input", debounce(fn, 300));
+```
+
+inside repeated render cycles or loops.
+
+Always reuse the same debounced instance.
+
+#### 2. Losing Event Object
+
+Some frameworks recycle synthetic events.
+
+Bad:
+
+```js
+debouncedFn(event);
+```
+
+Better:
+
+```js
+debouncedFn(event.target.value);
+```
+
+#### 3. Memory Leaks
+
+If components unmount, clear timers if needed.
+
+Example:
+
+```js
+clearTimeout(timer);
+```
+
+especially in frameworks like React/Vue.
+
+### Time Complexity
+
+Each invocation:
+
+- `clearTimeout`: O(1)
+- `setTimeout`: O(1)
+
+Overall debounce overhead is constant time.
+
+### Best Practices
+
+- Debounce expensive operations only
+- Use 200–500ms for search inputs
+- Combine with `AbortController` for APIs
+- Preserve `this` using `apply`
+- Avoid recreating debounced handlers
+- Use throttle instead for continuous UI updates
+
+### Summary
+
+A debounced input handler delays execution until the user stops triggering events for a specified duration. It is implemented using `setTimeout` and `clearTimeout`, improving performance by reducing unnecessary executions such as API calls during typing. Efficient implementations preserve `this`, avoid recreating handlers, and often combine debouncing with `AbortController` to prevent stale asynchronous requests.
+
 ## Question 2. How to use `requestIdleCallback` for low-priority tasks
 
 ## Question 3. Difference between `clientX/clientY` and `pageX/pageY`
