@@ -25,6 +25,405 @@
 
 ## Question 1. How to implement dependency injection in JavaScript
 
+> Dependency Injection (DI) in JavaScript is a design pattern where dependencies are provided to a class or function from the outside instead of being created internally. This improves modularity, testability, maintainability, and flexibility.
+
+### What Is Dependency Injection?
+
+Without DI, a class creates its own dependencies:
+
+```js
+class UserService {
+  constructor() {
+    this.database = new Database();
+  }
+
+  getUsers() {
+    return this.database.findAll();
+  }
+}
+```
+
+Problem:
+
+- `UserService` is tightly coupled to `Database`
+- Hard to test
+- Hard to swap implementations
+
+With DI:
+
+```js
+class UserService {
+  constructor(database) {
+    this.database = database;
+  }
+
+  getUsers() {
+    return this.database.findAll();
+  }
+}
+```
+
+Usage:
+
+```js
+const db = new Database();
+const service = new UserService(db);
+```
+
+Now the dependency is injected externally.
+
+### Why Dependency Injection Matters
+
+DI provides:
+
+| Benefit                | Explanation                                     |
+| ---------------------- | ----------------------------------------------- |
+| Loose coupling         | Components depend on abstractions               |
+| Easier testing         | Mock dependencies easily                        |
+| Better maintainability | Swap implementations without changing consumers |
+| Reusability            | Components become independent                   |
+| Scalability            | Cleaner architecture in large apps              |
+
+### Types of Dependency Injection
+
+#### 1. Constructor Injection (Most Common)
+
+Dependencies are passed via constructor.
+
+```js
+class Logger {
+  log(message) {
+    console.log(message);
+  }
+}
+
+class AuthService {
+  constructor(logger) {
+    this.logger = logger;
+  }
+
+  login(user) {
+    this.logger.log(`User logged in: ${user}`);
+  }
+}
+
+const logger = new Logger();
+const auth = new AuthService(logger);
+
+auth.login("John");
+```
+
+##### Why preferred?
+
+- Dependencies are explicit
+- Object cannot exist without required dependencies
+- Easy to test
+
+#### 2. Setter Injection
+
+Dependencies are set after object creation.
+
+```js
+class UserService {
+  setDatabase(database) {
+    this.database = database;
+  }
+}
+
+const service = new UserService();
+service.setDatabase(new Database());
+```
+
+Useful when dependencies are optional.
+
+#### 3. Method Injection
+
+Dependency passed directly to a method.
+
+```js
+class ReportService {
+  generate(reportGenerator) {
+    return reportGenerator.create();
+  }
+}
+```
+
+Good for short-lived dependencies.
+
+### Real-World Example
+
+#### Without DI
+
+```js
+class EmailService {
+  send(message) {
+    console.log("Sending email:", message);
+  }
+}
+
+class Notification {
+  constructor() {
+    this.emailService = new EmailService();
+  }
+
+  notify(msg) {
+    this.emailService.send(msg);
+  }
+}
+```
+
+Hardcoded dependency.
+
+#### With DI
+
+```js
+class Notification {
+  constructor(service) {
+    this.service = service;
+  }
+
+  notify(msg) {
+    this.service.send(msg);
+  }
+}
+```
+
+Now inject different services:
+
+```js
+class SMSService {
+  send(msg) {
+    console.log("Sending SMS:", msg);
+  }
+}
+
+const sms = new SMSService();
+
+const notification = new Notification(sms);
+
+notification.notify("Hello");
+```
+
+### Dependency Injection and Testing
+
+DI is extremely useful for unit testing.
+
+#### Without DI
+
+Hard to mock internal dependencies.
+
+#### With DI
+
+Easy to inject fake implementations.
+
+```js
+class FakeDatabase {
+  findAll() {
+    return ["test-user"];
+  }
+}
+
+const service = new UserService(new FakeDatabase());
+
+console.log(service.getUsers());
+```
+
+This is a major interview point.
+
+### Dependency Injection Container
+
+In large applications, manually wiring dependencies becomes difficult.
+
+A DI container manages object creation automatically.
+
+### Simple DI Container Example
+
+```js
+class Container {
+  constructor() {
+    this.services = {};
+  }
+
+  register(name, dependency) {
+    this.services[name] = dependency;
+  }
+
+  resolve(name) {
+    return this.services[name];
+  }
+}
+
+const container = new Container();
+
+container.register("logger", new Logger());
+
+const logger = container.resolve("logger");
+```
+
+### More Advanced Factory-Based Container
+
+```js
+class Container {
+  constructor() {
+    this.dependencies = new Map();
+  }
+
+  register(name, factory) {
+    this.dependencies.set(name, factory);
+  }
+
+  resolve(name) {
+    const factory = this.dependencies.get(name);
+
+    if (!factory) {
+      throw new Error(`Dependency ${name} not found`);
+    }
+
+    return factory(this);
+  }
+}
+```
+
+Usage:
+
+```js
+container.register("logger", () => new Logger());
+
+container.register(
+  "authService",
+  (container) => new AuthService(container.resolve("logger")),
+);
+
+const authService = container.resolve("authService");
+```
+
+### Dependency Injection in Popular Frameworks
+
+#### Angular
+
+Angular has built-in DI.
+
+```ts
+constructor(private http: HttpClient) {}
+```
+
+Angular injector automatically provides dependencies.
+
+#### NestJS
+
+Uses decorators + reflection-based DI.
+
+```ts
+@Injectable()
+class UserService {}
+```
+
+#### React
+
+React doesn't have traditional DI but uses:
+
+- Context API
+- Hooks
+- Provider pattern
+
+### Dependency Injection vs Service Locator
+
+Interviewers sometimes ask this.
+
+#### DI
+
+Consumer receives dependencies externally.
+
+```js
+new UserService(db);
+```
+
+#### Service Locator
+
+Consumer fetches dependencies itself.
+
+```js
+const db = container.resolve("db");
+```
+
+DI is generally preferred because dependencies remain explicit.
+
+### Common Pitfalls
+
+#### 1. Overengineering Small Apps
+
+DI containers can add unnecessary complexity.
+
+Small applications may not need a full DI framework.
+
+#### 2. Hidden Dependencies
+
+Avoid global containers everywhere.
+
+Bad:
+
+```js
+const logger = globalContainer.resolve("logger");
+```
+
+This hides dependencies.
+
+#### 3. Circular Dependencies
+
+Example:
+
+```txt
+A depends on B
+B depends on A
+```
+
+Can cause initialization issues.
+
+### Best Practices
+
+#### Prefer Constructor Injection
+
+Most predictable and testable.
+
+#### Depend on Abstractions
+
+Inject interfaces/contracts instead of concrete implementations.
+
+JavaScript example:
+
+```js
+class Storage {
+  save() {}
+}
+```
+
+#### Keep Dependencies Explicit
+
+Avoid hidden globals.
+
+#### Use DI Containers Carefully
+
+Useful in:
+
+- Enterprise apps
+- Backend frameworks
+- Large architectures
+
+May be unnecessary in simple scripts.
+
+### Summary
+
+Dependency Injection is a pattern where dependencies are supplied externally rather than created inside a component.
+
+Key points:
+
+- Promotes loose coupling
+- Improves testability
+- Makes code modular and maintainable
+- Constructor injection is most common
+- DI containers automate dependency management
+- Widely used in Angular, NestJS, and enterprise Node.js apps
+
 ## Question 2. How to implement observer/observable pattern in JS frameworks
 
 ## Question 3. How to implement factory pattern in JavaScript
