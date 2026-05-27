@@ -25,6 +25,399 @@
 
 ## Question 1. How does Node.js handle I/O asynchronously using the libuv thread pool?
 
+> Node.js handles asynchronous I/O primarily through the **event loop** and the **libuv library**. For operations that the operating system cannot perform asynchronously natively (like file system access, DNS lookups, compression, and some crypto tasks), libuv uses a **thread pool** behind the scenes.
+
+In short:
+
+- JavaScript runs on a **single main thread**.
+- Expensive or blocking I/O tasks are delegated to libuv.
+- libuv either:
+  - Uses the OS’s async APIs (preferred), or
+  - Uses a **thread pool** to avoid blocking the event loop.
+
+- Once the operation completes, the callback/promise resolution is queued back to the event loop.
+
+### High-Level Architecture
+
+Node.js async execution involves:
+
+1. **JavaScript Call Stack**
+2. **Node.js APIs**
+3. **libuv**
+4. **Thread Pool**
+5. **Event Loop**
+6. **Callback Queue / Microtask Queue**
+
+### What is libuv?
+
+libuv is a C library used internally by Node.js to provide:
+
+- Event loop
+- Asynchronous I/O
+- Thread pool
+- Cross-platform abstractions
+- Timers
+- Networking
+
+It allows Node.js to remain non-blocking even though JavaScript itself runs on one thread.
+
+### Important Concept: Not All Async I/O Uses the Thread Pool
+
+This is one of the most important point.
+
+#### Operations Using OS Async APIs (No Thread Pool)
+
+Networking operations usually rely on the operating system’s async capabilities:
+
+- TCP sockets
+- HTTP requests
+- WebSockets
+
+These are handled efficiently by:
+
+- epoll (Linux)
+- kqueue (macOS)
+- IOCP (Windows)
+
+No extra thread is needed.
+
+Example:
+
+```js
+const http = require("http");
+
+http.get("http://example.com", (res) => {
+  console.log("Response received");
+});
+```
+
+The OS notifies libuv when the socket is ready.
+
+#### Operations That Use the libuv Thread Pool
+
+Some operations are blocking at the OS level, so libuv offloads them to worker threads.
+
+Common examples:
+
+| Operation                 | Uses Thread Pool? |
+| ------------------------- | ----------------- |
+| fs.readFile               | Yes               |
+| fs.writeFile              | Yes               |
+| crypto.pbkdf2             | Yes               |
+| bcrypt hashing            | Yes               |
+| zlib compression          | Yes               |
+| DNS lookup (`dns.lookup`) | Yes               |
+
+Example:
+
+```js
+const fs = require("fs");
+
+console.log("Start");
+
+fs.readFile("large.txt", "utf8", (err, data) => {
+  console.log("File read complete");
+});
+
+console.log("End");
+```
+
+Output:
+
+```txt
+Start
+End
+File read complete
+```
+
+Why?
+
+Because `fs.readFile()` gets delegated to the thread pool.
+
+### How the Thread Pool Works
+
+libuv maintains a pool of worker threads.
+
+Default size:
+
+```txt
+4 threads
+```
+
+Configurable via:
+
+```bash
+UV_THREADPOOL_SIZE=8
+```
+
+Example:
+
+```bash
+UV_THREADPOOL_SIZE=8 node app.js
+```
+
+Maximum allowed:
+
+```txt
+1024
+```
+
+(though very large values are rarely useful)
+
+### Step-by-Step Flow of Async File Read
+
+Consider:
+
+```js
+const fs = require("fs");
+
+fs.readFile("data.txt", () => {
+  console.log("Done");
+});
+```
+
+Execution flow:
+
+#### 1. JavaScript Calls fs.readFile()
+
+The main thread invokes the Node.js API.
+
+#### 2. Node Delegates to libuv
+
+libuv receives the request.
+
+#### 3. libuv Assigns Work to Thread Pool
+
+One worker thread picks up the file read operation.
+
+Meanwhile:
+
+- Main thread becomes free
+- Event loop continues processing other tasks
+
+#### 4. Worker Thread Performs Blocking I/O
+
+The worker thread executes the actual filesystem call.
+
+#### 5. Completion Notification
+
+After reading completes:
+
+- Worker thread informs libuv
+- libuv queues the callback
+
+#### 6. Event Loop Executes Callback
+
+When the call stack is free:
+
+```js
+console.log("Done");
+```
+
+gets executed on the main thread.
+
+### Visualization
+
+```txt
+Main Thread
+    |
+    |---- fs.readFile()
+    |
+    +--> libuv
+            |
+            +--> Thread Pool Worker
+                    |
+                    +--> Read File
+                    |
+                    +--> Notify Completion
+            |
+            +--> Event Loop Queue
+                    |
+                    +--> Callback Executed
+```
+
+### Why Node.js is Fast
+
+Node.js achieves scalability because:
+
+- Main thread does not block
+- One process can handle thousands of connections
+- I/O waits happen outside the main thread
+- Event loop stays responsive
+
+This is ideal for:
+
+- APIs
+- Chat apps
+- Streaming
+- Real-time systems
+
+#### Example: Thread Pool Saturation
+
+```js
+const crypto = require("crypto");
+
+for (let i = 0; i < 8; i++) {
+  crypto.pbkdf2("password", "salt", 100000, 64, "sha512", () => {
+    console.log(`Task ${i} done`);
+  });
+}
+```
+
+Default thread pool size is 4.
+
+Result:
+
+- First 4 tasks run immediately
+- Remaining 4 wait in queue
+
+This demonstrates that thread pool resources are limited.
+
+### Increasing Thread Pool Size
+
+```bash
+UV_THREADPOOL_SIZE=8 node app.js
+```
+
+Useful when:
+
+- Heavy filesystem work
+- Crypto-intensive workloads
+- Compression tasks
+
+But increasing blindly can hurt performance because:
+
+- More context switching
+- Higher memory usage
+- CPU contention
+
+### Event Loop vs Thread Pool
+
+Interviewers often ask this distinction.
+
+| Feature    | Event Loop                 | Thread Pool             |
+| ---------- | -------------------------- | ----------------------- |
+| Purpose    | Schedule async callbacks   | Execute blocking tasks  |
+| Runs JS?   | Yes                        | No                      |
+| Threads    | Single thread              | Multiple worker threads |
+| Managed by | libuv                      | libuv                   |
+| Handles    | Timers, callbacks, sockets | FS, crypto, DNS         |
+
+### Common Misconception
+
+#### “Node.js is single-threaded”
+
+Partially true.
+
+##### JavaScript execution
+
+✅ Single-threaded
+
+#### Runtime internals
+
+❌ Not single-threaded
+
+Node.js internally uses:
+
+- Thread pool
+- OS threads
+- Background workers
+
+Only the JavaScript execution model is single-threaded.
+
+#### Microtasks and Callback Ordering
+
+After async work completes:
+
+```js
+fs.readFile("a.txt", () => {
+  console.log("file");
+
+  Promise.resolve().then(() => {
+    console.log("microtask");
+  });
+});
+
+console.log("sync");
+```
+
+Output:
+
+```txt
+sync
+file
+microtask
+```
+
+Because:
+
+1. Callback executes in event loop phase
+2. Promise microtasks execute immediately after callback
+
+This demonstrates interaction between:
+
+- libuv event loop
+- microtask queue
+- JavaScript runtime
+
+### Real-World Best Practices
+
+#### 1. Avoid Blocking APIs
+
+Bad:
+
+```js
+fs.readFileSync("large.txt");
+```
+
+This blocks the entire event loop.
+
+Prefer:
+
+```js
+fs.readFile();
+```
+
+#### 2. Avoid CPU-Heavy Work on Main Thread
+
+Heavy computations block the event loop.
+
+Use:
+
+- Worker Threads
+- Child Processes
+- Queues
+
+#### 3. Understand Thread Pool Limits
+
+Too many crypto/fs tasks can create bottlenecks.
+
+Monitor:
+
+- Event loop lag
+- Queue delays
+- CPU usage
+
+### Worker Threads vs libuv Thread Pool
+
+Important interview distinction:
+
+| Feature        | libuv Thread Pool  | Worker Threads          |
+| -------------- | ------------------ | ----------------------- |
+| Executes JS?   | No                 | Yes                     |
+| Purpose        | Native async tasks | Parallel JS computation |
+| Suitable for   | FS, crypto, DNS    | CPU-intensive JS        |
+| Access from JS | Indirect           | Direct                  |
+
+Example:
+
+- `fs.readFile()` → libuv thread pool
+- Image processing algorithm → Worker Threads
+
+### Summary
+
+Node.js uses libuv to provide asynchronous I/O. Operations like networking rely on OS-level non-blocking APIs, while operations that are inherently blocking—such as filesystem access, DNS lookup, crypto, and compression—are delegated to a libuv-managed thread pool. The main JavaScript thread remains free to continue executing the event loop. Once the background task completes, libuv pushes the callback into the event loop queue, where it is eventually executed on the main thread. This architecture allows Node.js to efficiently handle large numbers of concurrent I/O operations without blocking.
+
 ## Question 2. Difference between `process.nextTick`, `setImmediate`, and `setTimeout` in Node.js
 
 ## Question 3. How to implement clustering in Node.js
