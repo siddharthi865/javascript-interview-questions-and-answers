@@ -25,6 +25,363 @@
 
 ## Question 1. How to implement a factory pattern in JavaScript
 
+The **Factory Pattern** in JavaScript is a creational design pattern used to create objects without exposing the exact object creation logic to the client. Instead of using `new` directly everywhere, you centralize object creation in a factory function or class.
+
+It helps:
+
+- Encapsulate object creation logic
+- Reduce repetitive code
+- Improve maintainability
+- Support polymorphism and abstraction
+
+### 1. Basic Factory Function
+
+A simple factory returns objects based on input.
+
+```js
+function createUser(name, role) {
+  return {
+    name,
+    role,
+    describe() {
+      console.log(`${this.name} is a ${this.role}`);
+    },
+  };
+}
+
+const admin = createUser("John", "Admin");
+const editor = createUser("Sarah", "Editor");
+
+admin.describe();
+editor.describe();
+```
+
+### Output
+
+```js
+John is a Admin
+Sarah is a Editor
+```
+
+### 2. Why Use Factory Pattern?
+
+Without a factory:
+
+```js
+const user1 = {
+  name: "John",
+  role: "Admin",
+};
+
+const user2 = {
+  name: "Sarah",
+  role: "Editor",
+};
+```
+
+Problems:
+
+- Duplicate logic
+- Hard to maintain
+- No abstraction
+- Difficult to add validation or conditional behavior
+
+Factory pattern centralizes creation.
+
+### 3. Real Interview-Level Example
+
+Suppose you need different employee types.
+
+```js
+function EmployeeFactory(type, name) {
+  switch (type) {
+    case "developer":
+      return {
+        name,
+        type,
+        code() {
+          console.log(`${name} writes code`);
+        },
+      };
+
+    case "designer":
+      return {
+        name,
+        type,
+        design() {
+          console.log(`${name} creates UI designs`);
+        },
+      };
+
+    default:
+      throw new Error("Unknown employee type");
+  }
+}
+
+const dev = EmployeeFactory("developer", "Alice");
+const designer = EmployeeFactory("designer", "Bob");
+
+dev.code();
+designer.design();
+```
+
+### 4. Factory Pattern Using Classes
+
+Factories are often implemented with classes in modern JavaScript.
+
+```js
+class Car {
+  constructor(model) {
+    this.model = model;
+  }
+}
+
+class Bike {
+  constructor(model) {
+    this.model = model;
+  }
+}
+
+class VehicleFactory {
+  createVehicle(type, model) {
+    switch (type) {
+      case "car":
+        return new Car(model);
+
+      case "bike":
+        return new Bike(model);
+
+      default:
+        throw new Error("Invalid vehicle type");
+    }
+  }
+}
+
+const factory = new VehicleFactory();
+
+const car = factory.createVehicle("car", "Tesla");
+const bike = factory.createVehicle("bike", "Yamaha");
+
+console.log(car);
+console.log(bike);
+```
+
+### 5. Factory Pattern vs Constructor Function
+
+#### Constructor Function
+
+```js
+function User(name) {
+  this.name = name;
+}
+
+const u1 = new User("John");
+```
+
+##### Characteristics
+
+- Requires `new`
+- Creates instances from same blueprint
+- Uses prototypes
+
+#### Factory Function
+
+```js
+function createUser(name) {
+  return { name };
+}
+
+const u1 = createUser("John");
+```
+
+##### Characteristics
+
+- No `new`
+- Simpler syntax
+- Easier encapsulation
+- More flexible
+
+### 6. Factory Pattern + Prototypes (Memory Efficient)
+
+One downside of naive factories:
+
+```js
+function createUser(name) {
+  return {
+    name,
+    greet() {
+      console.log("Hello");
+    },
+  };
+}
+```
+
+Each object gets its own `greet()` copy.
+
+Better approach:
+
+```js
+const userMethods = {
+  greet() {
+    console.log(`Hello ${this.name}`);
+  },
+};
+
+function createUser(name) {
+  const user = Object.create(userMethods);
+  user.name = name;
+  return user;
+}
+
+const u1 = createUser("John");
+const u2 = createUser("Sarah");
+
+u1.greet();
+```
+
+Now methods are shared through the prototype chain.
+
+### 7. Factory Pattern in Real Applications
+
+Common real-world usage:
+
+#### UI Component Creation
+
+```js
+function createButton(type) {
+  if (type === "primary") {
+    return document.createElement("button");
+  }
+}
+```
+
+#### API Client Creation
+
+```js
+function createApiClient(env) {
+  const baseUrl =
+    env === "production" ? "https://api.prod.com" : "https://api.dev.com";
+
+  return {
+    get(path) {
+      return fetch(baseUrl + path);
+    },
+  };
+}
+```
+
+### 8. Factory Pattern vs Class
+
+| Feature                  | Factory Function | Class       |
+| ------------------------ | ---------------- | ----------- |
+| Uses `new`               | No               | Yes         |
+| Simpler syntax           | Yes              | Moderate    |
+| Encapsulation            | Excellent        | Good        |
+| Prototype support        | Manual           | Automatic   |
+| Private data via closure | Easy             | Harder      |
+| Best for                 | Flexible objects | OOP systems |
+
+### 9. Advanced Factory with Private Variables
+
+Factories work very well with closures.
+
+```js
+function createCounter() {
+  let count = 0;
+
+  return {
+    increment() {
+      count++;
+      return count;
+    },
+
+    getCount() {
+      return count;
+    },
+  };
+}
+
+const counter = createCounter();
+
+console.log(counter.increment());
+console.log(counter.increment());
+console.log(counter.getCount());
+```
+
+#### Why Important?
+
+`count` is private and inaccessible directly.
+
+```js
+console.log(counter.count); // undefined
+```
+
+This is a major advantage over plain objects/classes.
+
+### 10. Common Interview Follow-Up Questions
+
+#### Q1: Is Factory Pattern same as Factory Method Pattern?
+
+No.
+
+##### Factory Pattern
+
+Usually a simple function/class creating objects.
+
+##### Factory Method Pattern
+
+A more formal OOP design pattern where subclasses decide object creation.
+
+#### Q2: Why are factory functions popular in modern JS?
+
+Because they:
+
+- Avoid `this` confusion
+- Avoid mandatory `new`
+- Work naturally with closures
+- Are easier in functional programming styles
+
+#### Q3: What are disadvantages?
+
+##### Memory Overhead
+
+Methods recreated per object unless prototypes/shared methods used.
+
+##### Less Clear Type Relationships
+
+`instanceof` may not work as expected.
+
+Example:
+
+```js
+function createUser() {
+  return {};
+}
+
+const u = createUser();
+
+console.log(u instanceof createUser); // false
+```
+
+### 11. Best Practices
+
+#### Prefer Factories When
+
+- You need encapsulation
+- You need flexible object shapes
+- You want private state
+- You want composition over inheritance
+
+#### Prefer Classes When
+
+- You need inheritance hierarchies
+- You need `instanceof`
+- You work in large OOP architectures
+
+### 12. Summary
+
+The Factory Pattern is a creational design pattern that abstracts and centralizes object creation logic. In JavaScript, it is commonly implemented using factory functions or factory classes. It improves maintainability, encapsulation, and flexibility while reducing duplication. Modern JavaScript often favors factory functions because they integrate naturally with closures and functional programming patterns, though classes remain useful for prototype-based inheritance and structured OOP systems.
+
 ## Question 2. How to implement a module pattern in JavaScript
 
 ## Question 3. How to create a proxy to validate object properties
