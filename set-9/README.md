@@ -25,6 +25,218 @@
 
 ## Question 1. How to remove duplicates from an array without using Set
 
+A common way to remove duplicates from an array **without using `Set`** is to use:
+
+- `filter()` with `indexOf()`
+- `reduce()`
+- a temporary object/map for lookup
+- traditional loops
+
+The best approach depends on readability, performance, and the type of values in the array.
+
+### 1. Using `filter()` + `indexOf()` (Most Common)
+
+```js
+const arr = [1, 2, 2, 3, 4, 4, 5];
+
+const unique = arr.filter((item, index) => {
+  return arr.indexOf(item) === index;
+});
+
+console.log(unique); // [1, 2, 3, 4, 5]
+```
+
+#### How it works
+
+- `indexOf(item)` returns the **first occurrence** of the item.
+- During filtering:
+  - If the current index matches the first occurrence → keep it.
+  - Otherwise → it's a duplicate.
+
+##### Example
+
+For array:
+
+```js
+[1, 2, 2, 3];
+```
+
+At second `2`:
+
+```js
+arr.indexOf(2) // 1
+current index  // 2
+```
+
+Since `1 !== 2`, it gets removed.
+
+### 2. Using `reduce()`
+
+```js
+const arr = [1, 2, 2, 3, 4, 4];
+
+const unique = arr.reduce((acc, current) => {
+  if (!acc.includes(current)) {
+    acc.push(current);
+  }
+  return acc;
+}, []);
+
+console.log(unique);
+```
+
+#### Explanation
+
+- `acc` stores unique values.
+- `includes()` checks whether value already exists.
+- If not present → add it.
+
+### 3. Using a Temporary Object (Better Performance)
+
+```js
+const arr = [1, 2, 2, 3, 4, 4];
+
+const seen = {};
+const unique = [];
+
+for (const item of arr) {
+  if (!seen[item]) {
+    seen[item] = true;
+    unique.push(item);
+  }
+}
+
+console.log(unique);
+```
+
+#### Why this is faster
+
+- Object lookups are approximately **O(1)**.
+- Total complexity becomes roughly **O(n)**.
+
+Whereas:
+
+```js
+includes();
+indexOf();
+```
+
+inside loops make complexity closer to **O(n²)**.
+
+### 4. Using `Map` (Without `Set`)
+
+```js
+const arr = [1, 2, 2, 3];
+
+const map = new Map();
+
+for (const item of arr) {
+  map.set(item, true);
+}
+
+const unique = [...map.keys()];
+
+console.log(unique);
+```
+
+This preserves insertion order and works well for primitive values.
+
+### Time Complexity
+
+| Method              | Complexity | Notes                |
+| ------------------- | ---------- | -------------------- |
+| `filter + indexOf`  | O(n²)      | Easy to read         |
+| `reduce + includes` | O(n²)      | Functional style     |
+| Object lookup       | O(n)       | Fast for primitives  |
+| `Map`               | O(n)       | Modern and efficient |
+
+### Important Edge Cases
+
+#### 1. Objects in Arrays
+
+```js
+const arr = [{ a: 1 }, { a: 1 }];
+```
+
+These are different references:
+
+```js
+{a:1} !== {a:1}
+```
+
+So simple duplicate removal will NOT work as expected.
+
+Example:
+
+```js
+const unique = arr.filter((item, index) => arr.indexOf(item) === index);
+
+console.log(unique);
+// both objects remain
+```
+
+#### Removing Duplicate Objects
+
+Usually done using a unique property:
+
+```js
+const users = [
+  { id: 1, name: "A" },
+  { id: 2, name: "B" },
+  { id: 1, name: "A" },
+];
+
+const unique = users.filter(
+  (user, index, self) => index === self.findIndex((u) => u.id === user.id),
+);
+
+console.log(unique);
+```
+
+### Modern Best Practice
+
+In real projects, developers usually use:
+
+```js
+[...new Set(arr)];
+```
+
+because it is concise and performant.
+
+But in interviews, companies often ask for alternatives to test understanding of:
+
+- array iteration
+- lookup logic
+- time complexity
+- equality behavior
+- algorithmic thinking
+
+### Common Interview Follow-up Questions
+
+#### Why is `indexOf` solution inefficient?
+
+Because `indexOf` scans the array every iteration.
+
+Nested scanning:
+
+```txt
+n × n = O(n²)
+```
+
+#### Which solution is best for large arrays?
+
+Using:
+
+- object lookup
+- `Map`
+- or `Set`
+
+because they provide near O(1) lookup time.
+
+### Summary
+
+> “Without using `Set`, duplicates can be removed using `filter + indexOf`, `reduce`, or lookup-based approaches like objects or `Map`. For small arrays, `filter + indexOf` is readable and common. For large datasets, lookup structures are preferable because they reduce time complexity from O(n²) to O(n). Handling objects requires custom comparison logic since object equality in JavaScript is reference-based.”
+
 ## Question 2. Explain flatMap() method
 
 ## Question 3. How to implement a stack and queue using arrays
