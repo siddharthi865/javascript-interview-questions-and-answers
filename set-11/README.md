@@ -25,6 +25,263 @@
 
 ## Question 1. What is the difference between document and window objects?
 
+In a browser environment:
+
+- `window` is the **global object** representing the browser window/tab.
+- `document` is a property of `window` that represents the **HTML page (DOM)** loaded inside that window.
+
+So the relationship is:
+
+```js
+window.document;
+```
+
+`window` manages browser-level features, while `document` manages webpage content.
+
+### Detailed Explanation
+
+#### 1. What is the `window` Object?
+
+The `window` object is the **top-level global object** in browsers.
+
+It represents the browser tab/window and provides APIs for:
+
+- Browser control
+- Timers
+- Navigation
+- Storage
+- Global variables/functions
+- Screen/location/history access
+
+##### Examples
+
+```js
+console.log(window);
+```
+
+##### Common `window` APIs
+
+```js
+window.alert("Hello");
+window.setTimeout(() => {}, 1000);
+window.location.href;
+window.localStorage;
+window.history.back();
+```
+
+##### Important Interview Point
+
+In browsers, globally declared variables become properties of `window` (with `var`).
+
+```js
+var x = 10;
+
+console.log(window.x); // 10
+```
+
+But `let` and `const` do NOT attach to `window`.
+
+```js
+let y = 20;
+
+console.log(window.y); // undefined
+```
+
+#### 2. What is the `document` Object?
+
+The `document` object represents the **DOM (Document Object Model)** of the webpage.
+
+It allows JavaScript to:
+
+- Access HTML elements
+- Modify content
+- Change styles
+- Create/remove elements
+- Handle DOM events
+
+##### Examples
+
+```js
+console.log(document);
+```
+
+##### Common `document` APIs
+
+```js
+document.getElementById("title");
+document.querySelector(".box");
+document.createElement("div");
+document.body.style.background = "lightblue";
+```
+
+### Relationship Between `window` and `document`
+
+`document` is actually a property of `window`.
+
+```js
+console.log(window.document === document); // true
+```
+
+Hierarchy:
+
+```text
+window
+ ├── document
+ │    ├── body
+ │    ├── forms
+ │    └── links
+ ├── location
+ ├── history
+ ├── localStorage
+ └── setTimeout()
+```
+
+### Key Differences
+
+| Feature      | `window`                   | `document`                           |
+| ------------ | -------------------------- | ------------------------------------ |
+| Represents   | Browser window/tab         | Loaded HTML page                     |
+| Type         | Global browser object      | DOM object                           |
+| Scope        | Entire browser environment | Webpage content                      |
+| Access Level | Top-level object           | Child of `window`                    |
+| Used For     | Browser APIs               | DOM manipulation                     |
+| Example APIs | `alert()`, `setTimeout()`  | `querySelector()`, `createElement()` |
+
+### Practical Examples
+
+#### Example 1 — Using `window`
+
+```js
+window.alert("Welcome");
+```
+
+Controls browser behavior.
+
+#### Example 2 — Using `document`
+
+```js
+document.body.style.backgroundColor = "yellow";
+```
+
+Manipulates webpage content.
+
+### Browser Global Scope Behavior
+
+Because `window` is global, you can often omit `window`.
+
+These are equivalent:
+
+```js
+window.alert("Hi");
+alert("Hi");
+```
+
+And:
+
+```js
+window.document;
+document;
+```
+
+JavaScript automatically looks on `window`.
+
+### Important Interview Concept
+
+#### DOM vs BOM
+
+##### `document` → DOM (Document Object Model)
+
+Handles webpage structure.
+
+##### `window` → BOM (Browser Object Model)
+
+Handles browser features.
+
+Examples of BOM objects:
+
+- `navigator`
+- `screen`
+- `history`
+- `location`
+
+All accessible through `window`.
+
+### Common Interview Questions
+
+#### Q1: Is `document` part of `window`?
+
+Yes.
+
+```js
+window.document;
+```
+
+#### Q2: Can `document` exist without `window`?
+
+In browsers, no.
+
+`document` is provided by the browser through `window`.
+
+#### Q3: Which object is global in browsers?
+
+`window`
+
+#### Q4: Which object manipulates HTML elements?
+
+`document`
+
+### Example Combining Both
+
+```html
+<button id="btn">Click</button>
+
+<script>
+  document.getElementById("btn").addEventListener("click", () => {
+    window.alert("Button clicked");
+  });
+</script>
+```
+
+- `document` selects the button
+- `window` shows the alert
+
+### Common Pitfalls
+
+#### 1. Confusing Global Scope with DOM
+
+```js
+document.myVar; // ❌
+```
+
+Variables belong to `window`, not `document`.
+
+#### 2. Assuming Everything is on `document`
+
+Timers are on `window`, not `document`.
+
+```js
+setTimeout(() => {}, 1000);
+```
+
+Equivalent to:
+
+```js
+window.setTimeout(() => {}, 1000);
+```
+
+### Best Practices
+
+- Use `document` for DOM manipulation.
+- Use `window` only for browser/global APIs.
+- Avoid polluting `window` with global variables.
+- Prefer modules and block scope (`let`/`const`).
+
+### Summary
+
+> The `window` object represents the browser window and acts as the global object in browsers, providing APIs like `alert`, `setTimeout`, and `localStorage`.
+> The `document` object represents the DOM of the loaded webpage and is used to access and manipulate HTML elements.
+> `document` is actually a property of `window`, i.e., `window.document`.
+
 ## Question 2. How do you check if a variable is null or undefined?
 
 ## Question 3. Difference between for...in and for...of loops
