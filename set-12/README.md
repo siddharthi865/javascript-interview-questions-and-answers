@@ -25,6 +25,216 @@
 
 ## Question 1. How to reverse a string in JavaScript?
 
+A string can be reversed in JavaScript in several ways, but the most common interview answer is:
+
+```js
+const str = "hello";
+
+const reversed = str.split("").reverse().join("");
+
+console.log(reversed); // "olleh"
+```
+
+### Detailed Explanation
+
+JavaScript strings are **immutable**, meaning you cannot directly modify characters inside a string.
+So reversing a string usually involves:
+
+1. Converting the string into an array
+2. Reversing the array
+3. Converting it back into a string
+
+#### Method 1 — Using `split()`, `reverse()`, and `join()` (Most Common)
+
+```js
+function reverseString(str) {
+  return str.split("").reverse().join("");
+}
+
+console.log(reverseString("JavaScript"));
+// "tpircSavaJ"
+```
+
+##### How it works
+
+###### 1. `split("")`
+
+Converts the string into an array of characters.
+
+```js
+"hello".split("");
+// ["h", "e", "l", "l", "o"]
+```
+
+###### 2. `reverse()`
+
+Reverses the array in place.
+
+```js
+["h", "e", "l", "l", "o"].reverse();
+// ["o", "l", "l", "e", "h"]
+```
+
+###### 3. `join("")`
+
+Converts the array back into a string.
+
+```js
+["o", "l", "l", "e", "h"].join("");
+// "olleh"
+```
+
+#### Time and Space Complexity
+
+| Operation | Complexity |
+| --------- | ---------- |
+| split()   | O(n)       |
+| reverse() | O(n)       |
+| join()    | O(n)       |
+
+Overall:
+
+- **Time Complexity:** O(n)
+- **Space Complexity:** O(n)
+
+#### Method 2 — Using a Loop
+
+Interviewers sometimes ask you to reverse a string **without using `reverse()`**.
+
+```js
+function reverseString(str) {
+  let reversed = "";
+
+  for (let i = str.length - 1; i >= 0; i--) {
+    reversed += str[i];
+  }
+
+  return reversed;
+}
+
+console.log(reverseString("hello"));
+// "olleh"
+```
+
+#### Method 3 — Using Recursion
+
+```js
+function reverseString(str) {
+  if (str === "") {
+    return "";
+  }
+
+  return reverseString(str.substr(1)) + str[0];
+}
+
+console.log(reverseString("hello"));
+// "olleh"
+```
+
+##### Important Note
+
+This is elegant but not ideal for large strings because recursion can cause:
+
+- Higher memory usage
+- Stack overflow for very long strings
+
+#### Method 4 — Using `reduce()`
+
+```js
+function reverseString(str) {
+  return str.split("").reduce((rev, char) => char + rev, "");
+}
+
+console.log(reverseString("hello"));
+// "olleh"
+```
+
+#### Unicode / Emoji Edge Case
+
+A common issue with `split("")` is that it may break Unicode surrogate pairs like emojis.
+
+Example:
+
+```js
+const str = "😊👍";
+
+console.log(str.split("").reverse().join(""));
+// Incorrect result
+```
+
+Better approach:
+
+```js
+function reverseString(str) {
+  return [...str].reverse().join("");
+}
+
+console.log(reverseString("😊👍"));
+// 👍😊
+```
+
+Using the spread operator (`...str`) correctly handles many Unicode characters.
+
+### Modern ES6+ Version
+
+```js
+const reverseString = (str) => [...str].reverse().join("");
+```
+
+### Common Interview Follow-Ups
+
+#### Q1: Why can't we directly reverse a string?
+
+Because JavaScript strings are immutable.
+
+```js
+let str = "hello";
+str[0] = "H";
+
+console.log(str); // still "hello"
+```
+
+#### Q2: Does `reverse()` work on strings?
+
+No. `reverse()` is an Array method.
+
+```js
+"hello".reverse(); // Error
+```
+
+#### Q3: Which method is best?
+
+Usually:
+
+```js
+str.split("").reverse().join("");
+```
+
+is considered the standard interview solution.
+
+For Unicode-safe implementations:
+
+```js
+[...str].reverse().join("");
+```
+
+is better.
+
+### Best Practice Recommendation
+
+For production-quality modern JavaScript:
+
+```js
+const reverseString = (str) => [...str].reverse().join("");
+```
+
+because it is:
+
+- Clean
+- Readable
+- ES6+
+- More Unicode-friendly than `split("")`
+
 ## Question 2. Difference between `Math.max.apply()` and `Math.max(...array)`
 
 ## Question 3. How to merge multiple arrays into one?
