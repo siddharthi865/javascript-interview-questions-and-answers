@@ -25,6 +25,304 @@
 
 ## Question 1. How to implement a debounce function from scratch
 
+A **debounce function** limits how often a function executes by delaying its execution until a certain amount of time has passed since the last call.
+
+It’s commonly used for:
+
+- Search input suggestions
+- Window resize events
+- Scroll handlers
+- API calls triggered by typing
+
+### Basic Debounce Implementation
+
+```javascript
+function debounce(fn, delay) {
+  let timer;
+
+  return function (...args) {
+    clearTimeout(timer);
+
+    timer = setTimeout(() => {
+      fn.apply(this, args);
+    }, delay);
+  };
+}
+```
+
+#### How It Works
+
+Every time the returned function is called:
+
+1. Previous timer is cleared
+2. A new timer starts
+3. If no new call happens within `delay` milliseconds:
+   - original function executes
+
+This ensures the function runs **only after the user stops triggering the event**.
+
+#### Example: Search Input
+
+```javascript
+function search(query) {
+  console.log("Searching for:", query);
+}
+
+const debouncedSearch = debounce(search, 500);
+
+debouncedSearch("j");
+debouncedSearch("ja");
+debouncedSearch("jav");
+debouncedSearch("java");
+```
+
+Only the final call executes after 500ms:
+
+```javascript
+Searching for: java
+```
+
+#### Real DOM Example
+
+```javascript
+const input = document.getElementById("search");
+
+input.addEventListener(
+  "keyup",
+  debounce(function (e) {
+    console.log("API Call:", e.target.value);
+  }, 300),
+);
+```
+
+Without debounce:
+
+- API called on every keystroke
+
+With debounce:
+
+- API called only after typing pauses
+
+#### Why `clearTimeout()` Is Important
+
+```javascript
+clearTimeout(timer);
+```
+
+This cancels the previous scheduled execution.
+
+Without it:
+
+- multiple timers would execute
+- debounce behavior would fail
+
+#### Why Use `fn.apply(this, args)`?
+
+```javascript
+fn.apply(this, args);
+```
+
+This preserves:
+
+- correct `this`
+- all arguments
+
+Example:
+
+```javascript
+const obj = {
+  name: "John",
+  greet: debounce(function () {
+    console.log(this.name);
+  }, 300),
+};
+
+obj.greet();
+```
+
+Using `apply` ensures `this.name` remains `"John"`.
+
+#### Modern Arrow Function Version
+
+```javascript
+const debounce = (fn, delay) => {
+  let timer;
+
+  return (...args) => {
+    clearTimeout(timer);
+
+    timer = setTimeout(() => {
+      fn(...args);
+    }, delay);
+  };
+};
+```
+
+This works well in many cases, but note:
+
+- arrow functions do NOT have their own `this`
+- may not work correctly for object methods
+
+#### Advanced Debounce (Leading + Trailing)
+
+Interviewers often ask for a more complete implementation.
+
+```javascript
+function debounce(fn, delay, immediate = false) {
+  let timer;
+
+  return function (...args) {
+    const callNow = immediate && !timer;
+
+    clearTimeout(timer);
+
+    timer = setTimeout(() => {
+      timer = null;
+
+      if (!immediate) {
+        fn.apply(this, args);
+      }
+    }, delay);
+
+    if (callNow) {
+      fn.apply(this, args);
+    }
+  };
+}
+```
+
+### Behavior Modes
+
+#### Trailing Debounce (default)
+
+Executes after user stops triggering.
+
+```javascript
+debounce(fn, 300);
+```
+
+Use case:
+
+- search bars
+- autosave
+
+#### Leading Debounce
+
+Executes immediately once, then ignores calls until delay ends.
+
+```javascript
+debounce(fn, 300, true);
+```
+
+Use case:
+
+- preventing double-click submissions
+
+### Debounce vs Throttle
+
+| Feature   | Debounce         | Throttle                  |
+| --------- | ---------------- | ------------------------- |
+| Execution | After delay ends | At fixed intervals        |
+| Best For  | Typing/search    | Scroll/resize/game events |
+| Frequency | Less frequent    | Regular intervals         |
+
+### Common Interview Follow-Up
+
+#### Q: Where is `timer` stored?
+
+Inside a **closure**.
+
+```javascript
+let timer;
+```
+
+The returned function remembers `timer` even after `debounce()` execution finishes.
+
+This is a classic JavaScript closure interview topic.
+
+### Event Loop Perspective
+
+`setTimeout` places callback execution into:
+
+- Web APIs
+- then callback queue
+- then event loop processes it
+
+Debounce relies heavily on JavaScript’s asynchronous event loop model.
+
+### Common Mistakes
+
+#### 1. Forgetting `clearTimeout`
+
+```javascript
+// Wrong
+setTimeout(fn, delay);
+```
+
+Creates multiple executions.
+
+#### 2. Losing `this`
+
+```javascript
+fn(args);
+```
+
+May break object methods.
+
+Prefer:
+
+```javascript
+fn.apply(this, args);
+```
+
+#### 3. Recreating Debounce Repeatedly
+
+Wrong:
+
+```javascript
+input.addEventListener("keyup", debounce(fn, 300));
+```
+
+inside loops or rerenders repeatedly.
+
+This creates new timers every render.
+
+### Time Complexity
+
+- Each call:
+  - `clearTimeout`: O(1)
+  - `setTimeout`: O(1)
+
+Overall:
+
+- **Time Complexity:** O(1)
+- **Space Complexity:** O(1)
+
+### Production Notes
+
+Libraries like [Lodash](https://lodash.com?utm_source=chatgpt.com) provide highly optimized debounce utilities:
+
+```javascript
+_.debounce(fn, 300);
+```
+
+They support:
+
+- cancel
+- flush
+- leading/trailing options
+- max wait time
+
+### Summary
+
+A debounce function delays execution until repeated calls stop for a specified delay period. It is implemented using:
+
+- closures
+- `setTimeout`
+- `clearTimeout`
+
+It helps optimize performance by preventing unnecessary repeated function executions, especially in high-frequency events like typing, scrolling, and resizing.
+
 ## Question 2. How to implement a throttle function from scratch
 
 ## Question 3. Difference between `requestAnimationFrame` and `setTimeout` for animations
