@@ -25,6 +25,239 @@
 
 ## Question 1. Difference between focus and blur events
 
+`focus` and `blur` are DOM events used to detect when an element gains or loses user focus.
+
+- **`focus` event** → Fired when an element becomes active or selected.
+- **`blur` event** → Fired when an element loses focus.
+
+These events are commonly used with form elements like `<input>`, `<textarea>`, `<select>`, and interactive UI components.
+
+### 1. `focus` Event
+
+The `focus` event occurs when a user clicks into an input field, tabs into it, or when `.focus()` is called programmatically.
+
+#### Example
+
+```html
+<input type="text" id="username" placeholder="Enter username" />
+
+<script>
+  const input = document.getElementById("username");
+
+  input.addEventListener("focus", () => {
+    console.log("Input focused");
+    input.style.backgroundColor = "lightyellow";
+  });
+</script>
+```
+
+#### What happens?
+
+- User clicks the input
+- Input gains focus
+- `focus` event fires
+
+### 2. `blur` Event
+
+The `blur` event occurs when the focused element loses focus.
+
+This can happen when:
+
+- User clicks outside the element
+- User tabs to another field
+- Another element receives focus
+
+#### Example
+
+```html
+<input type="text" id="email" placeholder="Enter email" />
+
+<script>
+  const input = document.getElementById("email");
+
+  input.addEventListener("blur", () => {
+    console.log("Input lost focus");
+    input.style.backgroundColor = "";
+  });
+</script>
+```
+
+### 3. Real-World Usage
+
+These events are heavily used in:
+
+| Use Case                   | Event   |
+| -------------------------- | ------- |
+| Highlight active field     | `focus` |
+| Form validation            | `blur`  |
+| Show helper tooltip        | `focus` |
+| Hide suggestions/dropdowns | `blur`  |
+| Auto-select text           | `focus` |
+
+### 4. Common Interview Example
+
+#### Validate Input on Blur
+
+```html
+<input type="email" id="email" />
+
+<script>
+  const email = document.getElementById("email");
+
+  email.addEventListener("blur", () => {
+    if (!email.value.includes("@")) {
+      console.log("Invalid email");
+    }
+  });
+</script>
+```
+
+##### Why use `blur` for validation?
+
+Because validation after the user finishes typing provides a better UX than validating on every keystroke.
+
+### 5. Event Order
+
+If a user moves from one input to another:
+
+1. First input fires `blur`
+2. Second input fires `focus`
+
+Example flow:
+
+```text
+Input A blur
+Input B focus
+```
+
+### 6. Important Difference: Bubbling
+
+One of the most important interview points:
+
+| Event   | Bubbles? |
+| ------- | -------- |
+| `focus` | ❌ No    |
+| `blur`  | ❌ No    |
+
+Because they do not bubble, event delegation using these events directly will not work as expected.
+
+Instead, use:
+
+| Alternative Bubbling Event |
+| -------------------------- |
+| `focusin`                  |
+| `focusout`                 |
+
+### 7. `focusin` and `focusout`
+
+These are similar but bubble up the DOM tree.
+
+```javascript
+document.addEventListener("focusin", (e) => {
+  console.log("Focused:", e.target);
+});
+
+document.addEventListener("focusout", (e) => {
+  console.log("Blurred:", e.target);
+});
+```
+
+Useful for:
+
+- Large forms
+- Event delegation
+- Dynamic inputs
+
+### 8. Programmatic Focus
+
+JavaScript can trigger focus manually.
+
+```javascript
+input.focus();
+```
+
+Remove focus:
+
+```javascript
+input.blur();
+```
+
+Example:
+
+```javascript
+document.getElementById("username").focus();
+```
+
+### 9. Common Pitfalls
+
+#### 1. `blur` fires before click sometimes
+
+A frequent UI issue:
+
+```text
+Input blur → dropdown closes → click never happens
+```
+
+This occurs in autocomplete/dropdown components.
+
+##### Solution
+
+Use:
+
+- `mousedown` instead of `click`
+- Delay blur handling with `setTimeout`
+
+#### 2. `focus` doesn’t bubble
+
+Developers often try:
+
+```javascript
+parent.addEventListener("focus", handler);
+```
+
+This usually fails unless capture phase is used.
+
+Correct alternatives:
+
+```javascript
+parent.addEventListener("focusin", handler);
+```
+
+or
+
+```javascript
+parent.addEventListener("focus", handler, true);
+```
+
+### 10. Accessibility Importance
+
+Focus management is critical for accessibility and keyboard navigation.
+
+Good applications:
+
+- Show visible focus indicators
+- Support tab navigation
+- Avoid trapping focus
+- Manage modal focus properly
+
+Example:
+
+```css
+input:focus {
+  outline: 2px solid blue;
+}
+```
+
+### 11. Quick Comparison Table
+
+| Feature               | `focus`                  | `blur`              |
+| --------------------- | ------------------------ | ------------------- |
+| Triggered when        | Element gains focus      | Element loses focus |
+| Common usage          | Activate/highlight field | Validation/cleanup  |
+| Bubbles               | ❌ No                    | ❌ No               |
+| Opposite event        | `blur`                   | `focus`             |
+| Bubbling alternatives | `focusin`                | `focusout`          |
+
 ## Question 2. How to throttle scroll events for performance
 
 ## Question 3. How to prevent text selection in a webpage using JS
