@@ -25,6 +25,321 @@
 
 ## Question 1. Difference between Proxy and Reflect API
 
+`Proxy` and `Reflect` are related but serve different purposes in JavaScript:
+
+- **Proxy** lets you intercept and customize operations on objects (like property access, assignment, function calls, etc.).
+- **Reflect** provides standard built-in methods for performing those same object operations programmatically.
+
+They are often used together:
+
+- `Proxy` intercepts the operation.
+- `Reflect` performs the default behavior safely and consistently.
+
+### Detailed Explanation
+
+#### 1. What is a Proxy?
+
+A `Proxy` wraps an object and allows you to define custom behavior for fundamental operations.
+
+##### Syntax
+
+```js
+const proxy = new Proxy(target, handler);
+```
+
+- `target` → original object
+- `handler` → object containing traps (interceptors)
+
+##### Example: Intercept Property Access
+
+```js
+const user = {
+  name: "John",
+};
+
+const proxyUser = new Proxy(user, {
+  get(target, property) {
+    console.log(`Accessing ${property}`);
+    return target[property];
+  },
+});
+
+console.log(proxyUser.name);
+```
+
+##### Output
+
+```js
+Accessing name
+John
+```
+
+The `get` trap intercepts property reads.
+
+#### 2. What is Reflect?
+
+`Reflect` is a built-in object containing methods that mirror JavaScript internal object operations.
+
+It provides cleaner and more reliable alternatives to operators like:
+
+- `obj[prop]`
+- `delete obj[prop]`
+- `Object.defineProperty()`
+- `new`
+
+##### Example
+
+```js
+const user = {
+  name: "John",
+};
+
+console.log(Reflect.get(user, "name"));
+```
+
+##### Output
+
+```js
+John;
+```
+
+#### 3. Why Proxy and Reflect Are Used Together
+
+Inside Proxy traps, using `Reflect` helps preserve default behavior.
+
+##### Example Without Reflect
+
+```js
+const proxy = new Proxy(user, {
+  get(target, prop) {
+    return target[prop];
+  },
+});
+```
+
+This works, but can break behavior in edge cases involving:
+
+- inheritance
+- getters/setters
+- `this` binding
+
+##### Better Version Using Reflect
+
+```js
+const proxy = new Proxy(user, {
+  get(target, prop, receiver) {
+    return Reflect.get(target, prop, receiver);
+  },
+});
+```
+
+This forwards the operation exactly as JavaScript normally would.
+
+#### 4. Key Differences
+
+| Feature            | Proxy                           | Reflect                          |
+| ------------------ | ------------------------------- | -------------------------------- |
+| Purpose            | Intercept operations            | Perform operations               |
+| Type               | Constructor                     | Built-in object                  |
+| Used for           | Custom behavior                 | Standardized object manipulation |
+| Can intercept?     | Yes                             | No                               |
+| Modifies behavior? | Yes                             | No                               |
+| Common usage       | Validation, logging, reactivity | Safe forwarding/default behavior |
+
+#### 5. Common Proxy Traps and Matching Reflect Methods
+
+| Proxy Trap         | Reflect Equivalent         |
+| ------------------ | -------------------------- |
+| `get()`            | `Reflect.get()`            |
+| `set()`            | `Reflect.set()`            |
+| `deleteProperty()` | `Reflect.deleteProperty()` |
+| `has()`            | `Reflect.has()`            |
+| `ownKeys()`        | `Reflect.ownKeys()`        |
+| `apply()`          | `Reflect.apply()`          |
+| `construct()`      | `Reflect.construct()`      |
+
+#### 6. Real Example
+
+##### Validation Using Proxy + Reflect
+
+```js
+const user = {};
+
+const proxyUser = new Proxy(user, {
+  set(target, prop, value) {
+    if (prop === "age" && value < 0) {
+      throw new Error("Age cannot be negative");
+    }
+
+    return Reflect.set(target, prop, value);
+  },
+});
+
+proxyUser.age = 25;
+
+console.log(proxyUser.age);
+```
+
+##### Output
+
+```js
+25;
+```
+
+##### Invalid Value
+
+```js
+proxyUser.age = -5;
+```
+
+##### Output
+
+```js
+Error: Age cannot be negative
+```
+
+#### 7. Important Interview Concepts
+
+##### Proxy Changes Object Behavior
+
+A Proxy can:
+
+- validate data
+- log access
+- create reactive systems
+- implement access control
+- create virtual properties
+
+Frameworks like:
+
+- Vue.js
+- MobX
+
+use Proxies internally for reactivity.
+
+##### Reflect Does NOT Intercept
+
+`Reflect` simply performs operations.
+
+Think of it as:
+
+> “Functional versions of object operations.”
+
+Example:
+
+```js
+Reflect.deleteProperty(obj, "name");
+```
+
+instead of:
+
+```js
+delete obj.name;
+```
+
+#### 8. Why Reflect is Better Than Direct Operations
+
+Reflect methods:
+
+- return predictable boolean values
+- work better inside proxies
+- avoid some syntax inconsistencies
+
+Example:
+
+```js
+const success = Reflect.set(obj, "x", 10);
+
+console.log(success);
+```
+
+Returns:
+
+- `true`
+- `false`
+
+instead of silently failing sometimes.
+
+#### 9. Common Pitfalls
+
+##### Infinite Recursion
+
+Wrong:
+
+```js
+const proxy = new Proxy(obj, {
+  get(target, prop) {
+    return proxy[prop];
+  },
+});
+```
+
+This recursively calls the trap forever.
+
+Correct:
+
+```js
+return Reflect.get(target, prop);
+```
+
+##### Forgetting Return in `set`
+
+The `set` trap should return `true`.
+
+```js
+set(target, prop, value) {
+  target[prop] = value;
+  return true;
+}
+```
+
+Better:
+
+```js
+return Reflect.set(target, prop, value);
+```
+
+#### 10. Advanced Example: Default Values
+
+```js
+const settings = {};
+
+const proxy = new Proxy(settings, {
+  get(target, prop) {
+    return prop in target ? Reflect.get(target, prop) : "Default Value";
+  },
+});
+
+console.log(proxy.theme);
+```
+
+##### Output
+
+```js
+Default Value
+```
+
+#### 11. Best Practices
+
+##### Use Proxy When
+
+- intercepting object behavior
+- implementing validation
+- creating reactive systems
+- logging/debugging
+
+##### Use Reflect When
+
+- forwarding default behavior in Proxy traps
+- performing safe object operations
+- avoiding low-level operator inconsistencies
+
+#### Summary
+
+A strong interview answer would be:
+
+> “Proxy is used to intercept and customize operations on objects, while Reflect provides built-in methods to perform those operations programmatically. They are commonly used together because Proxy traps can delegate default behavior to Reflect methods, ensuring consistent behavior with JavaScript’s internal object mechanics.”
+
 ## Question 2. How to create a revocable Proxy
 
 ## Question 3. How to validate object property access using Proxy
