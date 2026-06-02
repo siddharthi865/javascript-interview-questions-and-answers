@@ -4038,6 +4038,336 @@ Spread performs a shallow copy.
 
 ## Question 11. Difference between deep equality and shallow equality
 
+## Concise Answer
+
+- **Shallow equality** checks only the **first-level references or values** of an object/array.
+- **Deep equality** recursively compares **all nested structures** to ensure complete structural equality.
+
+So:
+
+- Shallow = “same top-level reference/values”
+- Deep = “same entire structure”
+
+---
+
+# 1. What is Shallow Equality?
+
+Shallow equality compares only the **outer layer** of data.
+
+### Example (Objects)
+
+```js id="v3k9q1"
+const obj1 = { a: 1, b: { c: 2 } };
+const obj2 = { a: 1, b: { c: 2 } };
+
+console.log(obj1 === obj2);
+```
+
+### Output:
+
+```js id="q8m1z2"
+false;
+```
+
+Even though values look identical, references differ.
+
+---
+
+## Shallow Comparison Logic
+
+A shallow check typically does:
+
+```js id="shallow1"
+function shallowEqual(a, b) {
+  if (a === b) return true;
+
+  if (typeof a !== "object" || typeof b !== "object") {
+    return false;
+  }
+
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+
+  if (keysA.length !== keysB.length) return false;
+
+  for (let key of keysA) {
+    if (a[key] !== b[key]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+```
+
+---
+
+## Shallow Equality Example
+
+```js id="shallow2"
+const a = { x: 1, y: { z: 2 } };
+const b = { x: 1, y: { z: 2 } };
+
+console.log(shallowEqual(a, b));
+```
+
+### Output:
+
+```js id="shallow3"
+false;
+```
+
+Because:
+
+```text id="shallow4"
+a.y !== b.y  (different references)
+```
+
+---
+
+# 2. What is Deep Equality?
+
+Deep equality compares **all nested levels recursively**.
+
+### Example:
+
+```js id="deep1"
+const a = { x: 1, y: { z: 2 } };
+const b = { x: 1, y: { z: 2 } };
+
+console.log(deepEqual(a, b));
+```
+
+### Output:
+
+```js id="deep2"
+true;
+```
+
+---
+
+## Deep Equality Implementation (Simplified)
+
+```js id="deep3"
+function deepEqual(a, b) {
+  if (a === b) return true;
+
+  if (
+    typeof a !== "object" ||
+    typeof b !== "object" ||
+    a === null ||
+    b === null
+  ) {
+    return false;
+  }
+
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+
+  if (keysA.length !== keysB.length) return false;
+
+  for (let key of keysA) {
+    if (!keysB.includes(key)) return false;
+
+    if (!deepEqual(a[key], b[key])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+```
+
+---
+
+# 3. Key Differences
+
+| Feature          | Shallow Equality             | Deep Equality            |
+| ---------------- | ---------------------------- | ------------------------ |
+| Comparison depth | 1 level                      | Recursive (all levels)   |
+| Performance      | Fast                         | Slower                   |
+| Complexity       | O(n)                         | O(n × depth)             |
+| Nested objects   | Compared by reference        | Compared by value        |
+| Use cases        | UI optimization, React props | Testing, data validation |
+
+---
+
+# 4. Real Example Difference
+
+```js id="example1"
+const obj1 = {
+  name: "John",
+  address: { city: "NY" },
+};
+
+const obj2 = {
+  name: "John",
+  address: { city: "NY" },
+};
+```
+
+---
+
+## Shallow comparison:
+
+```js id="example2"
+obj1.address === obj2.address;
+```
+
+### Result:
+
+```js id="example3"
+false;
+```
+
+So shallow equality fails.
+
+---
+
+## Deep comparison:
+
+```js id="example4"
+deepEqual(obj1, obj2);
+```
+
+### Result:
+
+```js id="example5"
+true;
+```
+
+---
+
+# 5. Where Shallow Equality is Used
+
+## React Example
+
+```js id="react1"
+prevProps === nextProps;
+```
+
+React uses **shallow comparison** for:
+
+- `React.memo`
+- `PureComponent`
+- `useEffect` dependency checks
+
+### Why shallow?
+
+- Performance critical
+- Deep comparison is expensive
+
+---
+
+## React Pitfall
+
+```js id="react2"
+const obj = { a: { b: 1 } };
+
+setState(obj);
+```
+
+Even if inner data changes, React only sees reference.
+
+---
+
+# 6. Where Deep Equality is Used
+
+## Use cases:
+
+- Unit testing
+- State verification
+- Data syncing
+- API response validation
+
+Example:
+
+```js id="deepuse1"
+expect(actualData).toEqual(expectedData);
+```
+
+(Jest uses deep equality internally)
+
+---
+
+# 7. Performance Comparison
+
+## Shallow Equality
+
+```text id="perf1"
+O(1) to O(n)
+```
+
+Only checks top-level keys.
+
+---
+
+## Deep Equality
+
+```text id="perf2"
+O(n × depth)
+```
+
+Traverses entire structure.
+
+---
+
+# 8. Edge Cases (Interview Favorites)
+
+## Circular references
+
+```js id="cycle1"
+const a = {};
+a.self = a;
+```
+
+Deep equality must handle cycles:
+
+- Use `WeakMap` to track visited nodes
+- Prevent infinite recursion
+
+---
+
+## Different object types
+
+```js id="type1"
+deepEqual(new Date(), new Date());
+deepEqual(/abc/, /abc/);
+```
+
+Need special handling:
+
+- Date → `.getTime()`
+- RegExp → `.source` + `.flags`
+
+---
+
+## NaN comparison
+
+```js id="nan1"
+NaN === NaN; // false
+```
+
+Deep equality often treats:
+
+```js id="nan2"
+Number.isNaN(a) && Number.isNaN(b);
+```
+
+as equal.
+
+---
+
+# 9. One-Line Mental Model
+
+> Shallow equality checks only top-level references, while deep equality recursively compares all nested values and structures.
+
+---
+
+# 10. Interview Summary
+
+> Shallow equality compares only the first level of an object or array and checks references of nested values, making it fast but limited. Deep equality recursively compares all nested structures to ensure complete structural equivalence, making it accurate but more expensive. Shallow equality is commonly used in performance-sensitive scenarios like React rendering, while deep equality is used in testing and validation where correctness is more important than speed.
+
 ## Question 12. How to avoid race conditions in async JavaScript
 
 ## Question 13. Difference between Web Workers, Service Workers, and Shared Workers
