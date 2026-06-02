@@ -2845,6 +2845,282 @@ Classes cannot be arrow functions.
 
 ## Question 11. How does the event loop handle microtasks and macrotasks?
 
+## Short Answer (Interview-ready)
+
+The **event loop** in JavaScript continuously processes the call stack and task queues. It gives **priority to microtasks over macrotasks**: after every synchronous execution and after each macrotask, the engine **drains the entire microtask queue before moving to the next macrotask**.
+
+---
+
+# 🧠 Detailed Explanation (Senior Interview Level)
+
+JavaScript is **single-threaded**, but it handles async work using the **event loop**, which coordinates:
+
+- Call Stack (synchronous code)
+- Microtask Queue
+- Macrotask (Task) Queue
+
+---
+
+# ⚙️ Core Components
+
+## 1. Call Stack
+
+Executes synchronous code immediately (LIFO).
+
+---
+
+## 2. Macrotask Queue (Task Queue)
+
+Also called **Callback Queue**.
+
+Examples:
+
+- `setTimeout`
+- `setInterval`
+- DOM events
+- I/O callbacks
+
+---
+
+## 3. Microtask Queue
+
+Higher priority queue.
+
+Examples:
+
+- `Promise.then/catch/finally`
+- `queueMicrotask`
+- `MutationObserver`
+
+---
+
+# 🔥 Execution Priority Order
+
+### The event loop always follows this cycle:
+
+1. Execute all synchronous code (call stack)
+2. Run ALL microtasks (drain queue completely)
+3. Run ONE macrotask
+4. Repeat
+
+---
+
+# 🧠 Key Rule (Very Important)
+
+> ✅ Microtasks ALWAYS run before macrotasks
+> ❗ Microtasks are fully drained before moving on
+
+---
+
+# 🧪 Example 1 (Classic Interview Question)
+
+```js id="e1"
+console.log("start");
+
+setTimeout(() => console.log("timeout"), 0);
+
+Promise.resolve().then(() => console.log("promise"));
+
+console.log("end");
+```
+
+---
+
+## Execution step-by-step:
+
+### 1. Sync code runs:
+
+```
+start
+end
+```
+
+### 2. Microtasks run:
+
+```
+promise
+```
+
+### 3. Macrotask runs:
+
+```
+timeout
+```
+
+---
+
+## Final Output:
+
+```txt id="out1"
+start
+end
+promise
+timeout
+```
+
+---
+
+# 🧠 Event Loop Flow Visualization
+
+```
+Call Stack
+   ↓
+Sync Code Executes
+   ↓
+Microtask Queue (drain completely)
+   ↓
+Macrotask Queue (one task)
+   ↓
+Repeat
+```
+
+---
+
+# 🔥 Example 2 (Microtask chaining trap)
+
+```js id="e2"
+console.log("A");
+
+setTimeout(() => console.log("B"), 0);
+
+Promise.resolve()
+  .then(() => {
+    console.log("C");
+    return Promise.resolve();
+  })
+  .then(() => console.log("D"));
+
+console.log("E");
+```
+
+---
+
+## Execution order:
+
+### Sync:
+
+```
+A
+E
+```
+
+### Microtasks:
+
+```
+C
+D
+```
+
+### Macrotasks:
+
+```
+B
+```
+
+---
+
+## Final output:
+
+```txt id="out2"
+A
+E
+C
+D
+B
+```
+
+---
+
+# 🧠 Key Insight
+
+Each `.then()` schedules a **new microtask**, which gets executed **before any macrotask**.
+
+---
+
+# 🔥 Example 3 (Microtask starvation risk)
+
+```js id="e3"
+function loop() {
+  Promise.resolve().then(loop);
+}
+
+loop();
+
+setTimeout(() => console.log("timeout"), 0);
+```
+
+---
+
+## What happens?
+
+- Microtasks keep scheduling themselves
+- Event loop never reaches macrotasks
+
+### Result:
+
+```
+❌ timeout may never run (starvation)
+```
+
+---
+
+# ⚠️ Microtask vs Macrotask Differences
+
+| Feature        | Microtask                | Macrotask              |
+| -------------- | ------------------------ | ---------------------- |
+| Priority       | Higher                   | Lower                  |
+| Execution time | After sync code          | After microtasks       |
+| Queue clearing | Fully drained            | One per cycle          |
+| Examples       | Promises, queueMicrotask | setTimeout, DOM events |
+
+---
+
+# 🧠 Real-world analogy
+
+## Microtasks:
+
+> “VIP queue — processed immediately and fully before anything else”
+
+## Macrotasks:
+
+> “Regular queue — processed one by one between VIP cycles”
+
+---
+
+# 🔥 Advanced Interview Insight
+
+### Why microtasks exist?
+
+- To ensure **predictable async sequencing**
+- To avoid UI inconsistencies
+- To allow chaining (`Promise.then().then()`)
+
+---
+
+# ⚠️ Common Interview Mistakes
+
+## ❌ Thinking setTimeout runs immediately
+
+👉 It always waits for macrotask phase.
+
+---
+
+## ❌ Thinking promises are macrotasks
+
+👉 Promises are microtasks (higher priority).
+
+---
+
+## ❌ Assuming fairness between queues
+
+👉 Microtasks can starve macrotasks.
+
+---
+
+# 🧠 Senior-Level Interview Answer
+
+> “The JavaScript event loop processes synchronous code first via the call stack. After that, it drains the microtask queue completely before executing any macrotask. Microtasks include promise callbacks and are given higher priority to ensure predictable execution order. Macrotasks such as setTimeout or I/O callbacks are executed one per event loop iteration, ensuring that microtasks always run before the next macrotask begins.”
+
 ## Question 12. Difference between process.nextTick (Node.js) and Promise.then
 
 ## Question 13. How to implement memoization in JavaScript?
