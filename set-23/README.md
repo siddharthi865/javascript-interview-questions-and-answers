@@ -4185,6 +4185,380 @@ Small desk:
 
 ## Question 11. Difference between callback-based APIs and promise-based APIs in Node.js
 
+## ✅ Short Answer
+
+In Node.js:
+
+- **Callback-based APIs** use functions passed as arguments and follow an error-first pattern.
+- **Promise-based APIs** return a Promise that represents the eventual completion (or failure) of an async operation.
+
+👉 Key difference:
+
+> Callbacks are function-based and harder to compose; Promises are object-based and easier to chain, handle errors, and integrate with `async/await`.
+
+---
+
+# 🧠 Callback-Based APIs
+
+Callback APIs were the original async pattern in Node.js.
+
+### Example:
+
+```js id="c1a9xq"
+const fs = require("fs");
+
+fs.readFile("file.txt", "utf8", (err, data) => {
+  if (err) {
+    console.error(err);
+    return;
+  }
+
+  console.log(data);
+});
+```
+
+---
+
+## 🔑 Key Characteristics
+
+### 1. Error-first convention
+
+```js
+(err, result) => {};
+```
+
+- First argument → error
+- Second → result
+
+---
+
+### 2. Inversion of control
+
+You pass control to the function:
+
+```txt id="k9m2wp"
+You → give callback → Node API controls execution
+```
+
+---
+
+### 3. Nested callbacks (callback hell)
+
+```js id="d8x1qp"
+fs.readFile("a.txt", (err, a) => {
+  fs.readFile("b.txt", (err, b) => {
+    fs.readFile("c.txt", (err, c) => {
+      console.log(a, b, c);
+    });
+  });
+});
+```
+
+---
+
+## ❌ Problems with Callbacks
+
+### 1. Callback hell
+
+Hard to read and maintain.
+
+---
+
+### 2. Poor error handling
+
+Each level must handle errors manually.
+
+---
+
+### 3. No composability
+
+Hard to combine multiple async operations.
+
+---
+
+### 4. Difficult flow control
+
+Parallel vs sequential execution is messy.
+
+---
+
+# 🧠 Promise-Based APIs
+
+Promises represent a value that will be available in the future.
+
+Example:
+
+```js id="p3x7qv"
+const fs = require("fs/promises");
+
+fs.readFile("file.txt", "utf8")
+  .then((data) => {
+    console.log(data);
+  })
+  .catch((err) => {
+    console.error(err);
+  });
+```
+
+---
+
+## 🔑 Key Characteristics
+
+### 1. Return value instead of callback
+
+```js
+function readFile() {
+  return Promise;
+}
+```
+
+---
+
+### 2. Chainable flow
+
+```js id="m2k9xp"
+doA().then(doB).then(doC).catch(handleError);
+```
+
+---
+
+### 3. Centralized error handling
+
+One `.catch()` handles everything.
+
+---
+
+### 4. Better readability
+
+Linear flow instead of nested callbacks.
+
+---
+
+# ⚡ async/await (built on Promises)
+
+Modern syntax over Promises:
+
+```js id="a8q1wd"
+const fs = require("fs/promises");
+
+async function read() {
+  try {
+    const data = await fs.readFile("file.txt", "utf8");
+    console.log(data);
+  } catch (err) {
+    console.error(err);
+  }
+}
+```
+
+---
+
+# 📊 Callback vs Promise Comparison
+
+| Feature        | Callback-based     | Promise-based          |
+| -------------- | ------------------ | ---------------------- |
+| Style          | Function passed in | Object returned        |
+| Readability    | Poor (nested)      | Good (linear)          |
+| Error handling | Manual per level   | Centralized `.catch()` |
+| Composition    | Hard               | Easy                   |
+| Async control  | Manual             | Built-in chaining      |
+| Debugging      | Difficult          | Easier                 |
+| Modern usage   | Legacy             | Standard               |
+
+---
+
+# 🧠 Execution Model Difference
+
+## Callback
+
+```txt id="x9k2qp"
+Function A → executes → calls callback → continues
+```
+
+Control is inverted.
+
+---
+
+## Promise
+
+```txt id="z1m8qv"
+Function A returns Promise
+   ↓
+.then() decides next step
+```
+
+Control is retained.
+
+---
+
+# ⚙️ Under the Hood Difference
+
+### Callback-based APIs
+
+- Node APIs directly invoke your function
+- You are notified when done
+
+---
+
+### Promise-based APIs
+
+Promises are:
+
+- Objects with internal state:
+  - pending
+  - fulfilled
+  - rejected
+
+They schedule handlers via microtask queue.
+
+---
+
+# 🚨 Important Interview Insight
+
+Promises use:
+
+```txt id="q7x1mp"
+Microtask Queue (higher priority than setTimeout)
+```
+
+So:
+
+```js id="b2k9qv"
+setTimeout(() => console.log("timeout"), 0);
+
+Promise.resolve().then(() => console.log("promise"));
+```
+
+Output:
+
+```txt id="n4x7qp"
+promise
+timeout
+```
+
+---
+
+# 🔥 Example: Multiple Async Tasks
+
+## ❌ Callback style
+
+```js id="c9x7wp"
+getUser(id, (err, user) => {
+  getOrders(user.id, (err, orders) => {
+    getPayments(orders, (err, payments) => {
+      console.log(payments);
+    });
+  });
+});
+```
+
+---
+
+## ✅ Promise style
+
+```js id="p7m2qp"
+getUser(id)
+  .then((user) => getOrders(user.id))
+  .then((orders) => getPayments(orders))
+  .then((payments) => {
+    console.log(payments);
+  })
+  .catch(console.error);
+```
+
+---
+
+## ✅ async/await style
+
+```js id="a9x3qp"
+async function run(id) {
+  try {
+    const user = await getUser(id);
+    const orders = await getOrders(user.id);
+    const payments = await getPayments(orders);
+
+    console.log(payments);
+  } catch (err) {
+    console.error(err);
+  }
+}
+```
+
+---
+
+# 🧠 Common Pitfalls
+
+## ❌ Mixing callbacks and promises
+
+```js id="k1x8qp"
+fs.readFile("file", (err, data) => {
+  return Promise.resolve(data);
+});
+```
+
+Leads to confusion.
+
+---
+
+## ❌ Not handling Promise rejections
+
+```js id="m8q1xp"
+fetchData().then((data) => {
+  console.log(data);
+});
+```
+
+Missing `.catch()` → silent failures.
+
+---
+
+## ❌ Callback hell in modern code
+
+Still seen in legacy systems.
+
+---
+
+# ⚖️ When to Use What
+
+## Callbacks (rare today)
+
+- Legacy Node APIs
+- Low-level libraries
+- Event emitters
+
+---
+
+## Promises (modern standard)
+
+- APIs
+- DB calls
+- HTTP requests
+
+---
+
+## async/await (preferred)
+
+- Cleanest syntax
+- Production standard
+
+---
+
+# 🧠 Mental Model
+
+Think of it like:
+
+```txt id="x3k9qp"
+Callback → "I'll call you later"
+Promise → "I will give you a result object later"
+async/await → "I will wait for the result"
+```
+
+---
+
+# 🎯 Interview Summary
+
+> Callback-based APIs in Node.js use functions passed as arguments and follow an error-first pattern, but they often lead to nested code and poor composability. Promise-based APIs return a Promise object representing the eventual result of an async operation, allowing chaining, centralized error handling, and better readability. Promises also integrate with the microtask queue and support async/await syntax, making them the modern standard for handling asynchronous operations in Node.js applications.
+
 ## Question 12. How to handle uncaught exceptions gracefully
 
 ## Question 13. How to implement JWT authentication in Node.js
