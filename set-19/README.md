@@ -4060,6 +4060,381 @@ Custom iterables in JavaScript are implemented using the `[Symbol.iterator]` met
 
 ## Question 11. How to implement async iterables using `[Symbol.asyncIterator]`
 
+## Direct Answer
+
+You implement an **async iterable** in JavaScript by defining the `[Symbol.asyncIterator]()` method on an object. This method must return an **async iterator**, where the `next()` method returns a **Promise** that resolves to:
+
+```js
+{ value: any, done: boolean }
+```
+
+This allows the object to be consumed using:
+
+```js
+for await (const item of iterable)
+```
+
+---
+
+# 1. Basic Async Iterable
+
+### Simple example: async number range
+
+```js id="k2v8qz"
+const asyncRange = {
+  start: 1,
+  end: 3,
+
+  [Symbol.asyncIterator]() {
+    let current = this.start;
+
+    return {
+      async next() {
+        if (current <= this.end) {
+          return {
+            value: await Promise.resolve(current++),
+            done: false,
+          };
+        }
+
+        return { done: true };
+      },
+    };
+  },
+};
+```
+
+### Usage:
+
+```js id="m9x2qp"
+(async () => {
+  for await (const num of asyncRange) {
+    console.log(num);
+  }
+})();
+```
+
+### Output:
+
+```js id="a8q1lz"
+1;
+2;
+3;
+```
+
+---
+
+# 2. How Async Iteration Works Internally
+
+When you write:
+
+```js id="p3k8mz"
+for await (const value of asyncIterable)
+```
+
+JavaScript internally does:
+
+```js id="x7q2mz"
+const iterator = asyncIterable[Symbol.asyncIterator]();
+
+while (true) {
+  const result = await iterator.next();
+
+  if (result.done) break;
+
+  console.log(result.value);
+}
+```
+
+So async iteration is basically:
+
+> Iterator + Promises + await loop
+
+---
+
+# 3. Async Iterable with Delays
+
+### Example: simulating streaming data
+
+```js id="v1k8qz"
+const stream = {
+  data: ["A", "B", "C"],
+
+  [Symbol.asyncIterator]() {
+    let index = 0;
+
+    return {
+      async next() {
+        if (index < stream.data.length) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          return {
+            value: stream.data[index++],
+            done: false,
+          };
+        }
+
+        return { done: true };
+      },
+    };
+  },
+};
+```
+
+### Usage:
+
+```js id="z9k3qp"
+(async () => {
+  for await (const item of stream) {
+    console.log(item);
+  }
+})();
+```
+
+---
+
+# 4. Async Iterable Using Async Generator (Best Practice)
+
+Instead of manually writing `next()`, use **async generators**.
+
+### Cleaner implementation:
+
+```js id="g7x9qp"
+async function* asyncRange(start, end) {
+  for (let i = start; i <= end; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    yield i;
+  }
+}
+```
+
+### Usage:
+
+```js id="h2m8qp"
+(async () => {
+  for await (const num of asyncRange(1, 3)) {
+    console.log(num);
+  }
+})();
+```
+
+---
+
+# 5. Async Iterable Over API Calls (Real-World Example)
+
+### Simulating paginated API
+
+```js id="r8k3mz"
+function createPaginatedFetcher(fetchPage) {
+  return {
+    page: 1,
+    hasMore: true,
+
+    [Symbol.asyncIterator]() {
+      return {
+        next: async () => {
+          if (!this.hasMore) {
+            return { done: true };
+          }
+
+          const data = await fetchPage(this.page);
+
+          if (!data.length) {
+            this.hasMore = false;
+            return { done: true };
+          }
+
+          this.page++;
+
+          return {
+            value: data,
+            done: false,
+          };
+        },
+      };
+    },
+  };
+}
+```
+
+### Usage:
+
+```js id="n4q8xz"
+const fetchPage = async (page) => {
+  return page <= 3 ? [`page-${page}`] : [];
+};
+
+(async () => {
+  const iterable = createPaginatedFetcher(fetchPage);
+
+  for await (const page of iterable) {
+    console.log(page);
+  }
+})();
+```
+
+---
+
+# 6. Async Iterable vs Sync Iterable
+
+| Feature       | Iterable            | Async Iterable             |
+| ------------- | ------------------- | -------------------------- |
+| Method        | `[Symbol.iterator]` | `[Symbol.asyncIterator]`   |
+| next() return | `{ value, done }`   | `Promise<{ value, done }>` |
+| Consumption   | `for...of`          | `for await...of`           |
+| Use case      | Sync data           | Async data (API, streams)  |
+
+---
+
+# 7. Common Pitfalls
+
+## ❌ Forgetting `await` in loop
+
+```js id="p1x7mz"
+for (const item of asyncIterable) {
+} // ❌ wrong
+```
+
+Must be:
+
+```js id="k8q2mz"
+for await (const item of asyncIterable) {
+}
+```
+
+---
+
+## ❌ Returning non-Promise in async iterator
+
+```js id="v4m9qp"
+next() {
+  return { value: 1, done: false }; // works but defeats async purpose
+}
+```
+
+Better:
+
+```js id="x9k3qp"
+async next() {
+  return { value: 1, done: false };
+}
+```
+
+---
+
+## ❌ Sharing iterator state incorrectly
+
+```js id="b2q8mz"
+[Symbol.asyncIterator]() {
+  return this; // ❌ invalid
+}
+```
+
+Must return a fresh iterator each time.
+
+---
+
+# 8. Advanced Pattern: Async Queue Iterator
+
+Useful in event systems:
+
+```js id="t7k3qp"
+class AsyncQueue {
+  constructor() {
+    this.queue = [];
+    this.resolvers = [];
+  }
+
+  push(value) {
+    if (this.resolvers.length) {
+      this.resolvers.shift()(value);
+    } else {
+      this.queue.push(value);
+    }
+  }
+
+  [Symbol.asyncIterator]() {
+    return {
+      next: () => {
+        if (this.queue.length) {
+          return Promise.resolve({
+            value: this.queue.shift(),
+            done: false,
+          });
+        }
+
+        return new Promise((resolve) => {
+          this.resolvers.push(resolve);
+        }).then((value) => ({
+          value,
+          done: false,
+        }));
+      },
+    };
+  }
+}
+```
+
+### Usage:
+
+```js id="m8x2qp"
+const q = new AsyncQueue();
+
+setTimeout(() => q.push(1), 500);
+setTimeout(() => q.push(2), 1000);
+
+(async () => {
+  for await (const item of q) {
+    console.log(item);
+  }
+})();
+```
+
+---
+
+# 9. Real-World Use Cases
+
+Async iterables are used in:
+
+### 1. Streams
+
+- Node.js streams
+- Web Streams API
+
+### 2. API pagination
+
+- Fetching large datasets page-by-page
+
+### 3. Event streams
+
+- WebSocket messages
+- Kafka-like systems
+
+### 4. File processing
+
+- Reading large files chunk by chunk
+
+---
+
+# 10. Senior-Level Interview Insight
+
+Async iterables combine:
+
+- Iterator protocol
+- Promises
+- Event-driven programming
+
+They enable **pull-based asynchronous data consumption**, where data is fetched only when requested, unlike push-based event emitters.
+
+Modern JavaScript frameworks and runtimes use async iterables to model streaming data efficiently, making them a foundational abstraction for scalable I/O and reactive systems.
+
+---
+
+# 11. Interview Summary
+
+An async iterable is an object that implements `[Symbol.asyncIterator]`, returning an async iterator whose `next()` method returns a Promise resolving to `{ value, done }`. It enables consumption of asynchronous data sequences using `for await...of`. While manual implementations provide full control, async generator functions are the preferred approach due to simplicity and readability. Async iterables are widely used in streams, pagination, and real-time data systems, making them a key abstraction for modern asynchronous programming in JavaScript.
+
 ## Question 12. How to implement generators for state machines
 
 ## Question 13. How to implement a scheduler for async tasks
