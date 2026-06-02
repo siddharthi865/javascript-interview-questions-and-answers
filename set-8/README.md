@@ -2645,6 +2645,284 @@ Promise.race([p1, p2]).then(console.log);
 
 ## Question 11. How to handle multiple async operations sequentially
 
+## Direct Answer
+
+To handle **multiple async operations sequentially in JavaScript**, you use:
+
+👉 **`async/await` inside a loop (preferred)**
+or
+👉 **Promise chaining**
+
+The most modern and clean approach is:
+
+```js id="seq1"
+async function runTasks() {
+  await task1();
+  await task2();
+  await task3();
+}
+```
+
+or dynamically:
+
+```js id="seq2"
+for (const task of tasks) {
+  await task();
+}
+```
+
+---
+
+# 1. What “Sequential Async” Means
+
+Sequential execution means:
+
+> Each async operation waits for the previous one to finish before starting.
+
+Example order:
+
+```
+Task 1 → Task 2 → Task 3 → Task 4
+```
+
+---
+
+# 2. Best Approach: async/await (Modern Standard)
+
+## Example
+
+```js id="seq3"
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function run() {
+  console.log("Start");
+
+  await delay(1000);
+  console.log("Task 1 done");
+
+  await delay(1000);
+  console.log("Task 2 done");
+
+  await delay(1000);
+  console.log("Task 3 done");
+
+  console.log("End");
+}
+
+run();
+```
+
+---
+
+# 3. Sequential Execution with Array of Tasks
+
+## Case: dynamic tasks
+
+```js id="seq4"
+const tasks = [
+  () => fetch("/api/1"),
+  () => fetch("/api/2"),
+  () => fetch("/api/3"),
+];
+
+async function runSequentially() {
+  const results = [];
+
+  for (const task of tasks) {
+    const res = await task();
+    results.push(res);
+  }
+
+  return results;
+}
+```
+
+---
+
+# 4. Why NOT use forEach with async
+
+❌ Wrong approach:
+
+```js id="seq5"
+tasks.forEach(async (task) => {
+  await task();
+});
+```
+
+### Problem:
+
+- Does NOT wait for previous task
+- Runs all tasks concurrently
+
+---
+
+# 5. Promise Chaining (Older Approach)
+
+Before async/await:
+
+```js id="seq6"
+task1()
+  .then(() => task2())
+  .then(() => task3())
+  .then(() => console.log("Done"));
+```
+
+---
+
+## Dynamic chaining (less readable)
+
+```js id="seq7"
+tasks.reduce((promise, task) => {
+  return promise.then(() => task());
+}, Promise.resolve());
+```
+
+---
+
+# 6. Sequential vs Parallel (Important Interview Concept)
+
+## Sequential (slow but ordered)
+
+```js id="seq8"
+for (const task of tasks) {
+  await task();
+}
+```
+
+---
+
+## Parallel (fast but unordered)
+
+```js id="seq9"
+await Promise.all(tasks.map((task) => task()));
+```
+
+---
+
+# 7. Real-world Example
+
+## Sequential API calls (dependent)
+
+```js id="seq10"
+async function processOrder() {
+  const user = await fetchUser();
+  const cart = await fetchCart(user.id);
+  const order = await createOrder(cart);
+
+  return order;
+}
+```
+
+👉 Each step depends on previous result.
+
+---
+
+## Sequential logging / processing
+
+```js id="seq11"
+async function processFiles(files) {
+  for (const file of files) {
+    const data = await readFile(file);
+    console.log(data);
+  }
+}
+```
+
+---
+
+# 8. Error Handling in Sequential Flow
+
+```js id="seq12"
+async function run() {
+  try {
+    for (const task of tasks) {
+      await task();
+    }
+  } catch (err) {
+    console.error("Error occurred:", err);
+  }
+}
+```
+
+---
+
+## Continue even if one fails
+
+```js id="seq13"
+async function run() {
+  for (const task of tasks) {
+    try {
+      await task();
+    } catch (err) {
+      console.log("Task failed:", err);
+    }
+  }
+}
+```
+
+---
+
+# 9. Advanced Pattern: Sequential with delay
+
+```js id="seq14"
+async function runWithDelay(tasks) {
+  for (const task of tasks) {
+    await task();
+    await new Promise((res) => setTimeout(res, 500));
+  }
+}
+```
+
+---
+
+# 10. Common Pitfalls
+
+## Pitfall 1: using forEach
+
+```js id="seq15"
+tasks.forEach(async (task) => {
+  await task(); // ❌ not sequential
+});
+```
+
+---
+
+## Pitfall 2: using Promise.all when order matters
+
+```js id="seq16"
+await Promise.all(tasks.map((task) => task())); // ❌ parallel execution
+```
+
+---
+
+## Pitfall 3: forgetting await in loop
+
+```js id="seq17"
+for (const task of tasks) {
+  task(); // ❌ not waiting
+}
+```
+
+---
+
+# 11. Interview Insight
+
+### When interviewer asks:
+
+> “How do you run async tasks sequentially?”
+
+## Best answer:
+
+> “I use a `for...of` loop with `await` because it ensures each Promise resolves before the next begins, maintaining order and control flow. Alternatively, Promise chaining or reduce-based patterns can be used, but `async/await + loop` is the most readable and modern approach.”
+
+---
+
+# 12. Interview Summary
+
+> To handle multiple async operations sequentially in JavaScript, the best approach is using `async/await` inside a `for...of` loop, which ensures each operation completes before the next starts. Older approaches include Promise chaining or reduce-based patterns. Sequential execution is useful when tasks are dependent, while parallel execution (`Promise.all`) is preferred for independent tasks to improve performance.
+
 ## Question 12. Explain try…catch in async functions
 
 ## Question 13. Difference between setTimeout(fn, 0) and Promise.resolve().then(fn)
