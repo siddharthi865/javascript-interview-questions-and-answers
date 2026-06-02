@@ -3897,6 +3897,372 @@ res.setHeader("Retry-After", 60);
 
 ## Question 11. How to implement JWT authentication in Node.js
 
+## Short Answer
+
+JWT authentication in Node.js is implemented by:
+
+1. **Generating a JWT token after login**
+2. **Sending it to the client**
+3. **Verifying the token on protected routes via middleware**
+
+It is typically done using the `jsonwebtoken` library along with Express middleware.
+
+---
+
+# 1. What is JWT Authentication?
+
+JWT (JSON Web Token) is a stateless authentication mechanism where:
+
+- Server generates a signed token
+- Client stores it (usually in localStorage or cookies)
+- Client sends it with every request
+- Server verifies it without storing session data
+
+---
+
+## JWT Structure
+
+```txt
+header.payload.signature
+```
+
+Example:
+
+```txt id="jwt_example"
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+.
+eyJ1c2VySWQiOjEsImlhdCI6MTYw
+.
+signature
+```
+
+---
+
+# 2. Install Dependencies
+
+```bash id="install_jwt"
+npm install jsonwebtoken express bcrypt
+```
+
+---
+
+# 3. Basic Express Setup
+
+```js id="setup_app"
+const express = require("express");
+const app = express();
+
+app.use(express.json());
+
+app.listen(3000, () => {
+  console.log("Server running on port 3000");
+});
+```
+
+---
+
+# 4. User Login → Generate JWT
+
+We simulate a user login.
+
+```js id="login_jwt"
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+
+const SECRET_KEY = "my_secret_key";
+```
+
+---
+
+## Login Route
+
+```js id="login_route"
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  // fake user (normally from DB)
+  const user = {
+    id: 1,
+    email: "test@example.com",
+    passwordHash: await bcrypt.hash("123456", 10),
+  };
+
+  const isMatch = await bcrypt.compare(password, user.passwordHash);
+
+  if (!isMatch) {
+    return res.status(401).json({ message: "Invalid credentials" });
+  }
+
+  // Generate JWT
+  const token = jwt.sign({ userId: user.id, email: user.email }, SECRET_KEY, {
+    expiresIn: "1h",
+  });
+
+  res.json({ token });
+});
+```
+
+---
+
+## What happens here:
+
+```txt id="flow_login"
+User → Login → Verify credentials → Generate JWT → Send token
+```
+
+---
+
+# 5. JWT Authentication Middleware
+
+This protects routes.
+
+```js id="jwt_middleware"
+function authMiddleware(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).json({ message: "No token provided" });
+  }
+
+  const token = authHeader.split(" ")[1]; // Bearer TOKEN
+
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY);
+    req.user = decoded; // attach user info
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+}
+```
+
+---
+
+# 6. Protected Route
+
+```js id="protected_route"
+app.get("/profile", authMiddleware, (req, res) => {
+  res.json({
+    message: "Protected data",
+    user: req.user,
+  });
+});
+```
+
+---
+
+# 7. How Client Sends JWT
+
+### Request Header:
+
+```txt id="client_request"
+Authorization: Bearer <token>
+```
+
+Example:
+
+```js id="client_fetch"
+fetch("/profile", {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+});
+```
+
+---
+
+# 8. Token Verification Flow
+
+```txt id="verify_flow"
+Client Request
+     ↓
+Extract Authorization Header
+     ↓
+Extract Token
+     ↓
+jwt.verify()
+     ↓
+Valid → req.user
+Invalid → 401 Unauthorized
+```
+
+---
+
+# 9. Token Expiration
+
+JWT can expire automatically:
+
+```js id="expiry"
+jwt.sign(payload, SECRET_KEY, {
+  expiresIn: "1h",
+});
+```
+
+If expired:
+
+```txt id="expired"
+jwt.verify → throws TokenExpiredError
+```
+
+---
+
+# 10. Handling Errors Properly
+
+```js id="error_handling"
+try {
+  const decoded = jwt.verify(token, SECRET_KEY);
+  req.user = decoded;
+  next();
+} catch (err) {
+  if (err.name === "TokenExpiredError") {
+    return res.status(401).json({ message: "Token expired" });
+  }
+
+  return res.status(401).json({ message: "Invalid token" });
+}
+```
+
+---
+
+# 11. Refresh Token Concept (Important in Interviews)
+
+JWT is stateless → but refresh tokens solve long sessions.
+
+## Flow:
+
+```txt id="refresh_flow"
+Access Token (short-lived)
+Refresh Token (long-lived)
+```
+
+### When access token expires:
+
+- Use refresh token to get new access token
+
+---
+
+# 12. Secure Storage Options
+
+| Storage           | Security                        |
+| ----------------- | ------------------------------- |
+| localStorage      | ❌ vulnerable to XSS            |
+| sessionStorage    | ❌ temporary but still XSS risk |
+| HTTP-only cookies | ✅ recommended                  |
+
+---
+
+# 13. Using Cookies (More Secure)
+
+```js id="cookie_jwt"
+res.cookie("token", token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: "strict",
+});
+```
+
+Middleware:
+
+```js id="cookie_auth"
+const token = req.cookies.token;
+```
+
+---
+
+# 14. JWT vs Session Authentication
+
+| Feature     | JWT    | Session            |
+| ----------- | ------ | ------------------ |
+| Storage     | Client | Server             |
+| Scalability | High   | Medium             |
+| Stateless   | Yes    | No                 |
+| Revocation  | Hard   | Easy               |
+| Performance | Fast   | Slight DB overhead |
+
+---
+
+# 15. Common Pitfalls
+
+## 1. Storing JWT in localStorage
+
+```txt id="bad_storage"
+❌ vulnerable to XSS attacks
+```
+
+---
+
+## 2. Using long-lived tokens
+
+```txt id="long_token"
+Security risk if leaked
+```
+
+---
+
+## 3. Not verifying token properly
+
+```js id="no_verify"
+// ❌ trusting decoded token without verification
+```
+
+---
+
+## 4. Hardcoding secret key
+
+```js id="bad_secret"
+"my_secret_key";
+```
+
+Should use environment variables:
+
+```js id="env_secret"
+process.env.JWT_SECRET;
+```
+
+---
+
+# 16. Best Practices
+
+### 1. Use strong secret keys
+
+```txt id="strong_secret"
+long random string
+```
+
+---
+
+### 2. Use short-lived access tokens
+
+```js id="short_lived"
+expiresIn: "15m";
+```
+
+---
+
+### 3. Use refresh tokens
+
+For session persistence
+
+---
+
+### 4. Store tokens securely
+
+✔ HTTP-only cookies recommended
+
+---
+
+### 5. Always verify tokens
+
+```js id="verify_always"
+jwt.verify(token, secret);
+```
+
+---
+
+# 17. Final Interview Answer
+
+> JWT authentication in Node.js involves generating a signed token using `jsonwebtoken` after validating user credentials, sending it to the client, and then verifying it on protected routes using middleware. The token contains encoded user information and is stateless, meaning the server does not store session data. On each request, the client sends the token in the Authorization header, and the server verifies it using a secret key. If valid, access is granted; otherwise, a 401 Unauthorized response is returned. JWT-based authentication is scalable and commonly used in modern REST APIs, often combined with refresh tokens and secure HTTP-only cookies for improved security.
+
 ## Question 12. How to handle concurrent requests in Node.js
 
 ## Question 13. Difference between worker threads and cluster module in Node.js
