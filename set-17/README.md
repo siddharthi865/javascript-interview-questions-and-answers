@@ -2891,6 +2891,227 @@ A strong answer:
 
 ## Question 11. How to detect if a CSS class exists on an element
 
+## Short answer
+
+You can check if a CSS class exists on an element using:
+
+```javascript
+element.classList.contains("className");
+```
+
+It returns `true` if the class exists, otherwise `false`.
+
+---
+
+# 1. Recommended approach: `classList.contains()`
+
+```html id="c1a9kd"
+<div id="box" class="active highlighted"></div>
+
+<script>
+  const box = document.getElementById("box");
+
+  console.log(box.classList.contains("active")); // true
+  console.log(box.classList.contains("hidden")); // false
+</script>
+```
+
+### Why this is best
+
+- Fast and optimized
+- Clean and readable
+- Modern standard (preferred in interviews and production)
+
+---
+
+# 2. Alternative (older approach): `className`
+
+```javascript id="k2m8qp"
+element.className.includes("active");
+```
+
+### Example
+
+```javascript id="w9x2ld"
+const box = document.getElementById("box");
+
+if (box.className.includes("active")) {
+  console.log("Class exists");
+}
+```
+
+---
+
+### ⚠️ Problem with this approach
+
+It can produce false positives:
+
+```html id="p7q3mn"
+<div class="inactive"></div>
+```
+
+```javascript id="b8z1rt"
+element.className.includes("active"); // true ❌ wrong
+```
+
+Because `"inactive"` contains `"active"` as a substring.
+
+---
+
+# 3. Why `classList.contains()` is safer
+
+It checks **individual tokens**, not substrings:
+
+```text id="s1t4uv"
+"class='inactive active'" → ["inactive", "active"]
+```
+
+So:
+
+```javascript id="x6p9qz"
+classList.contains("active"); // true
+```
+
+---
+
+# 4. Checking multiple classes
+
+### Check if element has ALL classes
+
+```javascript id="m4k8hj"
+const hasAll =
+  element.classList.contains("active") &&
+  element.classList.contains("selected");
+```
+
+---
+
+### Check if element has ANY class
+
+```javascript id="n9v2sd"
+const hasAny = ["active", "selected"].some((cls) =>
+  element.classList.contains(cls),
+);
+```
+
+---
+
+# 5. Using `matches()` (CSS selector approach)
+
+You can also check class existence using selectors:
+
+```javascript id="q3l7tw"
+element.matches(".active");
+```
+
+### Example:
+
+```javascript id="z8m1kc"
+if (box.matches(".active")) {
+  console.log("Has active class");
+}
+```
+
+---
+
+### Why this is useful
+
+You can check complex conditions:
+
+```javascript id="v5n0rq"
+element.matches(".active.highlighted");
+```
+
+Means:
+
+> element has BOTH classes
+
+---
+
+# 6. Common interview pitfalls
+
+## ❌ Using `className.includes`
+
+```javascript id="p2k8lm"
+element.className.includes("btn");
+```
+
+Problem:
+
+```text id="a7d9xy"
+"button-primary" → false negative or false positive depending on case
+```
+
+Always prefer:
+
+```javascript id="r4v1sn"
+element.classList.contains("btn");
+```
+
+---
+
+## ❌ Forgetting multiple class logic
+
+```javascript id="f8t3wb"
+if (element.classList.contains("a", "b")) // ❌ invalid
+```
+
+Correct:
+
+```javascript id="l6c2qh"
+element.classList.contains("a") && element.classList.contains("b");
+```
+
+---
+
+# 7. Real-world usage examples
+
+## Toggle UI state
+
+```javascript id="u9x1op"
+if (button.classList.contains("active")) {
+  button.classList.remove("active");
+} else {
+  button.classList.add("active");
+}
+```
+
+---
+
+## Conditional styling logic
+
+```javascript id="h3w7yt"
+if (modal.classList.contains("open")) {
+  console.log("Modal is visible");
+}
+```
+
+---
+
+## Animation triggers
+
+```javascript id="d1n8kq"
+if (card.classList.contains("animate")) {
+  startAnimation();
+}
+```
+
+---
+
+# 8. Best modern approach (recommended answer)
+
+```javascript id="b5q2rx"
+element.classList.contains("className");
+```
+
+---
+
+# Interview summary
+
+A strong interview answer:
+
+> The best way to check whether an element has a CSS class is using `element.classList.contains("className")`, which safely checks individual class tokens. Alternatives like `className.includes()` are error-prone because they perform substring matching. For more advanced cases, `element.matches()` can be used to evaluate CSS selector-based conditions.
+
 ## Question 12. How to implement a drag-and-drop functionality
 
 ## Question 13. How to detect viewport size and orientation in JS
