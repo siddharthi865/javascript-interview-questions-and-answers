@@ -3562,6 +3562,346 @@ async function fn() {
 
 ## Question 11. How does `import()` differ from static `import`?
 
+## Direct Answer
+
+`import()` is a **dynamic, runtime-based module loader** that returns a **Promise**, while static `import` is a **compile-time, synchronous module declaration**.
+
+```javascript
+// static import
+import { sum } from "./math.js";
+
+// dynamic import
+const module = await import("./math.js");
+```
+
+---
+
+# 1. Static `import` (ES Modules)
+
+```javascript id="a1"
+import { add } from "./math.js";
+
+console.log(add(2, 3));
+```
+
+### Key characteristics:
+
+- Loaded at **compile time (before execution)**
+- Must be at the **top level**
+- Cannot be conditional
+- Synchronous in appearance (resolved before code runs)
+- Supports tree-shaking (dead code elimination)
+
+---
+
+### Example
+
+```javascript id="a2"
+import { multiply } from "./math.js";
+
+console.log(multiply(2, 4));
+```
+
+---
+
+## Restrictions
+
+❌ Cannot be used inside `if` blocks
+❌ Cannot be called dynamically
+❌ Must be top-level
+
+```javascript id="a3"
+// ❌ Invalid
+if (true) {
+  import { add } from "./math.js";
+}
+```
+
+---
+
+# 2. Dynamic `import()`
+
+```javascript id="b1"
+const module = await import("./math.js");
+
+console.log(module.add(2, 3));
+```
+
+### Key characteristics:
+
+- Loaded at **runtime**
+- Returns a **Promise**
+- Can be used anywhere (conditions, functions, loops)
+- Enables lazy loading
+
+---
+
+## Example (Conditional Loading)
+
+```javascript id="b2"
+if (user.isAdmin) {
+  const adminModule = await import("./admin.js");
+  adminModule.showDashboard();
+}
+```
+
+---
+
+## Example (Function-based loading)
+
+```javascript id="b3"
+async function loadUtils() {
+  const utils = await import("./utils.js");
+  utils.log("Loaded dynamically");
+}
+```
+
+---
+
+# 3. Execution Difference (Important Interview Concept)
+
+## Static Import
+
+- Module is loaded **before code runs**
+- Parsed during module resolution phase
+
+```text
+Parse → Load dependencies → Execute
+```
+
+---
+
+## Dynamic Import
+
+- Module is loaded **on demand**
+
+```text
+Execute → import() called → fetch module → execute module
+```
+
+---
+
+# 4. Return Value Difference
+
+## Static Import
+
+```javascript id="c1"
+import { add } from "./math.js";
+
+console.log(add);
+```
+
+- Direct binding
+- No Promise involved
+
+---
+
+## Dynamic Import
+
+```javascript id="c2"
+const mod = await import("./math.js");
+
+console.log(mod.add);
+```
+
+Returns:
+
+```text
+Promise → Module Namespace Object
+```
+
+---
+
+# 5. Module Namespace Object (Dynamic Import)
+
+```javascript id="c3"
+const mod = await import("./math.js");
+
+console.log(mod);
+```
+
+Output shape:
+
+```javascript
+{
+  add: [Function],
+  multiply: [Function],
+  default: ...
+}
+```
+
+---
+
+# 6. Tree Shaking Support
+
+## Static Import (Good for bundlers)
+
+```javascript id="d1"
+import { add } from "./math.js";
+```
+
+✔ Enables tree shaking
+✔ Only includes used exports in bundle
+
+---
+
+## Dynamic Import
+
+```javascript id="d2"
+const mod = await import("./math.js");
+```
+
+❌ Harder to statically analyze
+✔ But useful for code splitting
+
+---
+
+# 7. Code Splitting (Real-world usage)
+
+Dynamic import is heavily used in modern apps:
+
+```javascript id="e1"
+button.addEventListener("click", async () => {
+  const chart = await import("./chart.js");
+  chart.render();
+});
+```
+
+✔ Loads code only when needed
+✔ Improves initial page load
+
+---
+
+# 8. Error Handling Difference
+
+## Static Import
+
+Errors occur at **load time**
+
+```javascript id="f1"
+import { x } from "./missing.js"; // Module not found → build/runtime error
+```
+
+---
+
+## Dynamic Import
+
+Errors occur at **runtime and can be caught**
+
+```javascript id="f2"
+try {
+  const mod = await import("./missing.js");
+} catch (err) {
+  console.log("Failed to load module");
+}
+```
+
+---
+
+# 9. Environment Compatibility
+
+| Feature             | Static import | Dynamic import         |
+| ------------------- | ------------- | ---------------------- |
+| ES Modules          | ✅            | ✅                     |
+| CommonJS            | ❌            | Partial (via bundlers) |
+| Browsers            | ✅            | ✅                     |
+| Node.js             | ✅            | ✅                     |
+| Conditional loading | ❌            | ✅                     |
+
+---
+
+# 10. Top Interview Traps
+
+---
+
+## Trap 1: Thinking `import()` is synchronous
+
+```javascript id="g1"
+const mod = import("./math.js");
+
+console.log(mod);
+```
+
+Output:
+
+```text
+Promise { <pending> }
+```
+
+---
+
+## Trap 2: Using `import` inside condition
+
+```javascript id="g2"
+if (true) {
+  import { add } from "./math.js"; // ❌ Syntax Error
+}
+```
+
+---
+
+## Trap 3: Confusing with require()
+
+| Feature       | import                                   | require   |
+| ------------- | ---------------------------------------- | --------- |
+| Sync/Async    | Async (static behaves like compile-time) | Sync      |
+| Tree shaking  | Yes                                      | No        |
+| Dynamic usage | import()                                 | require() |
+
+---
+
+# 11. Real-world Use Cases
+
+## Static import
+
+- Core dependencies
+- Utility functions
+- App bootstrap modules
+
+```javascript id="h1"
+import React from "react";
+```
+
+---
+
+## Dynamic import
+
+- Lazy-loaded routes
+- Feature flags
+- Heavy libraries (charts, editors)
+
+```javascript id="h2"
+const Chart = await import("chart.js");
+```
+
+---
+
+# 12. Interview Summary
+
+### Static `import`
+
+- Compile-time
+- Hoisted
+- Cannot be conditional
+- Best for core dependencies
+- Supports tree-shaking
+
+---
+
+### Dynamic `import()`
+
+- Runtime
+- Returns Promise
+- Can be conditional
+- Enables code splitting
+- Used for lazy loading
+
+---
+
+### One-line Interview Answer
+
+**Static `import` is a compile-time, hoisted module declaration that loads dependencies before execution, while `import()` is a runtime function that returns a Promise and allows conditional, lazy loading of modules for code splitting and dynamic execution.**
+
 ## Question 12. How to handle multiple asynchronous tasks with `Promise.allSettled`
 
 ## Question 13. How to convert a NodeList to an array
