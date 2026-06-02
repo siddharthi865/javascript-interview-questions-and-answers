@@ -3167,6 +3167,367 @@ because they return numeric values.
 
 ## Question 11. Difference between parseFloat and Number()
 
+## Short Answer
+
+- **`Number()`** converts a value to a number using **strict conversion rules** and expects the entire value to be numeric.
+- **`parseFloat()`** extracts a floating-point number from a string and parses it **until it hits an invalid character**.
+
+👉 Key idea:
+
+> `Number()` = strict conversion
+> `parseFloat()` = flexible parsing from left to right
+
+---
+
+# 1. `Number()` Function
+
+`Number()` tries to convert the **entire value** into a valid number.
+
+## Syntax
+
+```js
+Number(value);
+```
+
+---
+
+## Examples
+
+### Valid numeric string
+
+```js id="k2n8qp"
+console.log(Number("123"));
+```
+
+Output:
+
+```js
+123;
+```
+
+---
+
+### Floating point string
+
+```js id="q9v2mn"
+console.log(Number("12.34"));
+```
+
+Output:
+
+```js
+12.34;
+```
+
+---
+
+### Invalid numeric string
+
+```js id="t8x3la"
+console.log(Number("123px"));
+```
+
+Output:
+
+```js
+NaN;
+```
+
+---
+
+### Whitespace handling
+
+```js id="w5m9rd"
+console.log(Number("   42   "));
+```
+
+Output:
+
+```js
+42;
+```
+
+---
+
+### Boolean conversion
+
+```js id="h3p7qc"
+console.log(Number(true)); // 1
+console.log(Number(false)); // 0
+```
+
+---
+
+### null and undefined
+
+```js id="z1v8ka"
+console.log(Number(null)); // 0
+console.log(Number(undefined)); // NaN
+```
+
+---
+
+# 2. `parseFloat()` Function
+
+`parseFloat()` reads a string **from left to right** until it encounters an invalid character.
+
+## Syntax
+
+```js
+parseFloat(value);
+```
+
+---
+
+## Examples
+
+### Basic number
+
+```js id="u4c8zm"
+console.log(parseFloat("123"));
+```
+
+Output:
+
+```js
+123;
+```
+
+---
+
+### Stops at invalid character
+
+```js id="d6n2xp"
+console.log(parseFloat("123px"));
+```
+
+Output:
+
+```js
+123;
+```
+
+👉 It ignores `"px"` completely.
+
+---
+
+### Decimal numbers
+
+```js id="v7q3lt"
+console.log(parseFloat("12.34.56"));
+```
+
+Output:
+
+```js
+12.34;
+```
+
+It stops at the second dot.
+
+---
+
+### Leading spaces
+
+```js id="r9m2wb"
+console.log(parseFloat("   56.78"));
+```
+
+Output:
+
+```js
+56.78;
+```
+
+---
+
+### Hex or non-decimal strings
+
+```js id="a8k1qv"
+console.log(parseFloat("0x11"));
+```
+
+Output:
+
+```js
+0;
+```
+
+Because `parseFloat` does not support hex parsing.
+
+---
+
+# 3. Key Differences
+
+| Feature                     | `Number()`    | `parseFloat()` |
+| --------------------------- | ------------- | -------------- |
+| Conversion style            | Strict        | Flexible       |
+| Handles trailing characters | ❌ No (`NaN`) | ✅ Yes         |
+| Stops parsing               | No            | Yes            |
+| Supports full string only   | Yes           | No             |
+| Empty string `""`           | `0`           | `NaN`          |
+| Boolean support             | Yes           | No             |
+| Hex support                 | Yes (`0x11`)  | No             |
+
+---
+
+# 4. Behavior Comparison
+
+## Case 1: Clean number
+
+```js
+"123";
+```
+
+```js
+Number("123"); // 123
+parseFloat("123"); // 123
+```
+
+---
+
+## Case 2: Mixed string
+
+```js
+"123px";
+```
+
+```js
+Number("123px"); // NaN
+parseFloat("123px"); // 123
+```
+
+---
+
+## Case 3: Invalid start
+
+```js
+"abc123";
+```
+
+```js
+Number("abc123"); // NaN
+parseFloat("abc123"); // NaN
+```
+
+---
+
+## Case 4: Empty string
+
+```js
+"";
+```
+
+```js
+Number(""); // 0
+parseFloat(""); // NaN
+```
+
+---
+
+# 5. When to Use What?
+
+## Use `Number()` when:
+
+- You expect a **strict numeric value**
+- You want to reject invalid inputs
+- You are validating input data
+
+```js
+Number(userInput);
+```
+
+Example:
+
+```js
+if (Number(input) === NaN) {
+  console.log("Invalid number");
+}
+```
+
+---
+
+## Use `parseFloat()` when:
+
+- You are parsing values from strings like:
+  - `"12px"`
+  - `"45.67em"`
+
+- You want partial numeric extraction
+
+```js
+parseFloat("12.5kg"); // 12.5
+```
+
+---
+
+# 6. Important Interview Pitfalls
+
+## 1. `NaN` comparison issue
+
+```js
+Number("abc") === NaN; // ❌ false
+```
+
+Correct way:
+
+```js
+isNaN(Number("abc")); // true
+```
+
+---
+
+## 2. `parseFloat` ignores everything after first invalid character
+
+```js
+parseFloat("10.5.3"); // 10.5
+```
+
+This can lead to unexpected silent parsing.
+
+---
+
+## 3. Empty string difference
+
+```js
+Number(""); // 0
+parseFloat(""); // NaN
+```
+
+This is a common interview trick.
+
+---
+
+# 7. Practical Example
+
+## Extracting number from CSS value
+
+```js
+const width = "250px";
+
+console.log(parseFloat(width)); // 250
+```
+
+---
+
+## Strict validation
+
+```js
+const input = "250px";
+
+if (!isNaN(Number(input))) {
+  console.log("Valid number");
+} else {
+  console.log("Invalid number");
+}
+```
+
+---
+
+# Interview-Friendly Summary
+
+> `Number()` performs strict conversion and only returns a valid number if the entire input is numeric; otherwise, it returns `NaN`. In contrast, `parseFloat()` parses a string from left to right and extracts a number until it encounters an invalid character. Therefore, `Number()` is preferred for validation and strict type conversion, while `parseFloat()` is useful for extracting numeric values from mixed strings like `"12px"` or `"45.6em"`.
+
 ## Question 12. What is the difference between undefined, null, and an empty string?
 
 ## Question 13. How to find the length of an object or array?
