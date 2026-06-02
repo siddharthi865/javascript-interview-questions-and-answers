@@ -2365,6 +2365,237 @@ const add = (a, b) => a + b;
 
 ## Question 11. What are template literals in JavaScript?
 
+**Short answer:**
+Template literals are an ES6 feature that allows you to create strings using backticks (`` ` ``), enabling **multi-line strings, string interpolation, and embedded expressions**.
+
+---
+
+# 🔍 Detailed Interview Explanation
+
+Template literals make string handling in JavaScript more powerful and readable compared to traditional string concatenation.
+
+They are defined using **backticks** instead of quotes:
+
+```js id="t1"
+`This is a template literal`;
+```
+
+---
+
+# 1. 🧠 String Interpolation (Most Important Feature)
+
+You can embed variables and expressions using `${}`.
+
+## Example:
+
+```js id="t2"
+const name = "John";
+const age = 25;
+
+const message = `My name is ${name} and I am ${age} years old.`;
+
+console.log(message);
+```
+
+👉 Output:
+
+```
+My name is John and I am 25 years old.
+```
+
+---
+
+## You can also use expressions:
+
+```js id="t3"
+const a = 10;
+const b = 20;
+
+console.log(`Sum is ${a + b}`);
+```
+
+👉 Output:
+
+```
+Sum is 30
+```
+
+---
+
+# 2. 📄 Multi-line Strings (No Escape Needed)
+
+Before ES6:
+
+```js id="t4"
+const text = "Hello\nWorld";
+```
+
+With template literals:
+
+```js id="t5"
+const text = `Hello
+World`;
+
+console.log(text);
+```
+
+👉 Output:
+
+```
+Hello
+World
+```
+
+---
+
+# 3. ⚙️ Embedded Expressions
+
+You can use:
+
+- arithmetic operations
+- function calls
+- ternary operators
+
+## Example:
+
+```js id="t6"
+const price = 100;
+const tax = 0.18;
+
+console.log(`Total: ${price + price * tax}`);
+```
+
+---
+
+## Function call inside template:
+
+```js id="t7"
+function greet(name) {
+  return `Hello ${name}`;
+}
+
+console.log(`${greet("Alice")}`);
+```
+
+---
+
+# 4. 🧩 Tagged Template Literals (Advanced)
+
+This is a powerful advanced feature where a function processes a template literal.
+
+---
+
+## Example:
+
+```js id="t8"
+function tag(strings, value) {
+  console.log(strings);
+  console.log(value);
+}
+
+const name = "John";
+
+tag`Hello ${name}`;
+```
+
+👉 Output:
+
+- `strings = ["Hello ", ""]`
+- `value = "John"`
+
+---
+
+## Use case:
+
+- Sanitizing inputs
+- Internationalization (i18n)
+- Custom string formatting
+
+---
+
+# 5. 📊 Comparison with Traditional Strings
+
+## Old way:
+
+```js id="t9"
+const name = "John";
+const msg = "Hello " + name + ", welcome!";
+```
+
+---
+
+## Template literal way:
+
+```js id="t10"
+const msg = `Hello ${name}, welcome!`;
+```
+
+👉 Cleaner and easier to read
+
+---
+
+# ⚠️ Common Interview Pitfalls
+
+---
+
+## 1. Using wrong quotes
+
+```js id="p1"
+const msg = "Hello ${name}"; // ❌ Won’t work
+```
+
+✔ Correct:
+
+```js id="p2"
+const msg = `Hello ${name}`;
+```
+
+---
+
+## 2. Forgetting `${}` for expressions
+
+```js id="p3"
+const total = `Sum is a + b`; // ❌ wrong
+```
+
+✔ Correct:
+
+```js id="p4"
+const total = `Sum is ${a + b}`;
+```
+
+---
+
+## 3. Confusing with normal strings
+
+- Single quotes `' '` → static string
+- Backticks `` ` ` `` → dynamic string
+
+---
+
+# 🚀 Best Practices
+
+- Prefer template literals over string concatenation
+- Use them for:
+  - dynamic strings
+  - logging messages
+  - HTML generation
+
+- Avoid overcomplicating expressions inside `${}`
+
+---
+
+# 🎯 Final Summary
+
+- Template literals use **backticks (`` ` ``)** instead of quotes
+- Support:
+  - String interpolation (`${}`)
+  - Multi-line strings
+  - Embedded expressions
+  - Tagged templates (advanced use case)
+
+- They make code more readable and maintainable
+
 ## Question 12. How do you add comments in JavaScript?
 
 ## Question 13. Difference between global and local scope
