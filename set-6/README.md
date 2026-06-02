@@ -1926,6 +1926,283 @@ typeof []; // "object"
 
 ## Question 11. Explain string methods like split(), join(), includes()
 
+**Direct answer:**
+
+- `split()` converts a string into an array based on a separator.
+- `join()` combines array elements into a single string using a separator.
+- `includes()` checks whether a string contains a specific substring and returns `true` or `false`.
+
+---
+
+# Detailed Explanation (Interview Perspective)
+
+These are very commonly used **string and array utility methods** in JavaScript for data manipulation.
+
+---
+
+# 1. `split()` Method
+
+### Purpose:
+
+Converts a **string → array** based on a delimiter.
+
+---
+
+## Syntax:
+
+```javascript
+str.split(separator, limit);
+```
+
+---
+
+## Example:
+
+```javascript id="s1"
+const str = "apple,banana,orange";
+
+const result = str.split(",");
+console.log(result);
+// ["apple", "banana", "orange"]
+```
+
+---
+
+## With space separator:
+
+```javascript id="s2"
+const str = "Hello World JS";
+
+console.log(str.split(" "));
+// ["Hello", "World", "JS"]
+```
+
+---
+
+## Limit parameter:
+
+```javascript id="s3"
+const str = "a,b,c,d";
+
+console.log(str.split(",", 2));
+// ["a", "b"]
+```
+
+---
+
+## Key points:
+
+- Returns an **array**
+- Does NOT modify original string (strings are immutable)
+- Very useful for parsing data
+
+---
+
+# 2. `join()` Method
+
+### Purpose:
+
+Converts an **array → string** using a separator.
+
+---
+
+## Syntax:
+
+```javascript
+arr.join(separator);
+```
+
+---
+
+## Example:
+
+```javascript id="j1"
+const arr = ["apple", "banana", "orange"];
+
+console.log(arr.join(","));
+// "apple,banana,orange"
+```
+
+---
+
+## Different separators:
+
+```javascript id="j2"
+const arr = ["a", "b", "c"];
+
+console.log(arr.join(" ")); // "a b c"
+console.log(arr.join("-")); // "a-b-c"
+```
+
+---
+
+## Without separator:
+
+```javascript id="j3"
+console.log(["H", "i"].join(""));
+// "Hi"
+```
+
+---
+
+## Key points:
+
+- Returns a **string**
+- Does NOT modify original array
+- Useful for formatting output
+
+---
+
+# 3. `includes()` Method
+
+### Purpose:
+
+Checks whether a **string contains a substring**.
+
+---
+
+## Syntax:
+
+```javascript
+str.includes(searchString, position);
+```
+
+---
+
+## Example:
+
+```javascript id="i1"
+const str = "Hello JavaScript";
+
+console.log(str.includes("JavaScript"));
+// true
+```
+
+---
+
+## Case sensitivity:
+
+```javascript id="i2"
+console.log("Hello".includes("he"));
+// false (case-sensitive)
+```
+
+---
+
+## Using position:
+
+```javascript id="i3"
+const str = "JavaScript";
+
+console.log(str.includes("a", 2));
+// true (starts search from index 2)
+```
+
+---
+
+## Key points:
+
+- Returns **boolean (true/false)**
+- Case-sensitive
+- Does NOT modify string
+
+---
+
+# 4. Relationship Between Them
+
+A common pattern:
+
+```javascript id="r1"
+const str = "a,b,c";
+
+// string → array
+const arr = str.split(",");
+
+// array → string
+const newStr = arr.join("-");
+
+console.log(newStr); // "a-b-c"
+```
+
+---
+
+# 5. Comparison Table
+
+| Method       | Works On | Returns | Purpose                      |
+| ------------ | -------- | ------- | ---------------------------- |
+| `split()`    | String   | Array   | Break string into parts      |
+| `join()`     | Array    | String  | Combine elements             |
+| `includes()` | String   | Boolean | Check existence of substring |
+
+---
+
+# 6. Common Pitfalls (Interview Important)
+
+## 1. `includes()` is case-sensitive
+
+```javascript id="p1"
+"JavaScript".includes("javascript"); // false
+```
+
+---
+
+## 2. `split()` removes delimiter
+
+```javascript id="p2"
+"a,b,c".split(","); // ["a", "b", "c"]
+```
+
+Delimiter is not included in result.
+
+---
+
+## 3. `join()` does not modify original array
+
+```javascript id="p3"
+const arr = [1, 2, 3];
+
+arr.join("-");
+console.log(arr); // [1, 2, 3]
+```
+
+---
+
+# 7. Real-world Usage
+
+## 1. Search filter (includes)
+
+```javascript id="r2"
+const items = ["apple", "banana", "grape"];
+
+const result = items.filter((item) => item.includes("ap"));
+
+console.log(result); // ["apple", "grape"]
+```
+
+---
+
+## 2. CSV parsing (split)
+
+```javascript id="r3"
+const csv = "1,2,3,4";
+const numbers = csv.split(",");
+```
+
+---
+
+## 3. URL building (join)
+
+```javascript id="r4"
+const path = ["api", "users", "123"].join("/");
+// "api/users/123"
+```
+
+---
+
+# 8. Interview Summary Answer
+
+> `split()` converts a string into an array based on a separator, `join()` converts an array into a string using a separator, and `includes()` checks whether a string contains a specific substring and returns a boolean. All three are non-mutating methods and are widely used for string and array manipulation in JavaScript.
+
 ## Question 12. What is the difference between substr(), substring(), and slice()?
 
 ## Question 13. Difference between push() and concat() in arrays
