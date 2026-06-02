@@ -2405,6 +2405,236 @@ Works best when:
 
 ## Question 11. Difference between var, let, const in closures
 
+### Short Answer
+
+In closures, the difference between `var`, `let`, and `const` comes down to **scope behavior and how variables are captured**:
+
+- **`var`** → function-scoped, can cause unexpected shared state in closures (classic bug due to hoisting)
+- **`let`** → block-scoped, creates a new binding per iteration/block, works correctly with closures
+- **`const`** → block-scoped like `let`, but cannot be reassigned (safe for closure values that shouldn’t change)
+
+---
+
+# 1. First: What is a closure? (quick recap)
+
+A **closure** is when a function “remembers” variables from its outer scope even after that scope has finished execution.
+
+```javascript id="cl1"
+function outer() {
+  let x = 10;
+
+  function inner() {
+    console.log(x);
+  }
+
+  return inner;
+}
+
+const fn = outer();
+fn(); // 10
+```
+
+---
+
+# 2. Problem with `var` in closures
+
+`var` is **function-scoped**, not block-scoped. This causes all closures to share the same variable.
+
+## Classic interview problem
+
+```javascript id="var1"
+for (var i = 0; i < 3; i++) {
+  setTimeout(function () {
+    console.log(i);
+  }, 100);
+}
+```
+
+### Output:
+
+```
+3
+3
+3
+```
+
+### Why?
+
+- Only **one `i` exists (function-scoped)**
+- All closures reference the same variable
+- By the time callback runs → loop is finished → `i = 3`
+
+---
+
+# 3. Fix using `let`
+
+`let` is **block-scoped**, so each loop iteration creates a new binding.
+
+```javascript id="let1"
+for (let i = 0; i < 3; i++) {
+  setTimeout(function () {
+    console.log(i);
+  }, 100);
+}
+```
+
+### Output:
+
+```
+0
+1
+2
+```
+
+### Why?
+
+Each iteration creates a **new lexical environment**, so closures capture different `i` values.
+
+---
+
+# 4. `const` in closures
+
+`const` behaves like `let` in terms of scope but cannot be reassigned.
+
+```javascript id="const1"
+function outer() {
+  const message = "Hello";
+
+  return function inner() {
+    console.log(message);
+  };
+}
+
+const fn = outer();
+fn(); // Hello
+```
+
+---
+
+## Important distinction
+
+```javascript id="const2"
+const x = 10;
+x = 20; // ❌ Error: Assignment to constant variable
+```
+
+But closure behavior is the same as `let`:
+
+- same lexical capture
+- same block scope
+- difference is only **immutability of binding**
+
+---
+
+# 5. Key difference in closure behavior
+
+| Feature           | var              | let                   | const                        |
+| ----------------- | ---------------- | --------------------- | ---------------------------- |
+| Scope             | Function         | Block                 | Block                        |
+| Closure capture   | Shared reference | New binding per block | New binding per block        |
+| Loop issue        | Yes              | No                    | No                           |
+| Reassignment      | Yes              | Yes                   | No                           |
+| Best for closures | ❌ risky         | ✅ safe               | ✅ safest (when value fixed) |
+
+---
+
+# 6. Real-world example (very important)
+
+## Using `var` (buggy behavior)
+
+```javascript id="real1"
+function createButtons() {
+  var buttons = [];
+
+  for (var i = 0; i < 3; i++) {
+    buttons[i] = function () {
+      console.log("Button", i);
+    };
+  }
+
+  return buttons;
+}
+
+createButtons()[0](); // Button 3 ❌
+```
+
+---
+
+## Using `let` (correct behavior)
+
+```javascript id="real2"
+function createButtons() {
+  let buttons = [];
+
+  for (let i = 0; i < 3; i++) {
+    buttons[i] = function () {
+      console.log("Button", i);
+    };
+  }
+
+  return buttons;
+}
+
+createButtons()[0](); // Button 0 ✅
+```
+
+---
+
+# 7. Why this happens (interview insight)
+
+### var behavior:
+
+- single shared binding in function scope
+- closures point to same memory reference
+
+### let/const behavior:
+
+- new lexical environment per block iteration
+- closures capture different bindings
+
+---
+
+# 8. Memory perspective (advanced interview angle)
+
+- `var` → one memory slot reused
+- `let/const` in loops → multiple bindings created per iteration
+
+This is why `let` is safer for async callbacks.
+
+---
+
+# 9. Common pitfalls
+
+## ❌ Thinking closures “copy values”
+
+Closures do NOT copy values—they **reference variables**.
+
+---
+
+## ❌ Assuming const makes objects immutable
+
+```javascript id="pit1"
+const obj = { a: 1 };
+obj.a = 2; // allowed
+```
+
+Only binding is constant, not object content.
+
+---
+
+# 10. Best practices
+
+✔ Prefer `let` over `var` always
+✔ Use `const` by default unless reassignment is needed
+✔ Avoid `var` in modern JavaScript
+✔ Always use `let` in loops with async/closures
+
+---
+
+# 11. Interview one-liner
+
+> In closures, `var` creates a single function-scoped variable shared across all closures, often causing unexpected behavior, while `let` and `const` create block-scoped bindings that ensure each closure captures its own distinct value, making them safer and more predictable.
+
 ## Question 12. Explain function hoisting with examples
 
 ## Question 13. Explain how this behaves differently in arrow functions vs normal functions
