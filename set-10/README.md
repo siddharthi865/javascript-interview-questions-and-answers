@@ -4922,6 +4922,413 @@ toSpliced()
 
 ## Question 11. How to prevent race conditions in asynchronous code?
 
+## Short Answer
+
+Race conditions in asynchronous JavaScript can be prevented by ensuring **only one operation can modify shared state at a time**, or by **controlling the order and validity of async results** using techniques like:
+
+- `async/await` sequencing
+- request cancellation (AbortController)
+- locks / mutex patterns
+- debouncing / throttling
+- versioning or “latest request wins” strategy
+- atomic state updates (immutable patterns)
+
+---
+
+# What Is a Race Condition?
+
+A **race condition** occurs when multiple asynchronous operations access or modify shared state in an unpredictable order.
+
+### Example Problem
+
+```js id="r1"
+let userData;
+
+async function fetchUser() {
+  const res = await fetch("/user");
+  userData = await res.json();
+}
+
+fetchUser();
+fetchUser();
+```
+
+If the first request finishes after the second, it may overwrite newer data with stale data.
+
+---
+
+# 1. Sequential Execution (await chaining)
+
+The simplest way to prevent races is to enforce order.
+
+```js id="r2"
+async function loadData() {
+  const user = await fetch("/user").then((r) => r.json());
+  const posts = await fetch("/posts").then((r) => r.json());
+
+  return { user, posts };
+}
+```
+
+### Why it works
+
+- Each step waits for the previous one
+- No concurrent mutation of shared state
+
+### Trade-off
+
+- Slower if operations are independent
+
+---
+
+# 2. Promise Chaining Control
+
+```js id="r3"
+fetch("/user")
+  .then((res) => res.json())
+  .then((user) => {
+    return fetch(`/posts?user=${user.id}`);
+  })
+  .then((res) => res.json());
+```
+
+Ensures deterministic flow.
+
+---
+
+# 3. “Latest Request Wins” (Versioning Pattern)
+
+Very common in search/autocomplete systems.
+
+```js id="r4"
+let requestId = 0;
+
+async function search(query) {
+  const currentId = ++requestId;
+
+  const res = await fetch(`/search?q=${query}`);
+  const data = await res.json();
+
+  // Ignore stale responses
+  if (currentId !== requestId) return;
+
+  render(data);
+}
+```
+
+### Why it works
+
+- Only the latest request updates UI
+- Older responses are ignored
+
+---
+
+# 4. AbortController (Cancel Previous Requests)
+
+Modern and recommended approach.
+
+```js id="r5"
+let controller;
+
+async function search(query) {
+  if (controller) {
+    controller.abort();
+  }
+
+  controller = new AbortController();
+
+  try {
+    const res = await fetch(`/search?q=${query}`, {
+      signal: controller.signal,
+    });
+
+    const data = await res.json();
+    render(data);
+  } catch (err) {
+    if (err.name === "AbortError") return;
+    throw err;
+  }
+}
+```
+
+### Why it works
+
+- Cancels in-flight requests
+- Prevents outdated data from resolving
+
+---
+
+# 5. Mutex / Locking Pattern (Critical Section Control)
+
+Used when multiple async functions modify shared state.
+
+```js id="r6"
+let lock = Promise.resolve();
+
+function runExclusive(task) {
+  lock = lock.then(() => task());
+  return lock;
+}
+```
+
+### Usage
+
+```js id="r7"
+runExclusive(async () => {
+  await updateDatabase();
+});
+```
+
+### Why it works
+
+- Ensures only one async operation runs at a time
+- Others queue behind it
+
+---
+
+# 6. State Immutability (React-style prevention)
+
+Avoid shared mutable state.
+
+### Bad (mutable)
+
+```js id="r8"
+state.user.name = "Alice";
+```
+
+### Good (immutable update)
+
+```js id="r9"
+setState((prev) => ({
+  ...prev,
+  user: {
+    ...prev.user,
+    name: "Alice",
+  },
+}));
+```
+
+### Why it helps
+
+- Prevents accidental overwrites
+- Makes updates predictable
+
+---
+
+# 7. Debouncing (Prevent Excess Concurrent Calls)
+
+Common in input handling.
+
+```js id="r10"
+function debounce(fn, delay) {
+  let timer;
+
+  return (...args) => {
+    clearTimeout(timer);
+
+    timer = setTimeout(() => {
+      fn(...args);
+    }, delay);
+  };
+}
+```
+
+### Usage
+
+```js id="r11"
+const search = debounce(async (q) => {
+  const res = await fetch(`/search?q=${q}`);
+  console.log(await res.json());
+}, 300);
+```
+
+### Why it helps
+
+- Prevents multiple overlapping requests
+- Reduces race conditions in UI typing scenarios
+
+---
+
+# 8. Throttling (Limit Execution Frequency)
+
+```js id="r12"
+function throttle(fn, limit) {
+  let lastCall = 0;
+
+  return (...args) => {
+    const now = Date.now();
+
+    if (now - lastCall >= limit) {
+      lastCall = now;
+      fn(...args);
+    }
+  };
+}
+```
+
+---
+
+# 9. Queue-Based Execution (Task Queue)
+
+Ensures ordered execution.
+
+```js id="r13"
+class AsyncQueue {
+  constructor() {
+    this.queue = Promise.resolve();
+  }
+
+  add(task) {
+    this.queue = this.queue.then(() => task());
+    return this.queue;
+  }
+}
+```
+
+### Usage
+
+```js id="r14"
+const queue = new AsyncQueue();
+
+queue.add(() => fetch("/a"));
+queue.add(() => fetch("/b"));
+```
+
+Guaranteed order.
+
+---
+
+# 10. Avoid Shared Mutable State
+
+### Problem
+
+```js id="r15"
+let result;
+
+async function load() {
+  result = await fetchData();
+}
+```
+
+Multiple calls overwrite `result`.
+
+---
+
+### Fix
+
+Return values instead:
+
+```js id="r16"
+async function load() {
+  return await fetchData();
+}
+```
+
+---
+
+# 11. Atomic Updates (Functional Style)
+
+Instead of:
+
+```js id="r17"
+count++;
+```
+
+Use:
+
+```js id="r18"
+setCount((prev) => prev + 1);
+```
+
+### Why
+
+- Avoids stale closures
+- Prevents concurrent overwrite issues
+
+---
+
+# 12. Database-Level Locking (Advanced Concept)
+
+In backend JS (Node.js):
+
+- row-level locks
+- transactions
+- optimistic concurrency control
+
+Example idea:
+
+```sql
+UPDATE users
+SET balance = balance - 100
+WHERE id = 1 AND version = 5;
+```
+
+Prevents concurrent updates.
+
+---
+
+# Common Interview Scenarios
+
+## Scenario 1: Search Input Bug
+
+User types:
+
+```
+a → ab → abc
+```
+
+Requests return out of order → UI shows stale results.
+
+### Fix:
+
+- AbortController OR versioning
+
+---
+
+## Scenario 2: Double Click Payment
+
+Two async calls fire:
+
+```js
+pay();
+pay();
+```
+
+### Fix:
+
+- mutex lock OR disable button OR queue
+
+---
+
+## Scenario 3: Shared State Overwrite
+
+Two async functions update same variable.
+
+### Fix:
+
+- avoid shared mutable state OR use atomic updates
+
+---
+
+# Key Differences Between Strategies
+
+| Technique        | Best Use Case               |
+| ---------------- | --------------------------- |
+| `await` chaining | Simple sequential logic     |
+| AbortController  | UI requests (search, fetch) |
+| Versioning       | “latest wins” scenarios     |
+| Mutex            | Critical sections           |
+| Debounce         | Input events                |
+| Throttle         | Scroll/resize events        |
+| Immutable state  | React/Redux apps            |
+| Queue            | Ordered job execution       |
+
+---
+
+# Interview Summary
+
+> Race conditions in JavaScript occur when multiple asynchronous operations access or modify shared state unpredictably. They can be prevented using techniques such as sequential `async/await`, request cancellation via AbortController, versioning strategies, mutex locks, debouncing, throttling, and immutable state updates. The key principle is to ensure deterministic control over async execution and avoid concurrent uncontrolled mutations.
+
 ## Question 12. Explain service workers and caching in JavaScript
 
 ## Question 13. Difference between synchronous and asynchronous script loading
