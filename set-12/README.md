@@ -2328,6 +2328,233 @@ console.log(elapsed + " ms");
 
 ## Question 11. Difference between `Date.now()` and `new Date()`
 
+## Short Answer
+
+- **`Date.now()`** returns the current timestamp in **milliseconds (number)** since the Unix Epoch.
+- **`new Date()`** returns a **Date object** representing the current date and time.
+
+So:
+
+```js id="v1m9qk"
+typeof Date.now(); // "number"
+typeof new Date(); // "object"
+```
+
+---
+
+# 1. `Date.now()`
+
+### What it returns
+
+A **number (timestamp)**:
+
+```js id="k7xqpl"
+console.log(Date.now());
+```
+
+Example output:
+
+```js id="d9q2mv"
+1718179200000;
+```
+
+### Key characteristics
+
+- Returns milliseconds since **Jan 1, 1970 UTC**
+- No object creation (faster)
+- Used for calculations, comparisons, and performance
+
+### Example usage
+
+```js id="h4n8zt"
+const start = Date.now();
+
+// some operation
+for (let i = 0; i < 1000000; i++) {}
+
+const end = Date.now();
+
+console.log(end - start); // elapsed time in ms
+```
+
+---
+
+# 2. `new Date()`
+
+### What it returns
+
+A **Date object**:
+
+```js id="c2r8xv"
+const now = new Date();
+
+console.log(now);
+```
+
+Example output:
+
+```js id="x8m4qn"
+2026-06-12T10:15:30.000Z
+```
+
+### Key characteristics
+
+- Represents full date + time object
+- Provides methods like:
+  - `.getFullYear()`
+  - `.getMonth()`
+  - `.getDate()`
+  - `.toISOString()`
+
+### Example usage
+
+```js id="m9t4ab"
+const now = new Date();
+
+console.log(now.getFullYear()); // 2026
+console.log(now.getMonth()); // 0–11
+console.log(now.getDate()); // 1–31
+```
+
+---
+
+# Key Difference in Behavior
+
+## 1. Type difference
+
+```js id="q5v9ls"
+Date.now(); // number
+new Date(); // object
+```
+
+---
+
+## 2. Usage difference
+
+### Date.now() → for timestamps
+
+```js id="t2k8wj"
+const createdAt = Date.now();
+```
+
+### new Date() → for date operations
+
+```js id="n8v3rx"
+const date = new Date();
+console.log(date.toLocaleString());
+```
+
+---
+
+## 3. Memory & Performance
+
+| Feature         | Date.now()              | new Date()                    |
+| --------------- | ----------------------- | ----------------------------- |
+| Returns         | number                  | object                        |
+| Object creation | ❌ No                   | ✅ Yes                        |
+| Performance     | Faster                  | Slightly slower               |
+| Best for        | timestamps, comparisons | formatting, date manipulation |
+
+---
+
+# Internal Understanding (Interview Insight)
+
+### `Date.now()`
+
+Equivalent to:
+
+```js id="f7k2zp"
+Date.prototype.now = function () {
+  return new Date().getTime();
+};
+```
+
+But implemented natively and optimized in the engine.
+
+---
+
+### `new Date()`
+
+Internally:
+
+- Allocates a Date object
+- Stores timestamp + methods for formatting and manipulation
+
+---
+
+# Practical Examples
+
+## 1. Comparing times
+
+```js id="v3p7ld"
+const t1 = Date.now();
+
+setTimeout(() => {
+  const t2 = Date.now();
+  console.log(t2 - t1);
+}, 1000);
+```
+
+---
+
+## 2. Formatting date
+
+```js id="b8n4qk"
+const date = new Date();
+
+console.log(date.toISOString());
+console.log(date.toLocaleDateString());
+```
+
+---
+
+## 3. Store timestamps in DB
+
+```js id="c9r2mw"
+const user = {
+  name: "John",
+  createdAt: Date.now(),
+};
+```
+
+---
+
+# Common Interview Gotcha
+
+### Why not always use `new Date()`?
+
+Because:
+
+```js id="p4x7sd"
+new Date() - new Date();
+```
+
+works due to coercion, but:
+
+```js id="m2v8lk"
+Date.now() - Date.now();
+```
+
+is cleaner, faster, and more intentional.
+
+---
+
+# Comparison Table
+
+| Feature            | `Date.now()`          | `new Date()`          |
+| ------------------ | --------------------- | --------------------- |
+| Return type        | Number                | Object                |
+| Represents         | Timestamp             | Full date-time        |
+| Formatting support | ❌                    | ✅                    |
+| Performance        | Faster                | Slower                |
+| Best use case      | Calculations, storage | Display, manipulation |
+
+---
+
+# Interview-Ready Answer
+
+> `Date.now()` returns the current timestamp as a number representing milliseconds since the Unix Epoch, making it ideal for time calculations and performance tracking. `new Date()` returns a Date object that represents the current date and time and provides methods for formatting and manipulating date components like year, month, and day. In short, `Date.now()` is used when you need a numeric timestamp, while `new Date()` is used when you need a full date object for formatting or date operations.
+
 ## Question 12. How to calculate the difference between two dates
 
 ## Question 13. How to convert a string to a Date object
