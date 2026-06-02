@@ -2366,6 +2366,222 @@ Examples that DO NOT bubble:
 
 ## Question 11. How to remove an event listener?
 
+## Short Answer
+
+You remove an event listener in JavaScript using:
+
+```js
+element.removeEventListener(event, handlerFunction);
+```
+
+👉 Important rule: **the function reference must be the same** as the one used in `addEventListener()`.
+
+---
+
+# 1. Basic Syntax
+
+```js id="a1"
+element.addEventListener("click", handleClick);
+element.removeEventListener("click", handleClick);
+```
+
+---
+
+# 2. Correct Example
+
+### HTML:
+
+```html id="b1"
+<button id="btn">Click Me</button>
+```
+
+### JS:
+
+```js id="b2"
+function handleClick() {
+  console.log("Button clicked");
+}
+
+const btn = document.getElementById("btn");
+
+btn.addEventListener("click", handleClick);
+
+// remove later
+btn.removeEventListener("click", handleClick);
+```
+
+👉 Event listener is successfully removed.
+
+---
+
+# 3. ❌ Common Mistake (VERY IMPORTANT)
+
+You cannot remove an anonymous function:
+
+```js id="c1"
+btn.addEventListener("click", function () {
+  console.log("Hello");
+});
+
+// ❌ This will NOT work
+btn.removeEventListener("click", function () {
+  console.log("Hello");
+});
+```
+
+### Why?
+
+Because these are **two different function references in memory**.
+
+---
+
+# 4. Correct Way for Anonymous-like logic
+
+### Use a named function or variable:
+
+```js id="c2"
+const handleClick = function () {
+  console.log("Hello");
+};
+
+btn.addEventListener("click", handleClick);
+btn.removeEventListener("click", handleClick);
+```
+
+---
+
+# 5. Arrow Function Case
+
+```js id="d1"
+const handler = () => console.log("Clicked");
+
+btn.addEventListener("click", handler);
+btn.removeEventListener("click", handler);
+```
+
+---
+
+# 6. Event Listener with Options (IMPORTANT EDGE CASE)
+
+If you use options like `capture`, they must match:
+
+```js id="e1"
+function handler() {
+  console.log("clicked");
+}
+
+btn.addEventListener("click", handler, true);
+
+// ❌ won't remove if options mismatch
+btn.removeEventListener("click", handler, false);
+
+// ✅ correct
+btn.removeEventListener("click", handler, true);
+```
+
+---
+
+# 7. Once Option Alternative (Modern Approach)
+
+Instead of manually removing, you can use:
+
+```js id="f1"
+btn.addEventListener("click", handler, { once: true });
+```
+
+👉 Automatically removes after first execution.
+
+---
+
+# 8. Real-world Example
+
+### Click button only once manually removed:
+
+```js id="g1"
+function handleClick() {
+  console.log("Clicked once");
+  btn.removeEventListener("click", handleClick);
+}
+
+btn.addEventListener("click", handleClick);
+```
+
+---
+
+# 9. Removing Delegated Events (Important Interview Point)
+
+If using event delegation:
+
+```js id="h1"
+function handler(e) {
+  if (e.target.tagName === "LI") {
+    console.log("clicked");
+  }
+}
+
+list.addEventListener("click", handler);
+
+// remove
+list.removeEventListener("click", handler);
+```
+
+---
+
+# 10. Key Rules (Interview Must-Know)
+
+### ✔ Rule 1:
+
+Function reference must be identical
+
+### ✔ Rule 2:
+
+Anonymous functions cannot be removed
+
+### ✔ Rule 3:
+
+Options (`capture`, `once`, `passive`) must match
+
+### ✔ Rule 4:
+
+Works only if listener is attached via `addEventListener`
+
+---
+
+# 11. Common Interview Traps
+
+---
+
+## ❓ 1. Can you remove inline event handlers?
+
+```html
+<button onclick="handleClick()">Click</button>
+```
+
+👉 No direct `removeEventListener` support
+You must do:
+
+```js
+button.onclick = null;
+```
+
+---
+
+## ❓ 2. Does removeEventListener remove all listeners?
+
+❌ No — only the specific matching one.
+
+---
+
+## ❓ 3. What happens if function reference differs?
+
+👉 Nothing is removed
+
+---
+
+# 💡 Final Interview Summary
+
+> `removeEventListener()` is used to remove a previously attached event listener from an element. It only works if the same function reference and options are used as in `addEventListener()`. Anonymous functions cannot be removed because they do not share a reference.
+
 ## Question 12. How does setTimeout work?
 
 ## Question 13. Difference between alert() and console.log()
