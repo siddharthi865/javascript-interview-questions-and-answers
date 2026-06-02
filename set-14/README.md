@@ -3757,6 +3757,361 @@ Not immediately.
 
 ## Question 11. Difference between microtasks and macrotasks
 
+## Concise Answer
+
+- **Microtasks** are high-priority tasks executed **immediately after the current call stack finishes and before rendering or macrotasks**.
+- **Macrotasks (Tasks)** are lower-priority tasks executed **one at a time after microtasks are fully drained**.
+
+👉 Microtasks include: `Promise.then`, `queueMicrotask`, `MutationObserver`
+👉 Macrotasks include: `setTimeout`, `setInterval`, DOM events, I/O
+
+---
+
+# 1. Core Idea (Interview Definition)
+
+JavaScript uses two main queues in the event loop:
+
+```text id="evq1"
+1. Microtask Queue (high priority)
+2. Macrotask Queue (Task Queue / Callback Queue)
+```
+
+Execution order:
+
+```text id="evq2"
+Call Stack → Microtasks → Macrotask → repeat
+```
+
+---
+
+# 2. Microtasks
+
+## What are Microtasks?
+
+Microtasks are **small, high-priority jobs that must complete before the browser moves on**.
+
+---
+
+## Examples
+
+- `Promise.then / catch / finally`
+- `queueMicrotask()`
+- `MutationObserver`
+
+---
+
+## Example
+
+```js id="m1"
+console.log("A");
+
+Promise.resolve().then(() => {
+  console.log("B");
+});
+
+console.log("C");
+```
+
+### Output
+
+```text id="m1o"
+A
+C
+B
+```
+
+### Why?
+
+- Sync code runs first: `A`, `C`
+- Promise callback goes to microtask queue
+- Microtasks run before any macrotask or rendering
+
+---
+
+## Key Characteristics
+
+- High priority
+- Executed **all at once (drained completely)**
+- Run before rendering
+- Used for promise chaining
+
+---
+
+# 3. Macrotasks (Tasks)
+
+## What are Macrotasks?
+
+Macrotasks are **larger chunks of work scheduled to run later**.
+
+---
+
+## Examples
+
+- `setTimeout`
+- `setInterval`
+- DOM events (click, input)
+- I/O callbacks
+- `setImmediate` (Node.js)
+
+---
+
+## Example
+
+```js id="m2"
+console.log("A");
+
+setTimeout(() => {
+  console.log("B");
+}, 0);
+
+console.log("C");
+```
+
+### Output
+
+```text id="m2o"
+A
+C
+B
+```
+
+---
+
+## Key Characteristics
+
+- Lower priority than microtasks
+- Executed **one per event loop iteration**
+- Can be delayed even with `0ms`
+- Allows rendering between tasks
+
+---
+
+# 4. Execution Order (VERY IMPORTANT)
+
+```js id="order1"
+console.log("Start");
+
+setTimeout(() => console.log("Macrotask"), 0);
+
+Promise.resolve().then(() => console.log("Microtask"));
+
+console.log("End");
+```
+
+### Output
+
+```text id="order2"
+Start
+End
+Microtask
+Macrotask
+```
+
+---
+
+## Why?
+
+Step-by-step:
+
+### 1. Sync code
+
+```text id="s1"
+Start
+End
+```
+
+### 2. Microtasks (drained first)
+
+```text id="s2"
+Microtask
+```
+
+### 3. Macrotasks
+
+```text id="s3"
+Macrotask
+```
+
+---
+
+# 5. Event Loop Priority Rule
+
+```text id="rule1"
+1. Execute Call Stack
+2. Flush ALL Microtasks
+3. Execute ONE Macrotask
+4. Repeat
+```
+
+👉 Key interview point:
+
+> Microtasks always finish before the next macrotask begins.
+
+---
+
+# 6. Side-by-Side Comparison
+
+| Feature          | Microtasks                 | Macrotasks         |
+| ---------------- | -------------------------- | ------------------ |
+| Priority         | High                       | Lower              |
+| Queue name       | Microtask Queue            | Task Queue         |
+| Examples         | Promises, queueMicrotask   | setTimeout, events |
+| Execution        | After stack, before render | After microtasks   |
+| Drained          | Fully before next step     | One per cycle      |
+| Delay            | Minimal                    | Can be delayed     |
+| Rendering impact | Blocks rendering           | Allows rendering   |
+
+---
+
+# 7. Real-World Analogy
+
+### Microtasks = urgent emails
+
+You must finish ALL urgent emails before doing anything else.
+
+### Macrotasks = regular work tickets
+
+You pick ONE task, then recheck urgent emails again.
+
+---
+
+# 8. Advanced Example (FAANG-level)
+
+```js id="adv1"
+console.log(1);
+
+setTimeout(() => {
+  console.log(2);
+  Promise.resolve().then(() => console.log(3));
+}, 0);
+
+Promise.resolve().then(() => {
+  console.log(4);
+});
+
+console.log(5);
+```
+
+---
+
+## Output
+
+```text id="adv2"
+1
+5
+4
+2
+3
+```
+
+---
+
+## Why?
+
+### Sync
+
+```text id="a1"
+1
+5
+```
+
+### Microtasks
+
+```text id="a2"
+4
+```
+
+### Macrotask
+
+```text id="a3"
+2
+```
+
+### Microtask inside macrotask
+
+```text id="a4"
+3
+```
+
+---
+
+# 9. Microtask Starvation (Important Trap)
+
+```js id="star1"
+function loop() {
+  Promise.resolve().then(loop);
+}
+
+loop();
+
+setTimeout(() => {
+  console.log("Timeout");
+}, 0);
+```
+
+### Result:
+
+```text id="star2"
+Timeout may never run
+```
+
+### Why?
+
+- Microtasks keep scheduling more microtasks
+- Event loop never reaches macrotasks
+
+---
+
+# 10. When to Use What
+
+## Microtasks
+
+Use for:
+
+- Promise chaining
+- Immediate post-processing
+- State updates after sync code
+
+---
+
+## Macrotasks
+
+Use for:
+
+- Delayed execution
+- UI events
+- Scheduling work
+- Throttling / debouncing
+
+---
+
+# 11. Common Interview Pitfalls
+
+## ❌ Thinking `setTimeout(fn, 0)` runs immediately
+
+It does NOT.
+
+---
+
+## ❌ Thinking promises and setTimeout are equal
+
+They are not:
+
+- Promises = microtasks (higher priority)
+- setTimeout = macrotasks
+
+---
+
+## ❌ Not knowing microtasks drain completely
+
+All microtasks run before any macrotask executes.
+
+---
+
+# Interview Summary
+
+> Microtasks are high-priority tasks like Promise callbacks that execute immediately after the call stack is empty and before rendering. Macrotasks include operations like `setTimeout` and events, which execute after microtasks and are processed one at a time per event loop cycle. The event loop always drains the entire microtask queue before moving to the next macrotask, which is why Promises execute before timers even when timers are set to `0ms`.
+
 ## Question 12. How to identify and fix memory leaks
 
 ## Question 13. Difference between `localStorage`, `sessionStorage`, and cookies
