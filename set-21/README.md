@@ -3366,6 +3366,409 @@ Think:
 
 ## Question 11. How to reduce JavaScript blocking time for page load
 
+## Short Answer
+
+To reduce **JavaScript blocking time (TBT / Total Blocking Time)** during page load, you need to **minimize long-running JavaScript execution on the main thread**, break up heavy work, defer non-critical scripts, and load code only when needed.
+
+In simple terms:
+
+> 👉 “Don’t let JavaScript monopolize the main thread during page load.”
+
+---
+
+# 1. What is JavaScript Blocking Time?
+
+When the browser is loading a page:
+
+- JavaScript runs on the **main thread**
+- While JS is executing, the browser **cannot render UI, respond to input, or paint**
+
+If JS runs too long:
+
+- First Input Delay increases
+- Page feels “frozen”
+- Lighthouse TBT increases
+
+---
+
+# 2. Core Strategies to Reduce JS Blocking Time
+
+## 1. Defer or async non-critical scripts
+
+### ❌ Bad (blocking)
+
+```html
+<script src="heavy-lib.js"></script>
+```
+
+### ✔ Better
+
+```html
+<script defer src="app.js"></script>
+<script async src="analytics.js"></script>
+```
+
+### Why it helps
+
+- `defer` avoids blocking HTML parsing
+- `async` avoids blocking execution order
+
+---
+
+# 3. 2. Split JavaScript into smaller chunks
+
+## ❌ Bad: large monolithic bundle
+
+```javascript
+bundle.js; // 2–5 MB JS loaded at once
+```
+
+## ✔ Good: code splitting
+
+```javascript
+import("./dashboard.js");
+```
+
+### Benefits
+
+- Loads only what is needed
+- Reduces initial JS execution cost
+
+---
+
+## In real apps (React/Vue)
+
+```javascript
+const Dashboard = lazy(() => import("./Dashboard"));
+```
+
+---
+
+# 4. 3. Break long tasks into smaller chunks
+
+Long tasks (>50ms) block the main thread.
+
+---
+
+## ❌ Bad
+
+```javascript
+for (let i = 0; i < 1e8; i++) {
+  heavyCalculation(i);
+}
+```
+
+---
+
+## ✔ Good: chunking
+
+```javascript
+function processChunk(items, start = 0) {
+  const limit = 1000;
+
+  const end = Math.min(start + limit, items.length);
+
+  for (let i = start; i < end; i++) {
+    heavyCalculation(items[i]);
+  }
+
+  if (end < items.length) {
+    requestIdleCallback(() => processChunk(items, end));
+  }
+}
+```
+
+---
+
+## Or using `requestAnimationFrame`
+
+```javascript
+function chunkedWork(items, index = 0) {
+  const batch = 100;
+
+  const end = Math.min(index + batch, items.length);
+
+  for (let i = index; i < end; i++) {
+    process(items[i]);
+  }
+
+  if (end < items.length) {
+    requestAnimationFrame(() => chunkedWork(items, end));
+  }
+}
+```
+
+---
+
+# 5. 4. Use `requestIdleCallback` for non-urgent work
+
+```javascript
+requestIdleCallback(() => {
+  console.log("Run when browser is idle");
+});
+```
+
+### Use for:
+
+- analytics
+- logging
+- prefetching
+- caching
+
+---
+
+# 6. 5. Avoid heavy work during page load
+
+## ❌ Bad
+
+```javascript
+window.onload = () => {
+  buildHugeDOMTree();
+};
+```
+
+---
+
+## ✔ Better
+
+```javascript
+requestIdleCallback(() => {
+  buildHugeDOMTree();
+});
+```
+
+---
+
+# 7. 6. Remove unnecessary third-party scripts
+
+Third-party scripts are a **major TBT contributor**:
+
+- Ads
+- Chat widgets
+- Trackers
+- Social embeds
+
+---
+
+## Optimization strategies:
+
+- Load with `async`
+- Load after interaction
+- Lazy-load on scroll
+
+```javascript
+window.addEventListener(
+  "scroll",
+  () => {
+    loadChatWidget();
+  },
+  { once: true },
+);
+```
+
+---
+
+# 8. 7. Optimize event handlers (debounce/throttle)
+
+## ❌ Bad
+
+```javascript
+window.addEventListener("resize", expensiveFn);
+```
+
+---
+
+## ✔ Good
+
+```javascript
+window.addEventListener("resize", debounce(expensiveFn, 200));
+```
+
+---
+
+# 9. 8. Avoid layout thrashing inside JS execution
+
+## ❌ Bad
+
+```javascript
+for (let el of elements) {
+  const height = el.offsetHeight;
+  el.style.height = height + 10 + "px";
+}
+```
+
+---
+
+## ✔ Good
+
+```javascript
+const heights = elements.map((el) => el.offsetHeight);
+
+elements.forEach((el, i) => {
+  el.style.height = heights[i] + "px";
+});
+```
+
+---
+
+# 10. 9. Use Web Workers for heavy computation
+
+Move CPU-heavy logic off the main thread.
+
+---
+
+## Example
+
+### main.js
+
+```javascript
+const worker = new Worker("worker.js");
+
+worker.postMessage({ data: hugeArray });
+
+worker.onmessage = (e) => {
+  console.log("Processed:", e.data);
+};
+```
+
+---
+
+### worker.js
+
+```javascript
+onmessage = (e) => {
+  const result = heavyCompute(e.data);
+  postMessage(result);
+};
+```
+
+---
+
+### Benefit
+
+- Main thread stays free
+- Zero UI blocking
+
+---
+
+# 11. 10. Reduce DOM complexity
+
+Large DOM = slow JS execution
+
+---
+
+## ❌ Bad
+
+- 10,000 DOM nodes
+- Frequent reflows
+
+---
+
+## ✔ Good
+
+- Virtual scrolling
+- Lazy rendering
+- Minimal DOM nodes
+
+---
+
+# 12. 11. Use modern bundlers optimally
+
+### Enable:
+
+- Tree shaking
+- Code splitting
+- Minification
+- Compression (Brotli/Gzip)
+
+---
+
+## Example (Webpack/Vite)
+
+```javascript
+optimization: {
+  splitChunks: {
+    chunks: "all";
+  }
+}
+```
+
+---
+
+# 13. 12. Prefer CSS over JS for animations
+
+## ❌ JS animations (blocking)
+
+```javascript
+setInterval(() => {
+  box.style.left = x++ + "px";
+}, 16);
+```
+
+---
+
+## ✔ CSS animations (non-blocking)
+
+```css
+.box {
+  transition: transform 0.3s ease;
+}
+```
+
+---
+
+# 14. Key Metrics Impacted
+
+Reducing JS blocking time improves:
+
+- TBT (Total Blocking Time)
+- FID (First Input Delay)
+- INP (Interaction to Next Paint)
+- LCP (Largest Contentful Paint)
+
+---
+
+# 15. Mental Model (Interview Gold)
+
+Think:
+
+> “JavaScript blocking time is reduced by minimizing long main-thread tasks and deferring or splitting everything non-essential.”
+
+---
+
+# 16. Best Practices Summary
+
+To reduce JS blocking time:
+
+### Loading strategy
+
+- Use `defer` / `async`
+- Split bundles
+- Lazy-load modules
+
+### Execution strategy
+
+- Break long tasks
+- Use `requestIdleCallback`
+- Use Web Workers
+
+### Rendering strategy
+
+- Reduce DOM size
+- Avoid layout thrashing
+- Use CSS for animations
+
+### Third-party control
+
+- Delay non-critical scripts
+- Load on interaction
+
+---
+
+# Final Interview Summary
+
+JavaScript blocking time refers to the duration during which long-running JavaScript tasks block the browser’s main thread, preventing rendering and user interaction. It can be reduced by deferring non-critical scripts using `defer` and `async`, splitting code into smaller chunks through dynamic imports, and breaking long-running computations into smaller tasks using `requestIdleCallback` or `requestAnimationFrame`. Offloading heavy computations to Web Workers, minimizing DOM complexity, optimizing event handlers with debouncing, and reducing third-party script impact further improve performance. Overall, the goal is to ensure the main thread remains free for rendering and user interactions, leading to lower TBT and smoother page performance.
+
 ## Question 12. How to implement code splitting in JavaScript
 
 ## Question 13. How to dynamically import modules for performance
