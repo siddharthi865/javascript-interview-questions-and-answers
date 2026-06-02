@@ -2732,6 +2732,417 @@ A strong answer is:
 
 ## Question 11. Explain JSON. How to parse and stringify JSON?
 
+### **Short Answer**
+
+**JSON (JavaScript Object Notation)** is a lightweight text-based format used to store and exchange data between systems, especially between browsers and servers.
+
+JavaScript provides two main methods:
+
+- **`JSON.parse()`** → Converts a JSON string into a JavaScript object.
+- **`JSON.stringify()`** → Converts a JavaScript object into a JSON string.
+
+---
+
+# **What is JSON?**
+
+JSON is a text format that represents data as **key-value pairs** and arrays.
+
+### Example JSON
+
+```json
+{
+  "name": "Alice",
+  "age": 25,
+  "isAdmin": true
+}
+```
+
+Although JSON looks similar to JavaScript objects, it is **just a string format**, not a JavaScript object.
+
+---
+
+# **JSON vs JavaScript Object**
+
+### JavaScript Object
+
+```javascript
+const user = {
+  name: "Alice",
+  age: 25,
+};
+```
+
+### JSON String
+
+```javascript
+const json = '{"name":"Alice","age":25}';
+```
+
+Notice:
+
+- JSON keys must be enclosed in double quotes (`"`).
+- JSON is stored as text/string.
+
+---
+
+# **1. `JSON.parse()`**
+
+### Purpose
+
+Converts a JSON string into a JavaScript object.
+
+### Syntax
+
+```javascript
+JSON.parse(jsonString);
+```
+
+### Example
+
+```javascript
+const json = '{"name":"Alice","age":25}';
+
+const user = JSON.parse(json);
+
+console.log(user.name);
+```
+
+### Output
+
+```javascript
+Alice;
+```
+
+After parsing:
+
+```javascript
+console.log(typeof user);
+```
+
+Output:
+
+```javascript
+object;
+```
+
+---
+
+## Parsing Arrays
+
+```javascript
+const json = '["apple","banana","mango"]';
+
+const fruits = JSON.parse(json);
+
+console.log(fruits);
+```
+
+Output:
+
+```javascript
+["apple", "banana", "mango"];
+```
+
+---
+
+# **2. `JSON.stringify()`**
+
+### Purpose
+
+Converts a JavaScript object into a JSON string.
+
+### Syntax
+
+```javascript
+JSON.stringify(object);
+```
+
+### Example
+
+```javascript
+const user = {
+  name: "Alice",
+  age: 25,
+};
+
+const json = JSON.stringify(user);
+
+console.log(json);
+```
+
+### Output
+
+```javascript
+{"name":"Alice","age":25}
+```
+
+### Type
+
+```javascript
+console.log(typeof json);
+```
+
+Output:
+
+```javascript
+string;
+```
+
+---
+
+# **Real-World API Example**
+
+### Server Response
+
+```javascript
+const response = '{"id":1,"name":"John"}';
+```
+
+Convert to object:
+
+```javascript
+const user = JSON.parse(response);
+
+console.log(user.name);
+```
+
+---
+
+### Sending Data to Server
+
+```javascript
+const user = {
+  id: 1,
+  name: "John",
+};
+
+const body = JSON.stringify(user);
+```
+
+The resulting string can be sent in an HTTP request body.
+
+---
+
+# **Pretty Printing JSON**
+
+### Using `JSON.stringify()` with Formatting
+
+```javascript
+const user = {
+  name: "Alice",
+  age: 25,
+};
+
+console.log(JSON.stringify(user, null, 2));
+```
+
+Output:
+
+```json
+{
+  "name": "Alice",
+  "age": 25
+}
+```
+
+Parameters:
+
+```javascript
+JSON.stringify(value, replacer, space);
+```
+
+- `value` → object to convert
+- `replacer` → filter/transform fields
+- `space` → indentation
+
+---
+
+# **Common Interview Pitfalls**
+
+## 1. Parsing Invalid JSON
+
+❌ Invalid JSON:
+
+```javascript
+const json = "{name:'Alice'}";
+JSON.parse(json);
+```
+
+Throws:
+
+```javascript
+SyntaxError;
+```
+
+JSON requires double quotes:
+
+✅ Correct
+
+```javascript
+const json = '{"name":"Alice"}';
+```
+
+---
+
+## 2. Forgetting That `JSON.stringify()` Returns a String
+
+```javascript
+const user = { name: "Alice" };
+
+const json = JSON.stringify(user);
+
+console.log(typeof json);
+```
+
+Output:
+
+```javascript
+string;
+```
+
+---
+
+## 3. Not All JavaScript Values Can Be Represented in JSON
+
+### Functions Are Omitted
+
+```javascript
+const obj = {
+  name: "Alice",
+  greet() {
+    console.log("Hi");
+  },
+};
+
+console.log(JSON.stringify(obj));
+```
+
+Output:
+
+```json
+{ "name": "Alice" }
+```
+
+---
+
+### `undefined` Is Ignored
+
+```javascript
+const obj = {
+  name: "Alice",
+  age: undefined,
+};
+
+console.log(JSON.stringify(obj));
+```
+
+Output:
+
+```json
+{ "name": "Alice" }
+```
+
+---
+
+# **JSON-Supported Data Types**
+
+✅ Supported:
+
+- String
+- Number
+- Boolean
+- Null
+- Object
+- Array
+
+❌ Not Supported:
+
+- Function
+- `undefined`
+- Symbol
+- BigInt
+
+---
+
+# **Deep Copy Using JSON (Older Technique)**
+
+```javascript
+const copy = JSON.parse(JSON.stringify(obj));
+```
+
+### Limitation
+
+This approach loses:
+
+```javascript
+Date;
+Map;
+Set;
+Function;
+undefined;
+Symbol;
+```
+
+Modern JavaScript prefers:
+
+```javascript
+const copy = structuredClone(obj);
+```
+
+---
+
+# **Common Use Cases**
+
+### API Communication
+
+```javascript
+fetch("/api/user").then((res) => res.json());
+```
+
+Internally, JSON data is parsed into JavaScript objects.
+
+---
+
+### Local Storage
+
+```javascript
+localStorage.setItem("user", JSON.stringify(user));
+```
+
+Retrieve:
+
+```javascript
+const user = JSON.parse(localStorage.getItem("user"));
+```
+
+---
+
+# **Best Practices**
+
+- Always validate external JSON before parsing.
+- Use `try...catch` when parsing untrusted JSON.
+- Use `JSON.stringify()` when sending data over APIs.
+- Prefer `structuredClone()` for deep cloning instead of the JSON trick.
+
+### Safe Parsing Example
+
+```javascript
+try {
+  const data = JSON.parse(jsonString);
+  console.log(data);
+} catch (error) {
+  console.error("Invalid JSON:", error.message);
+}
+```
+
+---
+
+## **Interview Tip**
+
+A strong interview answer:
+
+> "JSON (JavaScript Object Notation) is a text-based format used for data exchange. `JSON.parse()` converts a JSON string into a JavaScript object, while `JSON.stringify()` converts a JavaScript object into a JSON string. JSON supports objects, arrays, strings, numbers, booleans, and null, but does not support functions, undefined, symbols, or BigInt."
+
 ## Question 12. What is this keyword in JavaScript?
 
 ## Question 13. Difference between call(), apply(), and bind()
