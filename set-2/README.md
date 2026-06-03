@@ -2466,6 +2466,270 @@ A concise interview answer:
 
 ## Question 10. How to copy an array without affecting the original?
 
+### **Short Answer**
+
+To copy an array without affecting the original, create a **new array** instead of assigning the reference.
+
+Common ways:
+
+```javascript
+const copy1 = [...arr]; // Spread operator
+const copy2 = arr.slice(); // slice()
+const copy3 = Array.from(arr);
+```
+
+These create a **shallow copy** of the array.
+
+---
+
+# **Why a Simple Assignment Doesn't Work**
+
+Arrays are **reference types** in JavaScript.
+
+```javascript
+const original = [1, 2, 3];
+const copy = original;
+
+copy.push(4);
+
+console.log(original);
+```
+
+### Output
+
+```javascript
+[1, 2, 3, 4];
+```
+
+Both variables point to the same array in memory.
+
+```
+original ──┐
+           ├──> [1, 2, 3, 4]
+copy ──────┘
+```
+
+---
+
+# **1. Using the Spread Operator (`...`)**
+
+### Recommended Modern Approach
+
+```javascript
+const original = [1, 2, 3];
+
+const copy = [...original];
+
+copy.push(4);
+
+console.log(original); // [1, 2, 3]
+console.log(copy); // [1, 2, 3, 4]
+```
+
+### Advantages
+
+- Clean syntax
+- Easy to read
+- Widely used in modern JavaScript and React
+
+---
+
+# **2. Using `slice()`**
+
+```javascript
+const original = [1, 2, 3];
+
+const copy = original.slice();
+
+copy.push(4);
+
+console.log(original);
+```
+
+Output:
+
+```javascript
+[1, 2, 3];
+```
+
+Calling `slice()` with no arguments copies the entire array.
+
+---
+
+# **3. Using `Array.from()`**
+
+```javascript
+const original = [1, 2, 3];
+
+const copy = Array.from(original);
+```
+
+Useful when converting array-like objects to arrays.
+
+---
+
+# **4. Using `concat()`**
+
+```javascript
+const original = [1, 2, 3];
+
+const copy = [].concat(original);
+```
+
+Less common today, but still valid.
+
+---
+
+# **Important: Shallow Copy vs Deep Copy**
+
+All methods above create a **shallow copy**.
+
+---
+
+## Primitive Values
+
+```javascript
+const original = [1, 2, 3];
+
+const copy = [...original];
+
+copy[0] = 100;
+
+console.log(original);
+```
+
+Output:
+
+```javascript
+[1, 2, 3];
+```
+
+Works as expected.
+
+---
+
+## Nested Objects (Pitfall)
+
+```javascript
+const original = [{ name: "Alice" }, { name: "Bob" }];
+
+const copy = [...original];
+
+copy[0].name = "Charlie";
+
+console.log(original[0].name);
+```
+
+Output:
+
+```javascript
+Charlie;
+```
+
+Why?
+
+Because the objects inside the array are still shared references.
+
+```
+original[0] ──┐
+              ├──> { name: "Charlie" }
+copy[0] ──────┘
+```
+
+---
+
+# **Deep Copying an Array**
+
+If the array contains nested objects or arrays, use a deep-copy technique.
+
+### Modern Approach: `structuredClone()`
+
+```javascript
+const original = [{ name: "Alice" }];
+
+const copy = structuredClone(original);
+
+copy[0].name = "Charlie";
+
+console.log(original[0].name);
+```
+
+Output:
+
+```javascript
+Alice;
+```
+
+---
+
+### Older JSON Technique
+
+```javascript
+const copy = JSON.parse(JSON.stringify(original));
+```
+
+### Limitation
+
+Loses:
+
+- Functions
+- `Date` objects
+- `Map`
+- `Set`
+- `undefined`
+- Circular references
+
+`structuredClone()` is generally preferred in modern JavaScript.
+
+---
+
+# **Comparison**
+
+| Method                         | Shallow/Deep   | Modern?   |
+| ------------------------------ | -------------- | --------- |
+| `[...arr]`                     | Shallow        | ✅        |
+| `slice()`                      | Shallow        | ✅        |
+| `Array.from()`                 | Shallow        | ✅        |
+| `concat()`                     | Shallow        | ⚠️ Older  |
+| `structuredClone()`            | Deep           | ✅        |
+| `JSON.parse(JSON.stringify())` | Deep (limited) | ⚠️ Legacy |
+
+---
+
+# **Best Practices**
+
+### For normal arrays
+
+Use:
+
+```javascript
+const copy = [...arr];
+```
+
+### For nested data
+
+Use:
+
+```javascript
+const copy = structuredClone(arr);
+```
+
+### Avoid
+
+```javascript
+const copy = original;
+```
+
+when you need an independent copy.
+
+---
+
+## **Interview Tip**
+
+A strong answer is:
+
+> "Arrays are reference types, so assigning one array to another copies the reference, not the data. To create an independent copy, use the spread operator (`[...arr]`), `slice()`, or `Array.from()`. These create shallow copies. If the array contains nested objects or arrays, use `structuredClone()` to create a deep copy."
+
 ## Question 11. Explain JSON. How to parse and stringify JSON?
 
 ## Question 12. What is this keyword in JavaScript?
