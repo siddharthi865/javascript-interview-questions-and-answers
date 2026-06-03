@@ -1749,6 +1749,181 @@ function process(data) {
 
 ## Question 10. Difference between isArray() and instanceof Array
 
+**Direct answer:**
+`Array.isArray()` is the recommended, reliable way to check if a value is an array, while `instanceof Array` checks whether an object is in the Array prototype chain—but it can fail across different JavaScript execution contexts (like iframes).
+
+---
+
+# Detailed Explanation (Interview Perspective)
+
+Both methods are used to detect arrays, but they work differently internally and have different reliability guarantees.
+
+---
+
+# 1. `Array.isArray()`
+
+### Example:
+
+```javascript id="i1"
+Array.isArray([1, 2, 3]); // true
+Array.isArray({ a: 1 }); // false
+```
+
+### How it works:
+
+- It directly checks the internal `[[Class]]` of the value
+- Does NOT rely on prototype chain
+- Implemented specifically for arrays
+
+### Key characteristics:
+
+- ES5 standard (modern JS)
+- Works across iframes and windows
+- Most reliable method
+
+---
+
+# 2. `instanceof Array`
+
+### Example:
+
+```javascript id="i2"
+[1, 2, 3] instanceof Array; // true
+```
+
+### How it works:
+
+- Checks if `Array.prototype` exists in the object's prototype chain
+
+Internally equivalent to:
+
+```javascript id="i3"
+value.__proto__ === Array.prototype;
+```
+
+---
+
+# 3. Key Differences
+
+| Feature                    | Array.isArray()      | instanceof Array |
+| -------------------------- | -------------------- | ---------------- |
+| Reliability                | ⭐ High              | ⚠️ Medium        |
+| Cross-frame support        | ✅ Yes               | ❌ No            |
+| Depends on prototype chain | ❌ No                | ✅ Yes           |
+| Standardization            | ES5+ built-in method | Operator         |
+| Recommended                | ✅ Yes               | ❌ Not preferred |
+
+---
+
+# 4. Why `instanceof` can fail (important interview point)
+
+In different execution contexts (like iframes):
+
+```javascript id="i4"
+// iframe has its own Array constructor
+iframeArray instanceof Array; // false
+```
+
+### Reason:
+
+- Each frame has its own global environment
+- So `Array.prototype !== iframe.Array.prototype`
+
+---
+
+# 5. Why `Array.isArray()` works correctly
+
+```javascript id="i5"
+Array.isArray(iframeArray); // true
+```
+
+### Reason:
+
+- It checks the internal `[[Class]]` tag
+- Not dependent on global constructor reference
+
+---
+
+# 6. Internal behavior insight
+
+### `instanceof`:
+
+- Prototype chain check
+
+```text id="i6"
+obj → Array.prototype → Object.prototype → null
+```
+
+---
+
+### `Array.isArray()`:
+
+- Uses internal engine-level check (like `[[IsArray]]`)
+- Implemented in engines like V8
+
+---
+
+# 7. Edge cases
+
+## 1. Fake array-like objects
+
+```javascript id="i7"
+const fakeArray = {
+  0: "a",
+  1: "b",
+  length: 2,
+};
+
+Array.isArray(fakeArray); // false
+fakeArray instanceof Array; // false
+```
+
+---
+
+## 2. Real array
+
+```javascript id="i8"
+const arr = [];
+Array.isArray(arr); // true
+arr instanceof Array; // true
+```
+
+---
+
+# 8. When to use what?
+
+## Use `Array.isArray()` when:
+
+- Writing production code
+- Handling unknown inputs
+- Working with multiple execution contexts
+- Writing libraries/frameworks
+
+## Use `instanceof` when:
+
+- You are sure about a single runtime environment
+- Working with class-based checks in controlled codebases
+
+---
+
+# 9. Interview Trap Question
+
+### Q:
+
+Why is `typeof []` not useful?
+
+```javascript id="i9"
+typeof []; // "object"
+```
+
+👉 Because arrays are specialized objects in JavaScript.
+
+---
+
+# 10. Interview Summary Answer
+
+> `Array.isArray()` is the most reliable and recommended way to check if a value is an array because it works across all execution contexts and directly checks the internal array type. `instanceof Array` checks the prototype chain, which makes it less reliable, especially in scenarios involving multiple global contexts like iframes. Therefore, `Array.isArray()` is preferred in modern JavaScript development.
+
 ## Question 11. Explain string methods like split(), join(), includes()
 
 ## Question 12. What is the difference between substr(), substring(), and slice()?
