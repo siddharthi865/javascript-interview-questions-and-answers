@@ -3145,6 +3145,616 @@ means everything is loaded.
 
 ## Question 10. Explain JavaScript's event loop with call stack and task queue
 
+## Concise Answer
+
+The **Event Loop** is JavaScript's mechanism for handling asynchronous operations. It continuously checks whether the **Call Stack** is empty, and if so, moves pending tasks from the **Microtask Queue** and **Task (Macrotask) Queue** into the Call Stack for execution.
+
+### Priority Order
+
+```text
+1. Call Stack executes synchronous code
+2. Microtasks (Promises, queueMicrotask, MutationObserver)
+3. Macrotasks/Tasks (setTimeout, setInterval, DOM events, I/O)
+4. Repeat
+```
+
+This is why Promise callbacks usually run before `setTimeout` callbacks.
+
+---
+
+# 1. Why Do We Need an Event Loop?
+
+JavaScript is **single-threaded**, meaning it executes one piece of code at a time.
+
+```js
+console.log("A");
+console.log("B");
+console.log("C");
+```
+
+Output:
+
+```text
+A
+B
+C
+```
+
+Only one operation can be on the Call Stack at a time.
+
+However, JavaScript still supports:
+
+- Timers
+- Network requests
+- User interactions
+- File operations
+
+This is possible because of the Event Loop.
+
+---
+
+# 2. Main Components
+
+```text
+┌─────────────┐
+│ Call Stack  │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│ Event Loop  │
+└──────┬──────┘
+       │
+ ┌─────┴─────┐
+ ▼           ▼
+Microtask   Task Queue
+ Queue      (Macrotask)
+```
+
+---
+
+# 3. Call Stack
+
+The Call Stack tracks currently executing functions.
+
+Example:
+
+```js
+function first() {
+  second();
+}
+
+function second() {
+  console.log("Hello");
+}
+
+first();
+```
+
+Execution:
+
+```text
+Push first()
+Push second()
+console.log()
+Pop console.log()
+Pop second()
+Pop first()
+```
+
+Stack behavior:
+
+```text
+Top
+│ console.log
+│ second
+│ first
+Bottom
+```
+
+---
+
+# 4. Task Queue (Macrotask Queue)
+
+Contains tasks such as:
+
+- `setTimeout`
+- `setInterval`
+- DOM events
+- I/O operations
+
+Example:
+
+```js
+setTimeout(() => {
+  console.log("Timer");
+}, 0);
+```
+
+The callback is placed into the Task Queue after the timer expires.
+
+It does **not** execute immediately.
+
+---
+
+# 5. Microtask Queue
+
+Contains:
+
+- Promise callbacks (`then`, `catch`, `finally`)
+- `queueMicrotask()`
+- `MutationObserver`
+
+Example:
+
+```js
+Promise.resolve().then(() => {
+  console.log("Promise");
+});
+```
+
+The callback enters the Microtask Queue.
+
+---
+
+# 6. Basic Event Loop Example
+
+```js
+console.log("A");
+
+setTimeout(() => {
+  console.log("B");
+}, 0);
+
+console.log("C");
+```
+
+### Output
+
+```text
+A
+C
+B
+```
+
+### Why?
+
+#### Step 1
+
+```js
+console.log("A");
+```
+
+Output:
+
+```text
+A
+```
+
+---
+
+#### Step 2
+
+```js
+setTimeout(...)
+```
+
+Timer callback goes to Task Queue.
+
+---
+
+#### Step 3
+
+```js
+console.log("C");
+```
+
+Output:
+
+```text
+C
+```
+
+---
+
+#### Step 4
+
+Call Stack becomes empty.
+
+Event Loop moves timer callback from Task Queue to Call Stack.
+
+Output:
+
+```text
+B
+```
+
+Final:
+
+```text
+A
+C
+B
+```
+
+---
+
+# 7. Promise vs setTimeout
+
+Very common interview question.
+
+```js
+console.log("A");
+
+setTimeout(() => {
+  console.log("B");
+}, 0);
+
+Promise.resolve().then(() => {
+  console.log("C");
+});
+
+console.log("D");
+```
+
+### Output
+
+```text
+A
+D
+C
+B
+```
+
+---
+
+### Why?
+
+#### Synchronous code
+
+```text
+A
+D
+```
+
+---
+
+#### Queues
+
+```text
+Microtask Queue:
+C
+
+Task Queue:
+B
+```
+
+---
+
+#### Event Loop Priority
+
+Microtasks first:
+
+```text
+C
+```
+
+Then Task Queue:
+
+```text
+B
+```
+
+Final:
+
+```text
+A
+D
+C
+B
+```
+
+---
+
+# 8. Event Loop Algorithm
+
+Simplified:
+
+```text
+while (true) {
+
+  Execute Call Stack
+
+  If stack empty:
+      Execute ALL microtasks
+
+  If microtasks empty:
+      Execute ONE macrotask
+
+  Repeat
+}
+```
+
+Key interview point:
+
+> The Event Loop drains the entire Microtask Queue before processing the next Macrotask.
+
+---
+
+# 9. Multiple Promises Example
+
+```js
+console.log(1);
+
+Promise.resolve().then(() => {
+  console.log(2);
+});
+
+Promise.resolve().then(() => {
+  console.log(3);
+});
+
+console.log(4);
+```
+
+### Output
+
+```text
+1
+4
+2
+3
+```
+
+---
+
+### Execution
+
+Synchronous:
+
+```text
+1
+4
+```
+
+Microtasks:
+
+```text
+2
+3
+```
+
+---
+
+# 10. Tricky Interview Question
+
+```js
+console.log(1);
+
+setTimeout(() => {
+  console.log(2);
+}, 0);
+
+Promise.resolve().then(() => {
+  console.log(3);
+
+  setTimeout(() => {
+    console.log(4);
+  }, 0);
+});
+
+Promise.resolve().then(() => {
+  console.log(5);
+});
+
+console.log(6);
+```
+
+### Predict Output
+
+---
+
+### Answer
+
+```text
+1
+6
+3
+5
+2
+4
+```
+
+---
+
+### Why?
+
+#### Synchronous
+
+```text
+1
+6
+```
+
+#### Microtasks
+
+```text
+3
+5
+```
+
+While executing `3`, another timer (`4`) is scheduled.
+
+#### Macrotasks
+
+First timer:
+
+```text
+2
+```
+
+Second timer:
+
+```text
+4
+```
+
+---
+
+# 11. Microtask Starvation
+
+Advanced interview topic.
+
+```js
+function loop() {
+  Promise.resolve().then(loop);
+}
+
+loop();
+
+setTimeout(() => {
+  console.log("Timer");
+}, 0);
+```
+
+### What happens?
+
+The timer may never execute.
+
+Why?
+
+```text
+Microtask
+→ creates Microtask
+→ creates Microtask
+→ creates Microtask
+...
+```
+
+The Event Loop keeps draining microtasks and never reaches the Task Queue.
+
+This is called **microtask starvation**.
+
+---
+
+# 12. Browser vs Node.js
+
+### Browser
+
+Microtasks:
+
+```js
+Promise.then();
+queueMicrotask();
+```
+
+Macrotasks:
+
+```js
+setTimeout()
+setInterval()
+click events
+```
+
+---
+
+### Node.js
+
+Additional queues:
+
+- `process.nextTick()`
+- Check phase (`setImmediate`)
+- Timers phase
+- Poll phase
+
+Interviewers may ask this distinction for backend roles.
+
+---
+
+# 13. Visual Example
+
+```js
+console.log("Start");
+
+setTimeout(() => console.log("Timer"), 0);
+
+Promise.resolve().then(() => console.log("Promise"));
+
+console.log("End");
+```
+
+Flow:
+
+```text
+Call Stack
+-----------
+Start
+End
+
+Microtask Queue
+-----------
+Promise
+
+Task Queue
+-----------
+Timer
+```
+
+Execution:
+
+```text
+Start
+End
+Promise
+Timer
+```
+
+---
+
+# Common Interview Rules
+
+### Rule 1
+
+```js
+Promise.then();
+```
+
+always beats:
+
+```js
+setTimeout(fn, 0);
+```
+
+because microtasks have higher priority.
+
+---
+
+### Rule 2
+
+All synchronous code runs first.
+
+---
+
+### Rule 3
+
+The entire Microtask Queue is drained before the next Macrotask.
+
+---
+
+### Rule 4
+
+`setTimeout(fn, 0)` means:
+
+> Execute after the current call stack and queued microtasks complete.
+
+Not immediately.
+
+---
+
+# Interview Summary
+
+> JavaScript's Event Loop coordinates execution between the Call Stack, Microtask Queue, and Task Queue. Synchronous code runs on the Call Stack first. When the stack becomes empty, the Event Loop executes all pending microtasks (such as Promise callbacks), then processes macrotasks like `setTimeout` callbacks. This is why Promise handlers run before timer callbacks, even when the timer delay is `0ms`. Understanding the priority of the Call Stack, Microtasks, and Macrotasks is essential for predicting asynchronous JavaScript behavior.
+
 ## Question 11. Difference between microtasks and macrotasks
 
 ## Question 12. How to identify and fix memory leaks
