@@ -2839,6 +2839,332 @@ for values 10–35.
 
 ## Question 10. How to round a number to a fixed number of decimal places?
 
+## Short Answer
+
+Use the **`toFixed()`** method:
+
+```js
+const num = 12.34567;
+
+console.log(num.toFixed(2));
+```
+
+Output:
+
+```js
+"12.35";
+```
+
+`toFixed(2)` rounds the number to **2 decimal places** and returns a **string**.
+
+---
+
+# 1. Using `toFixed()`
+
+### Syntax
+
+```js
+number.toFixed(digits);
+```
+
+- `digits` = number of decimal places
+- Returns a **string**
+
+### Example
+
+```js
+const price = 99.999;
+
+console.log(price.toFixed(2));
+```
+
+Output:
+
+```js
+"100.00";
+```
+
+---
+
+## More Examples
+
+```js
+console.log((12.3456).toFixed(0)); // "12"
+console.log((12.3456).toFixed(1)); // "12.3"
+console.log((12.3456).toFixed(2)); // "12.35"
+console.log((12.3456).toFixed(3)); // "12.346"
+```
+
+---
+
+# 2. If You Need a Number Instead of a String
+
+Since `toFixed()` returns a string:
+
+```js
+const result = (12.3456).toFixed(2);
+
+console.log(typeof result);
+```
+
+Output:
+
+```js
+"string";
+```
+
+Convert back to a number:
+
+```js
+const result = Number((12.3456).toFixed(2));
+
+console.log(result);
+```
+
+Output:
+
+```js
+12.35;
+```
+
+or
+
+```js
+const result = parseFloat((12.3456).toFixed(2));
+```
+
+---
+
+# 3. Using `Math.round()`
+
+Another common approach:
+
+```js
+const num = 12.3456;
+
+const rounded = Math.round(num * 100) / 100;
+
+console.log(rounded);
+```
+
+Output:
+
+```js
+12.35;
+```
+
+### Formula
+
+```js
+Math.round(num * factor) / factor;
+```
+
+For 2 decimal places:
+
+```js
+factor = 100;
+```
+
+For 3 decimal places:
+
+```js
+factor = 1000;
+```
+
+Example:
+
+```js
+Math.round(12.34567 * 1000) / 1000;
+```
+
+Output:
+
+```js
+12.346;
+```
+
+---
+
+# 4. Using `Math.floor()` and `Math.ceil()`
+
+### Always Round Down
+
+```js
+Math.floor(12.999 * 100) / 100;
+```
+
+Output:
+
+```js
+12.99;
+```
+
+### Always Round Up
+
+```js
+Math.ceil(12.111 * 100) / 100;
+```
+
+Output:
+
+```js
+12.12;
+```
+
+---
+
+# Common Interview Pitfall: Floating-Point Precision
+
+JavaScript uses IEEE-754 floating-point arithmetic.
+
+Example:
+
+```js
+console.log((1.005).toFixed(2));
+```
+
+You might expect:
+
+```js
+"1.01";
+```
+
+But in some environments you may get:
+
+```js
+"1.00";
+```
+
+because internally:
+
+```js
+1.005;
+```
+
+is stored as approximately:
+
+```js
+1.004999999...
+```
+
+---
+
+## Safer Rounding
+
+```js
+const num = 1.005;
+
+const result = Math.round((num + Number.EPSILON) * 100) / 100;
+
+console.log(result);
+```
+
+Output:
+
+```js
+1.01;
+```
+
+### Why `Number.EPSILON`?
+
+It helps compensate for floating-point precision errors.
+
+---
+
+# Real-World Examples
+
+## Currency Formatting
+
+```js
+const amount = 123.456;
+
+console.log(amount.toFixed(2));
+```
+
+Output:
+
+```js
+"123.46";
+```
+
+---
+
+## Percentage Display
+
+```js
+const percentage = 98.7654;
+
+console.log(percentage.toFixed(1) + "%");
+```
+
+Output:
+
+```js
+"98.8%";
+```
+
+---
+
+# Comparison
+
+| Method              | Returns | Use Case                  |
+| ------------------- | ------- | ------------------------- |
+| `toFixed(n)`        | String  | Display values            |
+| `Number(toFixed())` | Number  | Rounded numeric value     |
+| `Math.round()`      | Number  | Mathematical calculations |
+| `Math.floor()`      | Number  | Always round down         |
+| `Math.ceil()`       | Number  | Always round up           |
+
+---
+
+# Common Interview Questions
+
+### Q1: Does `toFixed()` return a number?
+
+No.
+
+```js
+typeof (12.34).toFixed(2);
+```
+
+Output:
+
+```js
+"string";
+```
+
+---
+
+### Q2: Which method is best for displaying money?
+
+```js
+amount.toFixed(2);
+```
+
+because you typically want a formatted string.
+
+---
+
+### Q3: Which method is better for calculations?
+
+```js
+Math.round();
+```
+
+or
+
+```js
+Number(value.toFixed(n));
+```
+
+because they return numeric values.
+
+---
+
+# Interview-Friendly Summary
+
+> To round a number to a fixed number of decimal places, JavaScript provides `toFixed()`, which rounds the value and returns a string. For example, `(12.3456).toFixed(2)` returns `"12.35"`. If a numeric result is required, convert the string using `Number()` or `parseFloat()`. For mathematical calculations, `Math.round(num * factor) / factor` is commonly used. Be aware of floating-point precision issues and consider using `Number.EPSILON` for more accurate rounding in edge cases.
+
 ## Question 11. Difference between parseFloat and Number()
 
 ## Question 12. What is the difference between undefined, null, and an empty string?
