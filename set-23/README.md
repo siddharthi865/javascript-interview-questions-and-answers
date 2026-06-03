@@ -3809,6 +3809,380 @@ So you either:
 
 ## Question 10. How to implement caching in Node.js with LRU cache
 
+## ✅ Short Answer
+
+To implement caching in Node.js using an **LRU (Least Recently Used) cache**, you typically use an in-memory data structure that:
+
+- Stores a fixed number of items
+- Automatically removes the **least recently accessed item** when the limit is exceeded
+
+The most common approach is using the `lru-cache` package or implementing it with a `Map`.
+
+---
+
+# 🧠 What is LRU Cache?
+
+An LRU cache evicts the **least recently used item first** when it reaches capacity.
+
+### Example:
+
+```txt id="xk2q9a"
+Capacity = 3
+
+Access order:
+A → B → C
+
+Add D → A gets removed (least recently used)
+```
+
+---
+
+# Why LRU Cache is Useful in Node.js
+
+In Node.js applications:
+
+- Reduces database load
+- Improves API response time
+- Stores frequently accessed computations
+- Useful for rate-heavy or repeated queries
+
+---
+
+# ⚙️ Option 1: Using `lru-cache` (Recommended)
+
+## Install
+
+```bash id="9qv8mf"
+npm install lru-cache
+```
+
+---
+
+## Basic Example
+
+```js id="l2x9qv"
+const LRUCache = require("lru-cache");
+
+const cache = new LRUCache({
+  max: 3, // max items
+  ttl: 1000 * 60 * 5, // optional: 5 minutes
+});
+
+cache.set("a", 1);
+cache.set("b", 2);
+cache.set("c", 3);
+
+console.log(cache.get("a")); // 1
+
+cache.set("d", 4); // removes "b" (least recently used)
+```
+
+---
+
+# 🧠 How It Works Internally
+
+LRU cache is typically implemented using:
+
+- A **Map** (for O(1) lookup)
+- A **doubly linked list** (for tracking usage order)
+
+---
+
+### Structure:
+
+```txt id="m1k7xp"
+Most Recently Used → Head
+Least Recently Used → Tail
+```
+
+On access:
+
+```txt id="8kq2nm"
+Move item to head
+```
+
+On overflow:
+
+```txt id="z9p3tw"
+Remove tail node
+```
+
+---
+
+# ⚙️ Option 2: Custom LRU Cache Implementation
+
+This is a common **FAANG interview question**.
+
+---
+
+## Implementation using Map (simplified)
+
+```js id="k8x2qv"
+class LRUCache {
+  constructor(limit = 3) {
+    this.limit = limit;
+    this.cache = new Map();
+  }
+
+  get(key) {
+    if (!this.cache.has(key)) return -1;
+
+    const value = this.cache.get(key);
+
+    // refresh key (mark as recently used)
+    this.cache.delete(key);
+    this.cache.set(key, value);
+
+    return value;
+  }
+
+  set(key, value) {
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    }
+
+    this.cache.set(key, value);
+
+    // evict least recently used
+    if (this.cache.size > this.limit) {
+      const oldestKey = this.cache.keys().next().value;
+      this.cache.delete(oldestKey);
+    }
+  }
+}
+```
+
+---
+
+## Usage:
+
+```js id="x9m2qa"
+const cache = new LRUCache(3);
+
+cache.set("a", 1);
+cache.set("b", 2);
+cache.set("c", 3);
+
+cache.get("a"); // refreshes "a"
+
+cache.set("d", 4); // removes "b"
+```
+
+---
+
+# 🧠 Why Map Works Well
+
+In modern JS:
+
+- `Map` preserves insertion order
+- `delete + set` updates recency
+
+So we can simulate LRU behavior efficiently.
+
+---
+
+# ⚡ Option 3: LRU Cache in Express API
+
+Example caching database results:
+
+```js id="p4q8xv"
+const LRUCache = require("lru-cache");
+
+const cache = new LRUCache({ max: 100 });
+
+app.get("/user/:id", async (req, res) => {
+  const id = req.params.id;
+
+  // 1. Check cache
+  if (cache.has(id)) {
+    return res.json({
+      source: "cache",
+      data: cache.get(id),
+    });
+  }
+
+  // 2. Simulate DB call
+  const user = await db.findUser(id);
+
+  // 3. Store in cache
+  cache.set(id, user);
+
+  res.json({
+    source: "db",
+    data: user,
+  });
+});
+```
+
+---
+
+# 📊 Cache Flow
+
+```txt id="z1k9qp"
+Request
+  ↓
+Check LRU Cache
+  ↓ yes
+Return cached response
+
+  ↓ no
+Fetch DB
+  ↓
+Store in cache
+  ↓
+Return response
+```
+
+---
+
+# ⏱️ TTL (Time-Based Expiration)
+
+LRU alone is not enough; add TTL:
+
+```js id="v7k1mz"
+const cache = new LRUCache({
+  max: 100,
+  ttl: 1000 * 60, // 1 minute
+});
+```
+
+### Why TTL matters:
+
+- Prevents stale data
+- Automatically refreshes old entries
+
+---
+
+# ⚖️ LRU vs Other Caching Strategies
+
+| Strategy | Behavior                      | Use Case             |
+| -------- | ----------------------------- | -------------------- |
+| LRU      | Removes least recently used   | General API caching  |
+| FIFO     | Removes oldest inserted       | Queue-like systems   |
+| LFU      | Removes least frequently used | Long-term hot data   |
+| TTL      | Removes based on time         | Expiry-based caching |
+
+---
+
+# 🚨 Common Pitfalls
+
+## ❌ Using unlimited cache
+
+```js
+const cache = new Map();
+```
+
+Risk:
+
+- Memory leaks
+- Process crash
+
+---
+
+## ❌ Caching everything
+
+Not all data should be cached:
+
+- Sensitive data ❌
+- Frequently changing data ❌
+
+---
+
+## ❌ No invalidation strategy
+
+Bad:
+
+```txt id="a2m8qz"
+DB updated → cache still stale
+```
+
+---
+
+## ❌ Using in-memory cache in distributed systems
+
+Problem:
+
+```txt id="v8k2xm"
+Server A cache ≠ Server B cache
+```
+
+---
+
+# 🌐 Production Alternative: Redis LRU-like caching
+
+In distributed systems, use:
+
+Redis
+
+Redis supports:
+
+- TTL
+- Eviction policies (LRU, LFU)
+- Shared cache across servers
+
+---
+
+# 🚀 Best Practices
+
+## 1. Set max size
+
+```js
+max: 1000;
+```
+
+Prevents memory overload.
+
+---
+
+## 2. Use TTL + LRU together
+
+Best combination:
+
+```js
+ttl + max;
+```
+
+---
+
+## 3. Cache only expensive operations
+
+Good:
+
+- DB queries
+- API responses
+- Computed results
+
+Bad:
+
+- Small static values
+- Highly dynamic data
+
+---
+
+## 4. Monitor cache hit ratio
+
+```txt id="k9x2ab"
+cache hits / total requests
+```
+
+---
+
+# 🧠 Mental Model
+
+Think of LRU cache like:
+
+```txt id="m3x8qp"
+Small desk:
+- Frequently used papers stay on top
+- Old papers fall off automatically
+```
+
+---
+
+# 🎯 Interview Summary
+
+> LRU cache in Node.js is a caching mechanism that stores a limited number of items and evicts the least recently used entry when the capacity is exceeded. It is commonly implemented using a Map or dedicated libraries like lru-cache. LRU improves performance by reducing database and computation load for frequently accessed data. In production systems, it is often combined with TTL for expiration and replaced or complemented by distributed caching systems like Redis to handle multi-instance environments.
+
 ## Question 11. Difference between callback-based APIs and promise-based APIs in Node.js
 
 ## Question 12. How to handle uncaught exceptions gracefully
