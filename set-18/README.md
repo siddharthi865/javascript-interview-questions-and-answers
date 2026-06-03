@@ -3556,6 +3556,308 @@ Key concepts interviewers expect:
 
 ## Question 10. How to track upload progress using JavaScript
 
+## ✅ Direct Answer
+
+To track upload progress in JavaScript, you typically use **`XMLHttpRequest.upload.onprogress`**, because `fetch()` does not natively support upload progress events in a simple way.
+
+---
+
+# 🧠 Interview Explanation
+
+Upload progress tracking works by listening to **bytes sent vs total bytes** during an HTTP request.
+
+The browser exposes this via:
+
+- `xhr.upload.onprogress` → upload progress
+- `xhr.onprogress` → download progress
+
+---
+
+# 📌 Basic Upload Progress Example (XHR)
+
+```javascript id="p7qk2m"
+const xhr = new XMLHttpRequest();
+
+xhr.open("POST", "/upload");
+
+xhr.upload.onprogress = function (event) {
+  if (event.lengthComputable) {
+    const percent = (event.loaded / event.total) * 100;
+    console.log(`Upload Progress: ${percent.toFixed(2)}%`);
+  }
+};
+
+xhr.onload = function () {
+  console.log("Upload complete");
+};
+
+xhr.onerror = function () {
+  console.log("Upload failed");
+};
+
+const formData = new FormData();
+formData.append("file", fileInput.files[0]);
+
+xhr.send(formData);
+```
+
+---
+
+# 🧠 Key Concept
+
+### `ProgressEvent` provides:
+
+```javascript id="k3l9wq"
+event.loaded; // bytes uploaded so far
+event.total; // total bytes
+```
+
+So:
+
+```javascript id="r9x1ab"
+percent = (loaded / total) * 100;
+```
+
+---
+
+# 📊 Real-World Example (UI Progress Bar)
+
+```html id="m8t2vn"
+<input type="file" id="file" />
+<progress id="progress" value="0" max="100"></progress>
+```
+
+```javascript id="q2n7ks"
+const progressBar = document.getElementById("progress");
+
+const xhr = new XMLHttpRequest();
+xhr.open("POST", "/upload");
+
+xhr.upload.onprogress = (event) => {
+  if (event.lengthComputable) {
+    const percent = (event.loaded / event.total) * 100;
+    progressBar.value = percent;
+  }
+};
+
+xhr.onload = () => {
+  progressBar.value = 100;
+  console.log("Done");
+};
+
+const formData = new FormData();
+formData.append("file", fileInput.files[0]);
+
+xhr.send(formData);
+```
+
+---
+
+# ⚡ Fetch API Limitation (Important Interview Point)
+
+### ❌ Fetch does NOT directly support upload progress
+
+```javascript id="v0k9qp"
+fetch("/upload", {
+  method: "POST",
+  body: formData,
+});
+```
+
+You cannot do:
+
+```javascript id="x7m2qa"
+// ❌ Not supported
+fetch().onprogress = ...
+```
+
+---
+
+# 🧠 Why Fetch lacks upload progress
+
+- Fetch is built on streams
+- Upload happens inside the browser network stack
+- No exposed event hooks for upload bytes (in most browsers)
+
+---
+
+# 🔥 Modern Fetch Workaround (Advanced)
+
+You can approximate progress using **ReadableStream + chunked upload**, but it's complex.
+
+Example idea:
+
+```javascript id="a1p9kq"
+const stream = file.stream();
+```
+
+Then manually track chunks—but this is rarely used in interviews or production unless doing custom streaming uploads.
+
+---
+
+# ⚖️ Best Practice Comparison
+
+| Feature                    | XMLHttpRequest | Fetch         |
+| -------------------------- | -------------- | ------------- |
+| Upload progress            | ✅ Built-in    | ❌ Not native |
+| Async/await                | ❌             | ✅            |
+| Modern API                 | ❌             | ✅            |
+| Simplicity for uploads     | ⚠️ moderate    | ✅            |
+| Production upload tracking | ✅ best choice | ⚠️ limited    |
+
+---
+
+# 🧠 Advanced Interview Insight
+
+### Two types of progress:
+
+## 1. Upload Progress
+
+Tracked via:
+
+```javascript id="u2k4dn"
+xhr.upload.onprogress;
+```
+
+## 2. Download Progress
+
+Tracked via:
+
+```javascript id="h8q1lm"
+xhr.onprogress;
+```
+
+---
+
+# 📌 Example: Download Progress
+
+```javascript id="w9k2lp"
+xhr.onprogress = (event) => {
+  if (event.lengthComputable) {
+    console.log("Download:", event.loaded / event.total);
+  }
+};
+```
+
+---
+
+# 🔥 Advanced Pattern: Promise Wrapper for XHR Upload
+
+```javascript id="z8n1qp"
+function uploadWithProgress(file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.open("POST", "/upload");
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        onProgress((event.loaded / event.total) * 100);
+      }
+    };
+
+    xhr.onload = () => resolve(xhr.response);
+    xhr.onerror = () => reject(new Error("Upload failed"));
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    xhr.send(formData);
+  });
+}
+```
+
+Usage:
+
+```javascript id="x9k3lm"
+uploadWithProgress(file, (percent) => {
+  console.log(percent.toFixed(2) + "%");
+});
+```
+
+---
+
+# 🧠 Cancellation + Progress Together
+
+```javascript id="q7m2vn"
+const xhr = new XMLHttpRequest();
+
+xhr.upload.onprogress = (e) => {
+  console.log(e.loaded / e.total);
+};
+
+xhr.open("POST", "/upload");
+
+xhr.send(formData);
+
+// cancel if needed
+xhr.abort();
+```
+
+---
+
+# ⚠️ Common Interview Pitfalls
+
+### ❌ Assuming fetch supports progress
+
+```javascript id="k2p9mn"
+fetch("/upload").onprogress; // ❌ wrong
+```
+
+---
+
+### ❌ Not checking `lengthComputable`
+
+```javascript id="v7m1qp"
+event.loaded / event.total;
+```
+
+can fail if `total` is unknown.
+
+Correct:
+
+```javascript id="b9k2lm"
+if (event.lengthComputable) {
+  // safe
+}
+```
+
+---
+
+### ❌ Using wrong event
+
+```javascript id="n4k8qp"
+xhr.onprogress; // download, not upload
+```
+
+For upload:
+
+```javascript id="t8m2qp"
+xhr.upload.onprogress;
+```
+
+---
+
+# 🚀 Interview-Ready Summary
+
+Upload progress in JavaScript is primarily implemented using **XMLHttpRequest's `upload.onprogress` event**, which provides real-time byte-level tracking of data being sent to the server.
+
+```javascript id="finalxp"
+xhr.upload.onprogress = (event) => {
+  const percent = (event.loaded / event.total) * 100;
+};
+```
+
+Key interview concepts:
+
+- `ProgressEvent` (`loaded`, `total`)
+- `xhr.upload.onprogress` vs `xhr.onprogress`
+- `FormData` usage
+- Fetch limitations for upload progress
+- Browser networking model
+- UI progress bar integration
+- Optional cancellation via `xhr.abort()`
+
 ## Question 11. Difference between `localStorage` and `IndexedDB`
 
 ## Question 12. How to store complex objects in `localStorage`
