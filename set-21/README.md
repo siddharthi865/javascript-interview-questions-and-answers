@@ -3056,6 +3056,314 @@ Efficient infinite scrolling is implemented by loading data in paginated chunks 
 
 ## Question 10. Difference between `requestAnimationFrame` and `setInterval` for animations
 
+## Short Answer
+
+`requestAnimationFrame (rAF)` is a browser-optimized API for smooth animations that syncs with the screen refresh rate, while `setInterval` runs code at fixed time intervals regardless of rendering cycles. For animations, `requestAnimationFrame` is preferred because it is more efficient, smoother, and avoids layout thrashing or unnecessary frame rendering.
+
+---
+
+# 1. Core Difference
+
+| Feature        | `requestAnimationFrame`           | `setInterval`           |
+| -------------- | --------------------------------- | ----------------------- |
+| Timing control | Syncs with browser repaint        | Fixed time interval     |
+| Frame rate     | Typically 60fps (or display rate) | Independent of FPS      |
+| Efficiency     | High (pause when tab inactive)    | Low (keeps running)     |
+| Smoothness     | Very smooth                       | Can cause jank          |
+| Power usage    | Optimized                         | Wasteful                |
+| Best use       | Animations                        | Simple timers / polling |
+
+---
+
+# 2. How `requestAnimationFrame` Works
+
+## Concept
+
+The browser calls your callback **before each repaint**.
+
+---
+
+## Example
+
+```javascript id="raf1"
+function animate() {
+  console.log("Frame update");
+
+  requestAnimationFrame(animate);
+}
+
+requestAnimationFrame(animate);
+```
+
+---
+
+## Execution Flow
+
+```text id="flow1"
+JS → rAF callback → Paint → next frame → rAF callback → ...
+```
+
+---
+
+## Key Benefit
+
+- Runs exactly when the browser is ready to paint
+- Automatically throttled in background tabs
+
+---
+
+# 3. How `setInterval` Works
+
+## Concept
+
+Runs a function repeatedly every fixed delay.
+
+---
+
+## Example
+
+```javascript id="si1"
+setInterval(() => {
+  console.log("Runs every 16ms");
+}, 16);
+```
+
+---
+
+## Execution Flow
+
+```text id="flow2"
+Timer → JS execution → Timer → JS execution → ...
+```
+
+---
+
+## Problem
+
+It does NOT care about rendering timing.
+
+---
+
+# 4. Why `setInterval` is bad for animations
+
+## ❌ Issues
+
+### 1. Can drift over time
+
+Because JS execution time is not accounted for.
+
+---
+
+### 2. May run faster than screen refresh
+
+Example:
+
+- Screen: 60 FPS → ~16.67ms per frame
+- setInterval: 10ms → wasted frames
+
+---
+
+### 3. Causes frame drops (jank)
+
+If JS runs while browser is painting → stutter.
+
+---
+
+### 4. Runs in background tabs
+
+Wastes CPU and battery.
+
+---
+
+# 5. Why `requestAnimationFrame` is better
+
+## ✔ Syncs with repaint cycle
+
+```text id="raf2"
+Frame starts → JS runs → Layout → Paint → Frame ends
+```
+
+---
+
+## ✔ Automatically optimized
+
+- Pauses when tab is hidden
+- Batches DOM updates
+- Avoids unnecessary calculations
+
+---
+
+## ✔ Smooth animations
+
+Example:
+
+```javascript id="raf3"
+let position = 0;
+
+function animate() {
+  position += 2;
+  box.style.transform = `translateX(${position}px)`;
+
+  requestAnimationFrame(animate);
+}
+
+requestAnimationFrame(animate);
+```
+
+---
+
+# 6. Practical Comparison Example
+
+## ❌ Using setInterval
+
+```javascript id="bad1"
+setInterval(() => {
+  box.style.left = box.offsetLeft + 5 + "px";
+}, 16);
+```
+
+Problems:
+
+- Layout thrashing (`offsetLeft`)
+- Not frame-synced
+- Janky movement
+
+---
+
+## ✔ Using requestAnimationFrame
+
+```javascript id="good1"
+let x = 0;
+
+function move() {
+  x += 5;
+  box.style.transform = `translateX(${x}px)`;
+
+  requestAnimationFrame(move);
+}
+
+requestAnimationFrame(move);
+```
+
+---
+
+# 7. Performance Insight (Important Interview Point)
+
+## `requestAnimationFrame` aligns with browser pipeline:
+
+```text id="pipe1"
+JS → Style → Layout → Paint → Composite
+     ↑
+   rAF runs here (before paint)
+```
+
+This ensures:
+
+- No forced reflows mid-frame
+- Better GPU compositing opportunities
+
+---
+
+## `setInterval` is independent:
+
+```text id="pipe2"
+Timer → JS → (may interrupt rendering pipeline)
+```
+
+---
+
+# 8. Controlling FPS with rAF
+
+You can mimic intervals safely:
+
+```javascript id="fps1"
+let lastTime = 0;
+const fps = 30;
+const interval = 1000 / fps;
+
+function animate(time) {
+  if (time - lastTime >= interval) {
+    console.log("Update frame");
+    lastTime = time;
+  }
+
+  requestAnimationFrame(animate);
+}
+
+requestAnimationFrame(animate);
+```
+
+---
+
+# 9. When to use each
+
+## Use `requestAnimationFrame` for:
+
+- Animations (DOM, canvas, WebGL)
+- Smooth transitions
+- Game loops
+- Scroll-based effects
+
+---
+
+## Use `setInterval` for:
+
+- Polling APIs
+- Background timers (non-UI critical)
+- Simple repeated tasks (e.g., countdown logic)
+
+---
+
+# 10. Common Interview Mistakes
+
+## ❌ Using setInterval for animations
+
+Leads to:
+
+- janky motion
+- high CPU usage
+
+---
+
+## ❌ Not canceling rAF
+
+```javascript id="bad2"
+requestAnimationFrame(loop); // never stopped
+```
+
+Fix:
+
+```javascript id="good2"
+cancelAnimationFrame(id);
+```
+
+---
+
+## ❌ Mixing rAF with layout reads improperly
+
+```javascript id="bad3"
+requestAnimationFrame(() => {
+  box.style.width = box.offsetWidth + 10 + "px";
+});
+```
+
+Still causes layout recalculation if not batched properly.
+
+---
+
+# 11. Mental Model (Interview Gold)
+
+Think:
+
+> `requestAnimationFrame` is “animation-aware scheduling”
+> `setInterval` is “blind time-based scheduling”
+
+---
+
+# Final Interview Summary
+
+`requestAnimationFrame` is the preferred method for animations because it synchronizes updates with the browser’s rendering cycle, resulting in smoother performance, reduced CPU usage, and avoidance of layout thrashing. It pauses in inactive tabs and ensures updates occur just before repaint, making animations visually consistent. In contrast, `setInterval` executes code at fixed time intervals independent of the rendering pipeline, which can lead to jank, wasted CPU cycles, and inconsistent frame timing. Therefore, `requestAnimationFrame` should be used for all UI animations, while `setInterval` is better suited for non-visual periodic tasks like polling or timers.
+
 ## Question 11. How to reduce JavaScript blocking time for page load
 
 ## Question 12. How to implement code splitting in JavaScript
