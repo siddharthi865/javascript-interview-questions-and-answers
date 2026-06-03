@@ -2096,6 +2096,236 @@ Default = **bubbling phase**.
 
 ## Question 10. How to get the current timestamp in JavaScript?
 
+## Short Answer
+
+The most common ways to get the current timestamp in JavaScript are:
+
+```js
+Date.now();
+```
+
+or
+
+```js
+new Date().getTime();
+```
+
+Both return the number of **milliseconds since January 1, 1970 (Unix Epoch)**.
+
+---
+
+# 1. Using `Date.now()` (Recommended)
+
+```js
+const timestamp = Date.now();
+
+console.log(timestamp);
+```
+
+Example output:
+
+```js
+1718179200000;
+```
+
+### What it returns
+
+```text
+Milliseconds since:
+January 1, 1970 00:00:00 UTC
+```
+
+This is the modern and preferred approach.
+
+---
+
+# 2. Using `new Date().getTime()`
+
+```js
+const timestamp = new Date().getTime();
+
+console.log(timestamp);
+```
+
+Output:
+
+```js
+1718179200000;
+```
+
+Equivalent to:
+
+```js
+Date.now() === new Date().getTime();
+```
+
+Usually evaluates to:
+
+```js
+true;
+```
+
+---
+
+# 3. Using `new Date().valueOf()`
+
+```js
+const timestamp = new Date().valueOf();
+
+console.log(timestamp);
+```
+
+Also returns:
+
+```js
+1718179200000;
+```
+
+Because `valueOf()` returns the primitive timestamp value of a Date object.
+
+---
+
+# Milliseconds vs Seconds
+
+JavaScript timestamps are in **milliseconds**.
+
+### Milliseconds
+
+```js
+Date.now();
+// 1718179200000
+```
+
+### Seconds
+
+```js
+Math.floor(Date.now() / 1000);
+// 1718179200
+```
+
+A common interview question is:
+
+> "Why divide by 1000?"
+
+Because Unix timestamps are often stored in seconds in databases and APIs.
+
+---
+
+# Converting Timestamp to Date
+
+```js
+const timestamp = Date.now();
+
+const date = new Date(timestamp);
+
+console.log(date);
+```
+
+Output:
+
+```js
+Wed Jun 12 2026 ...
+```
+
+---
+
+# Getting High-Resolution Timing
+
+For performance measurements:
+
+```js
+performance.now();
+```
+
+Example:
+
+```js
+console.log(performance.now());
+```
+
+Output:
+
+```js
+1234.5678;
+```
+
+### Difference
+
+| Method              | Purpose                          |
+| ------------------- | -------------------------------- |
+| `Date.now()`        | Current real-world timestamp     |
+| `performance.now()` | Precise elapsed time measurement |
+
+---
+
+# Example: Measure Execution Time
+
+```js
+const start = performance.now();
+
+for (let i = 0; i < 1000000; i++) {}
+
+const end = performance.now();
+
+console.log(`Took ${end - start} ms`);
+```
+
+This is more accurate than `Date.now()` for benchmarking.
+
+---
+
+# Common Interview Examples
+
+### Generate Unique ID
+
+```js
+const id = Date.now();
+
+console.log(id);
+```
+
+---
+
+### Store Creation Time
+
+```js
+const user = {
+  name: "John",
+  createdAt: Date.now(),
+};
+```
+
+---
+
+### Check Elapsed Time
+
+```js
+const start = Date.now();
+
+// some operation
+
+const elapsed = Date.now() - start;
+
+console.log(elapsed + " ms");
+```
+
+---
+
+# Comparison
+
+| Method                 | Returns                      | Recommended         |
+| ---------------------- | ---------------------------- | ------------------- |
+| `Date.now()`           | Timestamp in ms              | ✅ Yes              |
+| `new Date().getTime()` | Timestamp in ms              | ✅ Yes              |
+| `new Date().valueOf()` | Timestamp in ms              | ⚠️ Less common      |
+| `performance.now()`    | High-resolution elapsed time | ✅ For benchmarking |
+
+---
+
+# Interview-Ready Answer
+
+> The most common way to get the current timestamp in JavaScript is `Date.now()`, which returns the number of milliseconds elapsed since January 1, 1970 UTC (the Unix Epoch). An equivalent older approach is `new Date().getTime()`. If a timestamp in seconds is needed, divide the result by 1000 and use `Math.floor()`. For performance measurements and benchmarking, `performance.now()` is preferred because it provides higher precision timing.
+
 ## Question 11. Difference between `Date.now()` and `new Date()`
 
 ## Question 12. How to calculate the difference between two dates
