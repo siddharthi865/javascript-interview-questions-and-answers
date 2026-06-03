@@ -3100,6 +3100,466 @@ console.log("x" in child); // true
 
 ## Question 10. Difference between `function` and `async function`
 
+## Direct Answer
+
+The main difference is that an **`async function` always returns a Promise** and allows the use of **`await`** inside it, whereas a regular **`function`** returns a normal value and cannot directly use `await`.
+
+```javascript
+function normal() {
+  return 42;
+}
+
+async function asyncFn() {
+  return 42;
+}
+```
+
+Output:
+
+```javascript
+console.log(normal()); // 42
+console.log(asyncFn()); // Promise { 42 }
+```
+
+---
+
+# 1. Return Value Difference
+
+## Regular Function
+
+```javascript
+function getValue() {
+  return 100;
+}
+
+console.log(getValue());
+```
+
+Output:
+
+```text
+100
+```
+
+Returns the actual value.
+
+---
+
+## Async Function
+
+```javascript
+async function getValue() {
+  return 100;
+}
+
+console.log(getValue());
+```
+
+Output:
+
+```text
+Promise { 100 }
+```
+
+Equivalent to:
+
+```javascript
+function getValue() {
+  return Promise.resolve(100);
+}
+```
+
+---
+
+# 2. Using `await`
+
+Only `async` functions can use `await`.
+
+```javascript
+async function fetchData() {
+  const response = await fetch("/api/data");
+  const data = await response.json();
+
+  return data;
+}
+```
+
+---
+
+Regular functions cannot:
+
+```javascript
+function fetchData() {
+  const response = await fetch("/api/data");
+}
+```
+
+Output:
+
+```text
+SyntaxError
+```
+
+---
+
+# 3. Error Handling
+
+## Regular Function
+
+```javascript
+function divide(a, b) {
+  if (b === 0) {
+    throw new Error("Division by zero");
+  }
+
+  return a / b;
+}
+```
+
+Error is thrown immediately.
+
+---
+
+## Async Function
+
+```javascript
+async function divide(a, b) {
+  if (b === 0) {
+    throw new Error("Division by zero");
+  }
+
+  return a / b;
+}
+```
+
+Error becomes a rejected Promise.
+
+```javascript
+divide(10, 0).catch((err) => console.log(err.message));
+```
+
+Output:
+
+```text
+Division by zero
+```
+
+---
+
+# 4. Execution Flow
+
+Many candidates think `async` makes a function fully asynchronous.
+
+Not exactly.
+
+### Before first `await`
+
+Runs synchronously.
+
+```javascript
+async function test() {
+  console.log("A");
+
+  await Promise.resolve();
+
+  console.log("B");
+}
+
+test();
+
+console.log("C");
+```
+
+Output:
+
+```text
+A
+C
+B
+```
+
+### Why?
+
+- `A` executes immediately
+- `await` pauses the function
+- main code continues → `C`
+- function resumes later as a microtask → `B`
+
+---
+
+# 5. Event Loop Connection
+
+`async/await` is built on top of Promises.
+
+```javascript
+async function example() {
+  await Promise.resolve();
+  console.log("Done");
+}
+```
+
+Internally similar to:
+
+```javascript
+function example() {
+  return Promise.resolve().then(() => {
+    console.log("Done");
+  });
+}
+```
+
+The continuation after `await` is scheduled in the **microtask queue**.
+
+---
+
+# 6. Async Function Return Types
+
+```javascript
+async function a() {
+  return "Hello";
+}
+```
+
+Actually returns:
+
+```javascript
+Promise.resolve("Hello");
+```
+
+So:
+
+```javascript
+const result = a();
+
+console.log(result);
+```
+
+Output:
+
+```text
+Promise { "Hello" }
+```
+
+To get the value:
+
+```javascript
+const value = await a();
+```
+
+or
+
+```javascript
+a().then(console.log);
+```
+
+---
+
+# 7. Comparison Table
+
+| Feature                       | `function` | `async function` |
+| ----------------------------- | ---------- | ---------------- |
+| Returns normal value          | ✅         | ❌               |
+| Returns Promise               | ❌         | ✅ Always        |
+| Can use `await`               | ❌         | ✅               |
+| Throws synchronous errors     | ✅         | ❌               |
+| Rejects Promise on error      | ❌         | ✅               |
+| Suitable for async operations | ❌         | ✅               |
+
+---
+
+# 8. Interview Trap #1
+
+```javascript
+async function test() {
+  return 5;
+}
+
+console.log(test());
+```
+
+Output:
+
+```text
+Promise { 5 }
+```
+
+Not:
+
+```text
+5
+```
+
+---
+
+# 9. Interview Trap #2
+
+```javascript
+async function test() {
+  return Promise.resolve(5);
+}
+```
+
+Output:
+
+```javascript
+test();
+```
+
+Returns:
+
+```text
+Promise { 5 }
+```
+
+Not:
+
+```text
+Promise { Promise { 5 } }
+```
+
+### Why?
+
+Async functions automatically flatten Promises.
+
+Equivalent to:
+
+```javascript
+return await Promise.resolve(5);
+```
+
+---
+
+# 10. Interview Trap #3
+
+```javascript
+async function test() {
+  throw new Error("Oops");
+}
+
+try {
+  test();
+} catch {
+  console.log("Caught");
+}
+```
+
+Output:
+
+```text
+(no output)
+```
+
+### Why?
+
+The error becomes a rejected Promise.
+
+Correct handling:
+
+```javascript
+test().catch((err) => console.log(err.message));
+```
+
+or
+
+```javascript
+try {
+  await test();
+} catch (err) {
+  console.log(err.message);
+}
+```
+
+---
+
+# 11. Async Arrow Functions
+
+```javascript
+const getData = async () => {
+  return "Hello";
+};
+```
+
+Works exactly the same:
+
+```javascript
+getData().then(console.log);
+```
+
+Output:
+
+```text
+Hello
+```
+
+---
+
+# 12. When to Use Which
+
+### Use Regular Functions
+
+```javascript
+function add(a, b) {
+  return a + b;
+}
+```
+
+For synchronous logic.
+
+---
+
+### Use Async Functions
+
+```javascript
+async function loadUser() {
+  const response = await fetch("/user");
+  return response.json();
+}
+```
+
+For:
+
+- API calls
+- database operations
+- file operations
+- timers and asynchronous workflows
+
+---
+
+# Interview Summary
+
+### Regular Function
+
+```javascript
+function fn() {
+  return value;
+}
+```
+
+- Returns value directly
+- Cannot use `await`
+- Throws synchronous errors
+
+---
+
+### Async Function
+
+```javascript
+async function fn() {
+  return value;
+}
+```
+
+- Always returns a Promise
+- Can use `await`
+- Errors become Promise rejections
+- Continuation after `await` runs as a microtask
+
+---
+
+### One-Line Interview Answer
+
+**A regular function returns values directly and executes synchronously, while an `async function` always returns a Promise, allows the use of `await`, and handles asynchronous operations by pausing execution and resuming through the Promise/microtask mechanism.**
+
 ## Question 11. How does `import()` differ from static `import`?
 
 ## Question 12. How to handle multiple asynchronous tasks with `Promise.allSettled`
