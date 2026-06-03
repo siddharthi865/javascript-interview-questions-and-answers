@@ -5716,6 +5716,733 @@ That demonstrates understanding of:
 
 ## Question 10. How to monitor and profile Node.js performance using built-in tools
 
+Monitoring and profiling Node.js performance using built-in tools involves analyzing:
+
+- CPU usage
+- Memory usage
+- Event loop delays
+- Garbage collection
+- Async bottlenecks
+- Slow functions
+- I/O performance
+
+Node.js includes several powerful built-in diagnostics tools that are extremely important in production systems and technical interviews.
+
+A strong interview answer should mention:
+
+- `process` APIs
+- `perf_hooks`
+- Inspector/DevTools
+- CPU profiling
+- Heap snapshots
+- Event loop monitoring
+- GC tracing
+
+---
+
+# Categories of Performance Monitoring
+
+| Category    | Goal                      |
+| ----------- | ------------------------- |
+| Monitoring  | Observe runtime health    |
+| Profiling   | Identify bottlenecks      |
+| Diagnostics | Investigate failures      |
+| Tracing     | Understand execution flow |
+
+---
+
+# 1. Monitoring Memory Usage
+
+Node.js exposes memory statistics through:
+
+```js id="4jlwmz"
+process.memoryUsage();
+```
+
+---
+
+# Example
+
+```js id="5jlwm3"
+console.log(process.memoryUsage());
+```
+
+Output:
+
+```txt id="2jlwm7"
+{
+  rss: 49348608,
+  heapTotal: 18268160,
+  heapUsed: 12000000,
+  external: 1200000,
+  arrayBuffers: 20000
+}
+```
+
+---
+
+# Important Fields
+
+| Field          | Meaning              |
+| -------------- | -------------------- |
+| `rss`          | Total process memory |
+| `heapUsed`     | Actual JS heap usage |
+| `heapTotal`    | Allocated heap       |
+| `external`     | Native memory        |
+| `arrayBuffers` | Buffer memory        |
+
+---
+
+# Detecting Memory Leaks
+
+Warning signs:
+
+- `heapUsed` continuously increases
+- GC frequency rises
+- RSS keeps growing
+
+---
+
+# Example Monitoring Loop
+
+```js id="9jlwm0"
+setInterval(() => {
+  const used = process.memoryUsage().heapUsed;
+
+  console.log(`${Math.round(used / 1024 / 1024)} MB`);
+}, 5000);
+```
+
+---
+
+# 2. CPU Usage Monitoring
+
+Use:
+
+```js id="6jlwm6"
+process.cpuUsage();
+```
+
+---
+
+# Example
+
+```js id="9jlwmr"
+const start = process.cpuUsage();
+
+setTimeout(() => {
+  const end = process.cpuUsage(start);
+
+  console.log(end);
+}, 1000);
+```
+
+Measures:
+
+- User CPU time
+- System CPU time
+
+---
+
+# 3. Measuring Execution Time
+
+Use built-in:
+
+```js id="0jlwm9"
+console.time();
+console.timeEnd();
+```
+
+---
+
+# Example
+
+```js id="1jlwme"
+console.time("db-query");
+
+await fetchUsers();
+
+console.timeEnd("db-query");
+```
+
+Output:
+
+```txt id="3jlwmq"
+db-query: 123.45ms
+```
+
+Simple but useful.
+
+---
+
+# 4. High-Precision Performance APIs
+
+Node.js provides:
+
+```js id="7jlwmd"
+perf_hooks;
+```
+
+Module.
+
+---
+
+# Example
+
+```js id="5jlwm5"
+const { performance } = require("perf_hooks");
+
+const start = performance.now();
+
+doWork();
+
+const end = performance.now();
+
+console.log(end - start);
+```
+
+Higher precision than `Date.now()`.
+
+---
+
+# Performance Marks & Measures
+
+Useful for advanced profiling.
+
+---
+
+# Example
+
+```js id="8jlwm2"
+const { performance } = require("perf_hooks");
+
+performance.mark("start");
+
+doWork();
+
+performance.mark("end");
+
+performance.measure("task", "start", "end");
+
+console.log(performance.getEntriesByName("task"));
+```
+
+---
+
+# 5. Event Loop Monitoring
+
+Critical Node.js performance topic.
+
+---
+
+# Why Event Loop Matters
+
+If event loop is blocked:
+
+- Requests slow down
+- Timeouts occur
+- Throughput drops
+
+---
+
+# Measure Event Loop Delay
+
+Using:
+
+```js id="4jlwms"
+monitorEventLoopDelay();
+```
+
+---
+
+# Example
+
+```js id="8jlwm8"
+const { monitorEventLoopDelay } = require("perf_hooks");
+
+const histogram = monitorEventLoopDelay();
+
+histogram.enable();
+
+setInterval(() => {
+  console.log(histogram.mean / 1e6);
+}, 1000);
+```
+
+Measures:
+
+- Event loop lag in milliseconds
+
+---
+
+# High Event Loop Delay Indicates
+
+Possible:
+
+- CPU-heavy tasks
+- Infinite loops
+- Large JSON parsing
+- Sync file operations
+
+---
+
+# 6. Using Node Inspector
+
+Node.js includes built-in debugging/profiling support.
+
+Start app:
+
+```bash id="9jlwmu"
+node --inspect app.js
+```
+
+Or:
+
+```bash id="2jlwmp"
+node --inspect-brk app.js
+```
+
+---
+
+# Connect Chrome DevTools
+
+Open:
+
+```txt id="6jlwmk"
+chrome://inspect
+```
+
+Features:
+
+- CPU profiling
+- Heap snapshots
+- Async stack traces
+- Memory analysis
+
+---
+
+# 7. CPU Profiling
+
+Generate CPU profile:
+
+```bash id="0jlwmm"
+node --prof app.js
+```
+
+Produces:
+
+- V8 profiler log
+
+Process it:
+
+```bash id="4jlwmy"
+node --prof-process isolate.log
+```
+
+---
+
+# What CPU Profiling Shows
+
+- Hot functions
+- CPU-intensive code
+- Call stacks
+- Optimization status
+
+---
+
+# Example Bottleneck
+
+```js id="1jlwm9"
+function expensive() {
+  while (true) {}
+}
+```
+
+CPU profiler quickly identifies this.
+
+---
+
+# 8. Heap Snapshots
+
+Used for memory leak detection.
+
+Generate snapshot:
+
+```bash id="9jlwmc"
+node --inspect app.js
+```
+
+Then:
+
+- Open DevTools
+- Memory tab
+- Take heap snapshot
+
+---
+
+# Heap Snapshots Show
+
+- Retained objects
+- Detached DOM-like objects
+- Closures
+- Memory growth
+
+---
+
+# Common Leak Signs
+
+- Growing arrays
+- Event listeners
+- Unreleased closures
+- Global caches
+
+---
+
+# 9. Garbage Collection Tracing
+
+Enable GC logs:
+
+```bash id="0jlwmo"
+node --trace-gc app.js
+```
+
+---
+
+# Example Output
+
+```txt id="3jlwmf"
+[12345] Mark-sweep 120MB -> 80MB
+```
+
+Useful for:
+
+- GC frequency
+- Pause times
+- Heap pressure
+
+---
+
+# GC Performance Problems
+
+Frequent GC may indicate:
+
+- Memory leaks
+- Excessive allocations
+- Large object churn
+
+---
+
+# 10. Trace Events
+
+Node supports detailed tracing.
+
+```bash id="8jlwmh"
+node --trace-events-enabled app.js
+```
+
+Produces:
+
+- Chrome trace files
+
+Visualized in:
+
+- Chrome tracing tools
+
+---
+
+# 11. Async Hooks
+
+Advanced async diagnostics.
+
+Module:
+
+```js id="2jlwmt"
+async_hooks;
+```
+
+Tracks:
+
+- Async resources
+- Promises
+- Timers
+- Sockets
+
+---
+
+# Example
+
+```js id="7jlwm7"
+const async_hooks = require("async_hooks");
+```
+
+Useful for:
+
+- Request tracing
+- Context propagation
+- Async debugging
+
+---
+
+# 12. Diagnostic Reports
+
+Generate runtime reports.
+
+```bash id="1jlwmp"
+node --report-on-fatalerror app.js
+```
+
+Or manually:
+
+```js id="6jlwm1"
+process.report.writeReport();
+```
+
+Contains:
+
+- Stack traces
+- Heap info
+- Environment
+- Handles
+
+---
+
+# 13. Built-In Benchmarking
+
+Simple benchmarking:
+
+```js id="9jlwm0"
+console.time("test");
+
+for (let i = 0; i < 1e6; i++) {}
+
+console.timeEnd("test");
+```
+
+---
+
+# Production Monitoring Metrics
+
+Monitor:
+
+- CPU %
+- Heap usage
+- Event loop lag
+- Request latency
+- Error rates
+- Open handles
+- Throughput
+
+---
+
+# Detecting Blocking Code
+
+Bad example:
+
+```js id="3jlwm9"
+fs.readFileSync("huge.txt");
+```
+
+Blocks event loop.
+
+Profiler will show:
+
+- Long event loop delays
+- CPU spikes
+
+---
+
+# Using Flame Graphs
+
+Node.js can generate flame graphs.
+
+Helps visualize:
+
+- Hot paths
+- CPU bottlenecks
+
+Often generated from:
+
+- `--prof`
+- Inspector profiles
+
+---
+
+# Event Loop Utilization (ELU)
+
+Modern Node.js provides:
+
+```js id="7jlwmd"
+performance.eventLoopUtilization();
+```
+
+---
+
+# Example
+
+```js id="5jlwm4"
+const { performance } = require("perf_hooks");
+
+console.log(performance.eventLoopUtilization());
+```
+
+Useful for:
+
+- Detecting overloaded event loops
+
+---
+
+# Common Performance Problems
+
+---
+
+# 1. Blocking the Event Loop
+
+Examples:
+
+- Sync filesystem operations
+- Large loops
+- Heavy JSON parsing
+
+---
+
+# 2. Memory Leaks
+
+Examples:
+
+- Global arrays
+- Unremoved listeners
+- Unbounded caches
+
+---
+
+# 3. Excessive Promise Chaining
+
+Can create:
+
+- Microtask starvation
+- High memory churn
+
+---
+
+# 4. Large Buffers
+
+Huge:
+
+- Buffers
+- JSON payloads
+- Arrays
+
+Increase GC pressure.
+
+---
+
+# Performance Optimization Strategies
+
+---
+
+# Use Streams
+
+Avoid loading large files fully into memory.
+
+---
+
+# Use Worker Threads
+
+For CPU-intensive work.
+
+Worker Threads
+
+---
+
+# Use Caching Carefully
+
+Avoid:
+
+- Unbounded memory growth
+
+---
+
+# Avoid Sync APIs
+
+Bad:
+
+```js id="1jlwmv"
+fs.readFileSync();
+```
+
+Better:
+
+```js id="0jlwmq"
+fs.promises.readFile();
+```
+
+---
+
+# Monitor Continuously
+
+Production systems should track:
+
+- Event loop lag
+- Heap usage
+- CPU
+- Latency
+
+---
+
+# Built-In vs External Tools
+
+Built-in tools are excellent for:
+
+- Profiling
+- Debugging
+- Diagnostics
+
+Production observability often adds:
+
+- Prometheus
+- Grafana
+- Datadog
+- New Relic
+
+---
+
+# Interview-Level Insights
+
+A senior-level answer should mention:
+
+- Event loop monitoring
+- Heap snapshots
+- CPU profiling
+- GC tracing
+- Inspector protocol
+- Flame graphs
+- Memory leak detection
+- Async diagnostics
+
+---
+
+# Interview Summary
+
+A strong interview answer should explain:
+
+- Use `process.memoryUsage()` for memory monitoring
+- Use `process.cpuUsage()` for CPU metrics
+- `perf_hooks` provides high-resolution timing
+- `monitorEventLoopDelay()` measures event loop lag
+- `node --inspect` integrates with Chrome DevTools
+- `--prof` enables CPU profiling
+- Heap snapshots help detect memory leaks
+- `--trace-gc` analyzes garbage collection
+- Event loop lag is critical in Node.js performance analysis
+
+That demonstrates understanding of:
+
+- Node.js internals
+- V8 behavior
+- Event loop performance
+- Production diagnostics
+- Performance engineering.
+
 ## Question 11. How to implement private class fields and methods using `#`
 
 ## Question 12. How to use Top-Level await in ES modules
