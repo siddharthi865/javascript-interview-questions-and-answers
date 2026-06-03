@@ -3497,6 +3497,545 @@ Must notify all subscribers.
 
 ## Question 10. Difference between mutable and immutable operations on arrays/objects
 
+## Concise Answer
+
+- **Mutable operations** modify the original array or object directly.
+- **Immutable operations** create and return a new array or object without changing the original.
+
+Understanding this distinction is important for:
+
+- React state updates
+- Redux and state management
+- Predictable code behavior
+- Avoiding unintended side effects
+
+---
+
+# What is Mutation?
+
+Mutation means changing an existing object in memory.
+
+```js
+const arr = [1, 2, 3];
+
+arr.push(4);
+
+console.log(arr);
+```
+
+Output:
+
+```js
+[1, 2, 3, 4];
+```
+
+The original array was modified.
+
+---
+
+# Mutable Array Operations
+
+These methods change the original array.
+
+| Method       | Mutates? |
+| ------------ | -------- |
+| push()       | ✅       |
+| pop()        | ✅       |
+| shift()      | ✅       |
+| unshift()    | ✅       |
+| splice()     | ✅       |
+| sort()       | ✅       |
+| reverse()    | ✅       |
+| fill()       | ✅       |
+| copyWithin() | ✅       |
+
+---
+
+## Example: push()
+
+```js
+const arr = [1, 2];
+
+arr.push(3);
+
+console.log(arr);
+```
+
+Output:
+
+```js
+[1, 2, 3];
+```
+
+---
+
+## Example: sort()
+
+```js
+const numbers = [3, 1, 2];
+
+numbers.sort();
+
+console.log(numbers);
+```
+
+Output:
+
+```js
+[1, 2, 3];
+```
+
+The original array is changed.
+
+---
+
+# Immutable Array Operations
+
+These return a new array.
+
+| Method       | Mutates? |
+| ------------ | -------- |
+| map()        | ❌       |
+| filter()     | ❌       |
+| reduce()     | ❌       |
+| slice()      | ❌       |
+| concat()     | ❌       |
+| toSorted()   | ❌       |
+| toReversed() | ❌       |
+| toSpliced()  | ❌       |
+| with()       | ❌       |
+
+---
+
+## Example: filter()
+
+```js
+const arr = [1, 2, 3, 4];
+
+const result = arr.filter((x) => x > 2);
+
+console.log(arr);
+console.log(result);
+```
+
+Output:
+
+```js
+[1, 2, 3, 4][(3, 4)];
+```
+
+Original array remains unchanged.
+
+---
+
+## Modern Immutable Alternative
+
+Instead of:
+
+```js
+arr.sort();
+```
+
+Use:
+
+```js
+const sorted = arr.toSorted();
+```
+
+Introduced in modern JavaScript.
+
+```js
+console.log(arr); // original
+console.log(sorted); // new array
+```
+
+---
+
+# Mutable Object Operations
+
+Objects are mutable by default.
+
+```js
+const user = {
+  name: "John",
+};
+
+user.name = "Alice";
+```
+
+Output:
+
+```js
+{
+  name: "Alice";
+}
+```
+
+The original object changes.
+
+---
+
+## Adding Properties
+
+```js
+const user = {
+  name: "John",
+};
+
+user.age = 25;
+```
+
+Mutates original object.
+
+---
+
+## Deleting Properties
+
+```js
+delete user.age;
+```
+
+Also mutates.
+
+---
+
+# Immutable Object Operations
+
+Usually done using:
+
+- Spread operator (`...`)
+- Object.assign()
+
+---
+
+## Using Spread
+
+```js
+const user = {
+  name: "John",
+};
+
+const updatedUser = {
+  ...user,
+  age: 25,
+};
+```
+
+Result:
+
+```js
+user;
+// { name: "John" }
+
+updatedUser;
+// { name: "John", age: 25 }
+```
+
+Original remains unchanged.
+
+---
+
+## Using Object.assign()
+
+```js
+const updated = Object.assign({}, user, {
+  age: 25,
+});
+```
+
+Creates a new object.
+
+---
+
+# Why Immutability Matters
+
+Consider:
+
+```js
+const user = {
+  name: "John",
+};
+
+const anotherRef = user;
+
+anotherRef.name = "Alice";
+
+console.log(user.name);
+```
+
+Output:
+
+```js
+Alice;
+```
+
+Because both variables point to the same object.
+
+---
+
+# Visualizing References
+
+```text
+user ─────┐
+          ▼
+      { name: "John" }
+          ▲
+anotherRef┘
+```
+
+Mutating through either reference affects the same object.
+
+---
+
+# Immutable Update
+
+```js
+const user = {
+  name: "John",
+};
+
+const updatedUser = {
+  ...user,
+  name: "Alice",
+};
+```
+
+Memory:
+
+```text
+user ─────────► Object A
+updatedUser ──► Object B
+```
+
+No shared mutation.
+
+---
+
+# Shallow vs Deep Immutability
+
+Interviewers often ask this.
+
+## Shallow Copy
+
+```js
+const user = {
+  name: "John",
+  address: {
+    city: "NY",
+  },
+};
+
+const copy = { ...user };
+```
+
+Looks immutable, but:
+
+```js
+copy.address.city = "LA";
+```
+
+Now:
+
+```js
+console.log(user.address.city);
+```
+
+Output:
+
+```js
+LA;
+```
+
+Because nested objects are shared.
+
+---
+
+## Deep Copy
+
+Modern solution:
+
+```js
+const copy = structuredClone(user);
+```
+
+Now nested objects are independent.
+
+---
+
+# React Interview Example
+
+Wrong:
+
+```js
+state.users.push(newUser);
+
+setState(state);
+```
+
+Mutates state directly.
+
+---
+
+Correct:
+
+```js
+setState({
+  ...state,
+  users: [...state.users, newUser],
+});
+```
+
+Creates new references.
+
+React can detect changes properly.
+
+---
+
+# Freezing Objects
+
+To prevent mutation:
+
+```js
+const user = Object.freeze({
+  name: "John",
+});
+
+user.name = "Alice";
+```
+
+Fails (or throws in strict mode).
+
+---
+
+## Deep Freeze Caveat
+
+```js
+Object.freeze(obj);
+```
+
+Only freezes top level.
+
+Nested objects remain mutable.
+
+---
+
+# Performance Trade-Offs
+
+## Mutable Operations
+
+Advantages:
+
+- Faster
+- Less memory allocation
+
+```js
+arr.push(item);
+```
+
+---
+
+Disadvantages:
+
+- Side effects
+- Harder debugging
+- State management issues
+
+---
+
+## Immutable Operations
+
+Advantages:
+
+- Predictable state
+- Easier debugging
+- Change detection
+- Functional programming style
+
+---
+
+Disadvantages:
+
+- More allocations
+- Potentially higher memory usage
+
+---
+
+# Common Interview Traps
+
+## Trap 1
+
+```js
+const arr = [1, 2];
+
+const copy = arr;
+
+copy.push(3);
+
+console.log(arr);
+```
+
+Output:
+
+```js
+[1, 2, 3];
+```
+
+Because `copy` references the same array.
+
+---
+
+## Trap 2
+
+```js
+const arr = [1, 2, 3];
+
+const copy = [...arr];
+
+copy.push(4);
+
+console.log(arr);
+```
+
+Output:
+
+```js
+[1, 2, 3];
+```
+
+Different arrays.
+
+---
+
+## Trap 3
+
+```js
+const obj = {
+  nested: {
+    value: 1,
+  },
+};
+
+const copy = { ...obj };
+
+copy.nested.value = 99;
+
+console.log(obj.nested.value);
+```
+
+Output:
+
+```js
+99;
+```
+
+Spread performs a shallow copy.
+
+---
+
+# Interview Summary
+
+> Mutable operations modify the original array or object directly, such as `push()`, `splice()`, property assignment, or `delete`. Immutable operations return new arrays or objects without changing the original, using methods like `map()`, `filter()`, spread syntax, or `Object.assign()`. Immutability improves predictability, simplifies state management in frameworks like React, and avoids unintended side effects, while mutation is often more memory-efficient and faster.
+
 ## Question 11. Difference between deep equality and shallow equality
 
 ## Question 12. How to avoid race conditions in async JavaScript
