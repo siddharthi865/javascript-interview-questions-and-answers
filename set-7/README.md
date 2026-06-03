@@ -2129,6 +2129,241 @@ window.addEventListener("touchmove", handler, { passive: true });
 
 ## Question 10. What is event delegation?
 
+## Short Answer
+
+**Event delegation** is a technique where you attach a **single event listener to a parent element** instead of adding listeners to multiple child elements. The parent uses **event bubbling** to handle events from its children.
+
+👉 In simple terms:
+You handle events at a higher level in the DOM instead of individual elements.
+
+---
+
+# 1. Why event delegation works
+
+Event delegation is based on **event bubbling**:
+
+When an event happens on a child element:
+
+1. It triggers on the child
+2. Then bubbles up to its parent
+3. Then to ancestors up to `document`
+
+So the parent can “catch” events from children.
+
+---
+
+# 2. Basic Example (Without Delegation ❌)
+
+### Problem approach:
+
+```js id="a1"
+document.querySelectorAll("li").forEach((li) => {
+  li.addEventListener("click", function () {
+    console.log("Clicked:", li.textContent);
+  });
+});
+```
+
+### Issues:
+
+- Multiple event listeners (bad performance for large lists)
+- Not dynamic (new `<li>` won’t work automatically)
+
+---
+
+# 3. Event Delegation Approach (✅ BEST)
+
+### Solution: attach event to parent
+
+```js id="a2"
+document.getElementById("list").addEventListener("click", function (event) {
+  if (event.target.tagName === "LI") {
+    console.log("Clicked:", event.target.textContent);
+  }
+});
+```
+
+---
+
+### HTML:
+
+```html id="a3"
+<ul id="list">
+  <li>Item 1</li>
+  <li>Item 2</li>
+  <li>Item 3</li>
+</ul>
+```
+
+---
+
+### How it works:
+
+- Click happens on `<li>`
+- Event bubbles up to `<ul>`
+- Parent checks `event.target`
+
+---
+
+# 4. Key Concept: `event.target`
+
+| Property              | Meaning                                 |
+| --------------------- | --------------------------------------- |
+| `event.target`        | The actual clicked element              |
+| `event.currentTarget` | The element handling the event (parent) |
+
+---
+
+### Example:
+
+```js id="a4"
+list.addEventListener("click", function (event) {
+  console.log(event.target); // clicked element
+  console.log(event.currentTarget); // parent (#list)
+});
+```
+
+---
+
+# 5. Real-world Example: Dynamic List
+
+### HTML:
+
+```html id="a5"
+<ul id="todo"></ul>
+<button id="add">Add Item</button>
+```
+
+### JS:
+
+```js id="a6"
+const todo = document.getElementById("todo");
+
+document.getElementById("add").addEventListener("click", () => {
+  const li = document.createElement("li");
+  li.textContent = "New Task";
+  todo.appendChild(li);
+});
+```
+
+### Event delegation:
+
+```js id="a7"
+todo.addEventListener("click", function (e) {
+  if (e.target.tagName === "LI") {
+    e.target.style.textDecoration = "line-through";
+  }
+});
+```
+
+👉 Even newly added items work automatically
+
+---
+
+# 6. Why Event Delegation is Important
+
+## ✅ Benefits:
+
+### 1. Better performance
+
+- Fewer event listeners
+- Memory efficient
+
+---
+
+### 2. Works for dynamic elements
+
+- Newly added elements automatically respond
+
+---
+
+### 3. Cleaner code
+
+- Centralized event handling
+
+---
+
+### 4. Easier maintenance
+
+- One listener instead of many
+
+---
+
+# 7. When NOT to use event delegation
+
+❌ Avoid when:
+
+- Events don’t bubble (`focus`, `blur`)
+- Complex nested structures require precise control
+- Performance difference is negligible (small DOM)
+
+---
+
+# 8. Advanced Filtering Example
+
+### Handle only buttons inside a container:
+
+```js id="a8"
+document.getElementById("container").addEventListener("click", function (e) {
+  if (e.target.matches("button.delete")) {
+    console.log("Delete clicked");
+  }
+});
+```
+
+---
+
+# 9. Event Delegation vs Direct Binding
+
+| Feature          | Direct Binding    | Event Delegation  |
+| ---------------- | ----------------- | ----------------- |
+| Listeners        | Many              | One               |
+| Performance      | Lower (large DOM) | Higher            |
+| Dynamic elements | ❌ No             | ✅ Yes            |
+| Complexity       | Simple            | Slightly advanced |
+
+---
+
+# 10. Common Interview Questions
+
+---
+
+## ❓ Why does event delegation work?
+
+👉 Because of **event bubbling** in DOM.
+
+---
+
+## ❓ Which property is used to identify clicked element?
+
+👉 `event.target`
+
+---
+
+## ❓ Difference between target and currentTarget?
+
+- target → actual clicked element
+- currentTarget → element with listener
+
+---
+
+## ❓ Does event delegation work with all events?
+
+❌ No — only events that bubble.
+
+Examples that DO NOT bubble:
+
+- focus
+- blur
+
+(use `focusin`, `focusout` instead)
+
+---
+
+# 💡 Final Interview Summary
+
+> Event delegation is a pattern where a single event listener is attached to a parent element to handle events from its child elements using event bubbling. It improves performance, reduces memory usage, and works well with dynamically added elements.
+
 ## Question 11. How to remove an event listener?
 
 ## Question 12. How does setTimeout work?
