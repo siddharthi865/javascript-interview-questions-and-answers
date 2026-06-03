@@ -2077,6 +2077,292 @@ const multiply = function (a, b) {
 
 ## Question 10. What are arrow functions? Give examples
 
+**Short answer:**
+Arrow functions are a shorter syntax for writing functions in JavaScript (introduced in ES6). They also differ from normal functions in how they handle `this`, `arguments`, and constructors.
+
+---
+
+# 🔍 Detailed Interview Explanation
+
+Arrow functions are **anonymous functions** with a concise syntax and **lexical `this` binding**. They are commonly used for callbacks, functional programming, and short logic blocks.
+
+---
+
+# 1. 🚀 Basic Syntax
+
+## Traditional function:
+
+```js id="f1"
+function add(a, b) {
+  return a + b;
+}
+```
+
+---
+
+## Arrow function:
+
+```js id="f2"
+const add = (a, b) => {
+  return a + b;
+};
+```
+
+---
+
+## Shorter version (implicit return):
+
+```js id="f3"
+const add = (a, b) => a + b;
+
+console.log(add(2, 3)); // 5
+```
+
+---
+
+# 2. 🧠 Key Features of Arrow Functions
+
+---
+
+## ✔ 1. Shorter Syntax
+
+```js id="k1"
+const greet = (name) => `Hello ${name}`;
+```
+
+If there is only **one parameter**, parentheses can be omitted.
+
+---
+
+## ✔ 2. Implicit return
+
+If function body has one expression:
+
+```js id="k2"
+const square = (x) => x * x;
+```
+
+No need for `return` keyword or `{}`.
+
+---
+
+## ✔ 3. Lexical `this` (MOST IMPORTANT INTERVIEW POINT)
+
+Arrow functions do NOT have their own `this`. They inherit `this` from surrounding scope.
+
+---
+
+### Example (normal function):
+
+```js id="t1"
+const obj = {
+  name: "JS",
+  getName: function () {
+    return this.name;
+  },
+};
+
+console.log(obj.getName()); // JS
+```
+
+---
+
+### Arrow function example:
+
+```js id="t2"
+const obj = {
+  name: "JS",
+  getName: () => {
+    return this.name;
+  },
+};
+
+console.log(obj.getName()); // undefined
+```
+
+👉 Because `this` is taken from outer scope (not `obj`)
+
+---
+
+# 3. 🚫 Arrow Functions Cannot Be Constructors
+
+```js id="c1"
+const Person = (name) => {
+  this.name = name;
+};
+
+const p1 = new Person("John"); // ❌ Error
+```
+
+👉 Arrow functions cannot be used with `new`
+
+---
+
+# 4. 🚫 No `arguments` Object
+
+## Normal function:
+
+```js id="a1"
+function test() {
+  console.log(arguments);
+}
+
+test(1, 2, 3);
+```
+
+---
+
+## Arrow function:
+
+```js id="a2"
+const test = () => {
+  console.log(arguments); // ❌ ReferenceError
+};
+```
+
+---
+
+## Workaround:
+
+Use rest parameters:
+
+```js id="a3"
+const test = (...args) => {
+  console.log(args);
+};
+
+test(1, 2, 3);
+```
+
+---
+
+# 5. 🧩 Arrow Functions in Array Methods
+
+Very commonly used in modern JavaScript:
+
+---
+
+## map example:
+
+```js id="m1"
+const nums = [1, 2, 3];
+
+const squared = nums.map((n) => n * n);
+
+console.log(squared); // [1, 4, 9]
+```
+
+---
+
+## filter example:
+
+```js id="m2"
+const nums = [1, 2, 3, 4];
+
+const even = nums.filter((n) => n % 2 === 0);
+
+console.log(even); // [2, 4]
+```
+
+---
+
+## reduce example:
+
+```js id="m3"
+const nums = [1, 2, 3, 4];
+
+const sum = nums.reduce((acc, n) => acc + n, 0);
+
+console.log(sum); // 10
+```
+
+---
+
+# 📊 Arrow Function vs Normal Function
+
+| Feature             | Arrow Function             | Normal Function       |
+| ------------------- | -------------------------- | --------------------- |
+| Syntax              | Short                      | Verbose               |
+| `this`              | Lexical                    | Dynamic               |
+| `arguments`         | Not available              | Available             |
+| Constructor (`new`) | ❌ Not allowed             | ✅ Allowed            |
+| Use case            | Callbacks, functional code | Methods, constructors |
+
+---
+
+# ⚠️ Common Interview Pitfalls
+
+---
+
+## 1. Misunderstanding `this`
+
+```js id="p1"
+const obj = {
+  name: "JS",
+  getName: () => this.name,
+};
+```
+
+👉 `this` does NOT refer to `obj`
+
+---
+
+## 2. Using arrow function as method
+
+```js id="p2"
+const obj = {
+  value: 10,
+  show: () => {
+    console.log(this.value);
+  },
+};
+```
+
+❌ Wrong usage for object methods
+
+---
+
+## 3. Forgetting implicit return rules
+
+```js id="p3"
+const add = (a, b) => {
+  a + b; // ❌ undefined
+};
+```
+
+✔ Fix:
+
+```js id="p4"
+const add = (a, b) => a + b;
+```
+
+---
+
+# 🚀 Best Practices
+
+- Use arrow functions for:
+  - Callbacks (`map`, `filter`, `reduce`)
+  - Short utility functions
+
+- Avoid arrow functions for:
+  - Object methods
+  - Constructors
+
+- Prefer readability over excessive brevity
+
+---
+
+# 🎯 Final Summary
+
+- Arrow functions are a **concise way to write functions**
+- Introduced in **ES6**
+- Key differences:
+  - No own `this` (lexical binding)
+  - No `arguments`
+  - Cannot be used as constructors
+
+- Best suited for **callbacks and functional programming**
+
 ## Question 11. What are template literals in JavaScript?
 
 ## Question 12. How do you add comments in JavaScript?
