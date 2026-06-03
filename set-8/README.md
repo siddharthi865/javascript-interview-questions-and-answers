@@ -2421,6 +2421,228 @@ async function loadData() {
 
 ## Question 10. Difference between Promise.all and Promise.race
 
+## Direct Answer
+
+- **`Promise.all()`** waits for **all Promises to resolve** (or fails fast if any reject) and returns an array of results.
+- **`Promise.race()`** returns the result of the **first settled Promise** (either resolved or rejected).
+
+👉 Key idea:
+**`all` = wait for everyone, `race` = first one wins**
+
+---
+
+# 1. `Promise.all()`
+
+### Definition
+
+Runs multiple Promises in parallel and waits until **all succeed**.
+
+```js id="pa1"
+const p1 = Promise.resolve(10);
+const p2 = Promise.resolve(20);
+const p3 = Promise.resolve(30);
+
+Promise.all([p1, p2, p3]).then((results) => {
+  console.log(results); // [10, 20, 30]
+});
+```
+
+---
+
+## Key Behavior
+
+- Executes Promises in parallel
+- Returns results in **same order as input**
+- Fails immediately if **any Promise rejects**
+
+---
+
+## Example with rejection
+
+```js id="pa2"
+const p1 = Promise.resolve(1);
+const p2 = Promise.reject("Error");
+const p3 = Promise.resolve(3);
+
+Promise.all([p1, p2, p3])
+  .then(console.log)
+  .catch((err) => console.log(err));
+```
+
+### Output:
+
+```
+Error
+```
+
+👉 Even though p3 succeeds, it is ignored.
+
+---
+
+## Use Cases
+
+- Loading multiple API calls together
+- Parallel data fetching
+- Batch processing
+
+---
+
+# 2. `Promise.race()`
+
+### Definition
+
+Returns the result of the **first Promise that settles (resolves or rejects)**.
+
+```js id="pr1"
+const p1 = new Promise((res) => setTimeout(() => res("First"), 1000));
+const p2 = new Promise((res) => setTimeout(() => res("Second"), 200));
+
+Promise.race([p1, p2]).then(console.log); // "Second"
+```
+
+---
+
+## Key Behavior
+
+- Returns **first settled value**
+- Doesn’t wait for others
+- Can resolve OR reject first
+
+---
+
+## Example with rejection winning race
+
+```js id="pr2"
+const fastFail = new Promise((_, reject) =>
+  setTimeout(() => reject("Error first"), 100),
+);
+
+const slowSuccess = new Promise((resolve) =>
+  setTimeout(() => resolve("Success"), 500),
+);
+
+Promise.race([fastFail, slowSuccess]).then(console.log).catch(console.log);
+```
+
+### Output:
+
+```
+Error first
+```
+
+---
+
+## Use Cases
+
+- Timeout handling
+- First-response wins scenarios
+- Competing requests (e.g., multiple servers)
+
+---
+
+# 3. Key Differences (Interview Table)
+
+| Feature            | Promise.all      | Promise.race               |
+| ------------------ | ---------------- | -------------------------- |
+| Waits for          | All Promises     | First settled Promise      |
+| Output             | Array of results | Single value               |
+| Order preserved    | Yes              | Not applicable             |
+| Failure behavior   | Fails fast       | First rejection wins       |
+| Parallel execution | Yes              | Yes                        |
+| Use case           | Batch processing | Timeout / fastest response |
+
+---
+
+# 4. Real-world Example
+
+## Promise.all → Fetch multiple APIs
+
+```js id="pa3"
+async function getDashboard() {
+  const [user, posts, notifications] = await Promise.all([
+    fetch("/user"),
+    fetch("/posts"),
+    fetch("/notifications"),
+  ]);
+
+  return { user, posts, notifications };
+}
+```
+
+---
+
+## Promise.race → Timeout control
+
+```js id="pr3"
+function timeout(ms) {
+  return new Promise((_, reject) =>
+    setTimeout(() => reject("Request timed out"), ms),
+  );
+}
+
+Promise.race([fetch("/data"), timeout(2000)])
+  .then((res) => console.log(res))
+  .catch((err) => console.log(err));
+```
+
+---
+
+# 5. Important Edge Cases
+
+## 1. Empty array
+
+```js id="edge1"
+Promise.all([]).then(console.log); // []
+Promise.race([]); // never settles
+```
+
+---
+
+## 2. Order in Promise.all
+
+Even if resolved out of order:
+
+```js id="edge2"
+const p1 = new Promise((res) => setTimeout(() => res(1), 300));
+const p2 = new Promise((res) => setTimeout(() => res(2), 100));
+
+Promise.all([p1, p2]).then(console.log);
+// [1, 2] (order preserved)
+```
+
+---
+
+## 3. Promise.race does NOT cancel others
+
+```js id="edge3"
+const p1 = new Promise((res) => setTimeout(() => res("slow"), 1000));
+const p2 = new Promise((res) => setTimeout(() => res("fast"), 200));
+
+Promise.race([p1, p2]).then(console.log);
+```
+
+👉 `p1` still runs in background.
+
+---
+
+# 6. Interview Insight
+
+## Promise.all
+
+- Think: **"Wait for all tasks to complete successfully"**
+- Fail-fast behavior
+
+## Promise.race
+
+- Think: **"Take the fastest response (success or failure)"**
+- Useful for performance optimization and timeouts
+
+---
+
+# 7. Interview Summary
+
+> `Promise.all` waits for all promises to resolve and returns their results as an array, failing if any promise rejects. `Promise.race` returns the result of the first promise that settles (either resolve or reject). `Promise.all` is used for batch processing, while `Promise.race` is used for scenarios like timeouts or fastest-response selection.
+
 ## Question 11. How to handle multiple async operations sequentially
 
 ## Question 12. Explain try…catch in async functions
