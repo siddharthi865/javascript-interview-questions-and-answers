@@ -2600,6 +2600,308 @@ A Virtual DOM is a JavaScript representation of the real DOM used to optimize up
 
 ## Question 10. How to throttle expensive computations during resize/scroll
 
+# ✅ Direct Answer
+
+To throttle expensive computations during `resize` or `scroll`, you limit how often your handler runs using **throttling techniques**—typically via `requestAnimationFrame`, timestamp-based throttling, or utility functions. The goal is to ensure the function runs at most once per frame (or per fixed interval), instead of on every event fire.
+
+---
+
+# 🧠 Interview-Level Explanation
+
+Events like:
+
+- `scroll`
+- `resize`
+- `mousemove`
+
+can fire **dozens of times per second** (often 50–100+).
+
+If you run expensive logic on every event:
+
+❌ layout thrashing
+❌ janky UI (dropped frames)
+❌ CPU spikes
+
+So we control execution frequency using **throttling**.
+
+---
+
+# 🚀 1. Best Practice: `requestAnimationFrame` Throttle (Preferred)
+
+This ensures the callback runs **once per frame (~16ms at 60fps)**.
+
+---
+
+## 📌 Implementation
+
+```js id="th1"
+function throttleRAF(fn) {
+  let scheduled = false;
+
+  return function (...args) {
+    if (!scheduled) {
+      scheduled = true;
+
+      requestAnimationFrame(() => {
+        fn.apply(this, args);
+        scheduled = false;
+      });
+    }
+  };
+}
+```
+
+---
+
+## 📌 Usage (scroll)
+
+```js id="th2"
+function onScroll() {
+  console.log("Expensive scroll calculation");
+}
+
+window.addEventListener("scroll", throttleRAF(onScroll));
+```
+
+---
+
+## 🧠 Why this is best
+
+- syncs with browser repaint cycle
+- avoids unnecessary intermediate calls
+- keeps UI smooth at 60fps
+
+---
+
+# ⚡ 2. Time-Based Throttle (Classic Approach)
+
+Runs function at most once every `delay ms`.
+
+---
+
+## 📌 Implementation
+
+```js id="th3"
+function throttle(fn, delay) {
+  let last = 0;
+
+  return function (...args) {
+    const now = Date.now();
+
+    if (now - last >= delay) {
+      last = now;
+      fn.apply(this, args);
+    }
+  };
+}
+```
+
+---
+
+## 📌 Usage
+
+```js id="th4"
+window.addEventListener(
+  "resize",
+  throttle(() => {
+    console.log("Resize logic");
+  }, 200),
+);
+```
+
+---
+
+## 🧠 Behavior
+
+| Time  | Event fired | Execution |
+| ----- | ----------- | --------- |
+| 0ms   | scroll      | ✅ run    |
+| 10ms  | scroll      | ❌ skip   |
+| 30ms  | scroll      | ❌ skip   |
+| 200ms | scroll      | ✅ run    |
+
+---
+
+# 📌 3. Combined RAF + Timestamp (Advanced Pattern)
+
+Balances precision + frame safety.
+
+---
+
+```js id="th5"
+function throttleHybrid(fn, delay) {
+  let last = 0;
+  let scheduled = false;
+  let lastArgs;
+
+  return function (...args) {
+    lastArgs = args;
+    const now = Date.now();
+
+    if (!scheduled) {
+      scheduled = true;
+
+      requestAnimationFrame(() => {
+        if (now - last >= delay) {
+          fn.apply(this, lastArgs);
+          last = now;
+        }
+
+        scheduled = false;
+      });
+    }
+  };
+}
+```
+
+---
+
+# 📌 4. Example: Expensive Scroll Calculation
+
+Imagine calculating element visibility:
+
+---
+
+## ❌ Bad (no throttle)
+
+```js id="th6"
+window.addEventListener("scroll", () => {
+  heavyLayoutCalculation(); // runs 100+ times/sec ❌
+});
+```
+
+---
+
+## ✅ Good (RAF throttle)
+
+```js id="th7"
+window.addEventListener("scroll", throttleRAF(heavyLayoutCalculation));
+```
+
+---
+
+# 📌 5. Resize Optimization Pattern
+
+Resize is especially expensive because it triggers:
+
+- reflow
+- repaint
+- layout recalculation
+
+---
+
+## Best practice:
+
+```js id="th8"
+window.addEventListener(
+  "resize",
+  throttleRAF(() => {
+    recalculateLayout();
+  }),
+);
+```
+
+---
+
+# 📊 Throttling vs Debouncing (Interview Favorite)
+
+| Feature      | Throttle     | Debounce     |
+| ------------ | ------------ | ------------ |
+| Execution    | Periodic     | After pause  |
+| Scroll       | ✅ Best      | ❌ Not ideal |
+| Resize       | ✅ Good      | ⚠️ sometimes |
+| Input search | ❌ not ideal | ✅ best      |
+
+---
+
+# 🧠 Why `requestAnimationFrame` is superior
+
+Compared to `setTimeout` throttle:
+
+| Feature           | setTimeout | requestAnimationFrame |
+| ----------------- | ---------- | --------------------- |
+| Sync with repaint | ❌         | ✅                    |
+| Jank prevention   | medium     | high                  |
+| Efficiency        | lower      | higher                |
+
+---
+
+# ⚠️ Common Pitfalls
+
+## ❌ 1. Heavy logic inside scroll handler
+
+Even throttled code should avoid:
+
+- layout reads + writes mixed
+- forced reflows
+
+---
+
+## ❌ 2. Multiple listeners without sharing throttle
+
+Bad:
+
+```js id="th9"
+scroll handler A (throttle)
+scroll handler B (throttle)
+```
+
+Better:
+
+- single shared throttled pipeline
+
+---
+
+## ❌ 3. Ignoring cleanup
+
+In SPAs:
+
+```js id="th10"
+window.removeEventListener("scroll", handler);
+```
+
+---
+
+## ❌ 4. Using debounce for scroll
+
+This delays updates → feels laggy.
+
+---
+
+# 🧠 Senior-Level Insight
+
+Modern browsers already try to optimize scroll:
+
+- passive listeners
+- compositing layers
+- scroll event coalescing
+
+So best strategy is:
+
+> Keep scroll handlers lightweight + frame-synced
+
+---
+
+# 📌 Bonus: Passive Event Listener (Important Optimization)
+
+```js id="th11"
+window.addEventListener("scroll", handler, {
+  passive: true,
+});
+```
+
+### Why it helps:
+
+- tells browser you won’t call `preventDefault()`
+- enables smoother scrolling
+- improves rendering pipeline
+
+---
+
+# 🧾 Interview Summary
+
+To throttle expensive computations during scroll or resize, you use techniques like `requestAnimationFrame` throttling or time-based throttling. `requestAnimationFrame` is preferred because it aligns execution with the browser’s rendering cycle, ensuring smooth 60fps updates. This prevents excessive function calls, reduces layout thrashing, and improves UI performance during high-frequency events like scrolling and resizing.
+
 ## Question 11. How to use `requestAnimationFrame` for smooth UI updates
 
 ## Question 12. How to detect browser support for features (feature detection)
