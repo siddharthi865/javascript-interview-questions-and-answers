@@ -4277,6 +4277,649 @@ button.addEventListener("click", async () => {
 
 ## Question 10. Difference between mutable and immutable operations on arrays and objects
 
+# Difference Between Mutable and Immutable Operations on Arrays and Objects
+
+## Short Answer
+
+- **Mutable operations** modify the original array or object directly.
+- **Immutable operations** create a new array or object without changing the original.
+
+Understanding this distinction is crucial in JavaScript, especially in **React**, **Redux**, state management, and functional programming.
+
+---
+
+# What Does "Mutable" Mean?
+
+A mutable operation changes the existing data structure.
+
+```js
+const arr = [1, 2, 3];
+
+arr.push(4);
+
+console.log(arr);
+```
+
+Output:
+
+```js
+[1, 2, 3, 4];
+```
+
+The original array was modified.
+
+---
+
+# What Does "Immutable" Mean?
+
+An immutable operation returns a new value instead of modifying the original.
+
+```js
+const arr = [1, 2, 3];
+
+const newArr = [...arr, 4];
+
+console.log(arr);
+console.log(newArr);
+```
+
+Output:
+
+```js
+[1, 2, 3][(1, 2, 3, 4)];
+```
+
+The original array remains unchanged.
+
+---
+
+# Arrays: Mutable Operations
+
+These methods modify the original array.
+
+| Method         | Description            |
+| -------------- | ---------------------- |
+| `push()`       | Add to end             |
+| `pop()`        | Remove from end        |
+| `shift()`      | Remove first element   |
+| `unshift()`    | Add to beginning       |
+| `splice()`     | Add/remove elements    |
+| `sort()`       | Sort array in place    |
+| `reverse()`    | Reverse array in place |
+| `fill()`       | Replace values         |
+| `copyWithin()` | Copy part of array     |
+
+---
+
+## Example: push()
+
+```js
+const arr = [1, 2];
+
+arr.push(3);
+
+console.log(arr);
+```
+
+Output:
+
+```js
+[1, 2, 3];
+```
+
+Original array changed.
+
+---
+
+## Example: sort()
+
+```js
+const nums = [3, 1, 2];
+
+nums.sort();
+
+console.log(nums);
+```
+
+Output:
+
+```js
+[1, 2, 3];
+```
+
+`sort()` mutates the original array.
+
+---
+
+# Arrays: Immutable Operations
+
+These return a new array.
+
+| Method         | Description                |
+| -------------- | -------------------------- |
+| `map()`        | Transform items            |
+| `filter()`     | Filter items               |
+| `reduce()`     | Aggregate values           |
+| `slice()`      | Extract portion            |
+| `concat()`     | Merge arrays               |
+| `toSorted()`   | Immutable sort (ES2023)    |
+| `toReversed()` | Immutable reverse (ES2023) |
+| `toSpliced()`  | Immutable splice (ES2023)  |
+| Spread (`...`) | Create copies              |
+
+---
+
+## Example: map()
+
+```js
+const arr = [1, 2, 3];
+
+const doubled = arr.map((x) => x * 2);
+
+console.log(arr);
+console.log(doubled);
+```
+
+Output:
+
+```js
+[1, 2, 3][(2, 4, 6)];
+```
+
+Original remains unchanged.
+
+---
+
+## Example: filter()
+
+```js
+const nums = [1, 2, 3, 4];
+
+const even = nums.filter((n) => n % 2 === 0);
+
+console.log(nums);
+console.log(even);
+```
+
+Output:
+
+```js
+[1, 2, 3, 4][(2, 4)];
+```
+
+---
+
+# Modern Immutable Array Methods (ES2023)
+
+A common interview topic.
+
+---
+
+## `toSorted()`
+
+Instead of:
+
+```js
+const arr = [3, 1, 2];
+
+arr.sort();
+```
+
+Use:
+
+```js
+const arr = [3, 1, 2];
+
+const sorted = arr.toSorted();
+
+console.log(arr);
+console.log(sorted);
+```
+
+Output:
+
+```js
+[3, 1, 2][(1, 2, 3)];
+```
+
+---
+
+## `toReversed()`
+
+```js
+const arr = [1, 2, 3];
+
+const reversed = arr.toReversed();
+```
+
+Original stays unchanged.
+
+---
+
+## `toSpliced()`
+
+Immutable version of `splice()`.
+
+```js
+const arr = [1, 2, 3];
+
+const result = arr.toSpliced(1, 1);
+
+console.log(arr);
+console.log(result);
+```
+
+Output:
+
+```js
+[1, 2, 3][(1, 3)];
+```
+
+---
+
+# Objects: Mutable Operations
+
+Objects are mutable by default.
+
+```js
+const user = {
+  name: "John",
+};
+
+user.name = "Alice";
+
+console.log(user);
+```
+
+Output:
+
+```js
+{
+  name: "Alice";
+}
+```
+
+Original object changed.
+
+---
+
+## Adding Properties
+
+```js
+const user = {};
+
+user.age = 25;
+```
+
+Mutation occurs.
+
+---
+
+## Deleting Properties
+
+```js
+const user = {
+  age: 25,
+};
+
+delete user.age;
+```
+
+Mutation occurs.
+
+---
+
+# Immutable Object Updates
+
+Use spread syntax.
+
+```js
+const user = {
+  name: "John",
+};
+
+const updatedUser = {
+  ...user,
+  name: "Alice",
+};
+
+console.log(user);
+console.log(updatedUser);
+```
+
+Output:
+
+```js
+{
+  name: "John";
+}
+{
+  name: "Alice";
+}
+```
+
+---
+
+# Immutable Property Addition
+
+```js
+const user = {
+  name: "John",
+};
+
+const updated = {
+  ...user,
+  age: 25,
+};
+```
+
+Original object untouched.
+
+---
+
+# Immutable Property Removal
+
+```js
+const user = {
+  name: "John",
+  age: 25,
+};
+
+const { age, ...rest } = user;
+
+console.log(rest);
+```
+
+Output:
+
+```js
+{
+  name: "John";
+}
+```
+
+---
+
+# Reference Behavior (Interview Favorite)
+
+```js
+const obj1 = {
+  name: "John",
+};
+
+const obj2 = obj1;
+
+obj2.name = "Alice";
+
+console.log(obj1.name);
+```
+
+Output:
+
+```js
+Alice;
+```
+
+Why?
+
+Both variables reference the same object in memory.
+
+---
+
+## Immutable Alternative
+
+```js
+const obj1 = {
+  name: "John",
+};
+
+const obj2 = {
+  ...obj1,
+};
+
+obj2.name = "Alice";
+
+console.log(obj1.name);
+```
+
+Output:
+
+```js
+John;
+```
+
+---
+
+# Shallow vs Deep Immutability
+
+A very common interview follow-up.
+
+---
+
+## Shallow Copy
+
+```js
+const user = {
+  name: "John",
+  address: {
+    city: "Delhi",
+  },
+};
+
+const copy = {
+  ...user,
+};
+```
+
+Nested objects are still shared.
+
+```js
+copy.address.city = "Mumbai";
+
+console.log(user.address.city);
+```
+
+Output:
+
+```js
+Mumbai;
+```
+
+---
+
+## Why?
+
+Memory:
+
+```txt
+user.address ──┐
+               ▼
+copy.address ──► { city: "Delhi" }
+```
+
+Spread performs a **shallow copy**.
+
+---
+
+## Deep Copy
+
+```js
+const copy = structuredClone(user);
+```
+
+Now nested objects are independent.
+
+```js
+copy.address.city = "Mumbai";
+
+console.log(user.address.city);
+```
+
+Output:
+
+```js
+Delhi;
+```
+
+---
+
+# Object.freeze()
+
+Creates a read-only object.
+
+```js
+const user = Object.freeze({
+  name: "John",
+});
+
+user.name = "Alice";
+```
+
+No change occurs (or throws in strict mode).
+
+---
+
+# Why Immutability Matters in React
+
+React compares references.
+
+```js
+setState(newState);
+```
+
+If you mutate:
+
+```js
+state.user.name = "Alice";
+```
+
+React may not detect the change properly.
+
+Preferred:
+
+```js
+setState({
+  ...state,
+  user: {
+    ...state.user,
+    name: "Alice",
+  },
+});
+```
+
+Creates new references.
+
+---
+
+# Common Interview Questions
+
+## Q1
+
+```js
+const arr = [1, 2];
+const arr2 = arr;
+
+arr2.push(3);
+
+console.log(arr);
+```
+
+Output:
+
+```js
+[1, 2, 3];
+```
+
+Because arrays are objects and are passed by reference.
+
+---
+
+## Q2
+
+```js
+const arr = [1, 2];
+
+const arr2 = arr.concat(3);
+
+console.log(arr);
+```
+
+Output:
+
+```js
+[1, 2];
+```
+
+`concat()` is immutable.
+
+---
+
+## Q3
+
+```js
+const obj = { a: 1 };
+
+const copy = { ...obj };
+
+copy.a = 2;
+
+console.log(obj.a);
+```
+
+Output:
+
+```js
+1;
+```
+
+Spread creates a new object.
+
+---
+
+# Interview Summary
+
+## Mutable Operations
+
+Modify the original data:
+
+```js
+push();
+pop();
+splice();
+sort();
+reverse();
+
+obj.prop = value;
+delete obj.prop;
+```
+
+---
+
+## Immutable Operations
+
+Return new data:
+
+```js
+map()
+filter()
+reduce()
+slice()
+concat()
+
+toSorted()
+toReversed()
+toSpliced()
+
+{ ...obj }
+[ ...arr ]
+```
+
+---
+
+### One-Line Interview Answer
+
+> Mutable operations change the original array or object in place, whereas immutable operations return a new array or object while leaving the original unchanged. Immutability improves predictability, enables easier state management, and is heavily used in React, Redux, and functional programming.
+
 ## Question 11. How to prevent race conditions in asynchronous code?
 
 ## Question 12. Explain service workers and caching in JavaScript
