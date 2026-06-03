@@ -3654,6 +3654,410 @@ A read-only object can be implemented using a `Proxy` by intercepting mutation o
 
 ## Question 10. How to implement custom iterables using `[Symbol.iterator]`
 
+## Direct Answer
+
+You implement a **custom iterable in JavaScript** by defining a method on an object using:
+
+```js
+[Symbol.iterator]();
+```
+
+This method must return an **iterator object** with a `next()` function that returns:
+
+```js
+{ value: any, done: boolean }
+```
+
+---
+
+# 1. Basic Custom Iterable
+
+### Example: Iterating over a custom range object
+
+```js id="q7v3xk"
+const range = {
+  start: 1,
+  end: 5,
+
+  [Symbol.iterator]() {
+    let current = this.start;
+    const end = this.end;
+
+    return {
+      next() {
+        if (current <= end) {
+          return { value: current++, done: false };
+        }
+        return { value: undefined, done: true };
+      },
+    };
+  },
+};
+```
+
+### Usage:
+
+```js id="m1c9zq"
+for (const num of range) {
+  console.log(num);
+}
+```
+
+### Output:
+
+```js id="k8d2lp"
+1;
+2;
+3;
+4;
+5;
+```
+
+---
+
+# 2. How It Works (Interview Explanation)
+
+When you use:
+
+```js id="p3k8lm"
+for (const x of range)
+```
+
+JavaScript internally does:
+
+```js id="v0n8qz"
+const iterator = range[Symbol.iterator]();
+
+let result = iterator.next();
+
+while (!result.done) {
+  console.log(result.value);
+  result = iterator.next();
+}
+```
+
+So the iterable protocol is:
+
+### Iterable:
+
+Object with `[Symbol.iterator]`
+
+### Iterator:
+
+Object with `.next()`
+
+---
+
+# 3. Custom Iterable Using Class
+
+More structured approach:
+
+```js id="t6r9qp"
+class Range {
+  constructor(start, end) {
+    this.start = start;
+    this.end = end;
+  }
+
+  [Symbol.iterator]() {
+    let current = this.start;
+    const end = this.end;
+
+    return {
+      next() {
+        if (current <= end) {
+          return { value: current++, done: false };
+        }
+        return { done: true };
+      },
+    };
+  }
+}
+```
+
+### Usage:
+
+```js id="x2m9qv"
+const r = new Range(3, 7);
+
+for (const n of r) {
+  console.log(n);
+}
+```
+
+---
+
+# 4. Iterable Using Generator (Best Approach)
+
+Generators automatically implement iterators.
+
+```js id="g8k3lp"
+function* range(start, end) {
+  for (let i = start; i <= end; i++) {
+    yield i;
+  }
+}
+```
+
+### Usage:
+
+```js id="h4n8qz"
+for (const num of range(1, 5)) {
+  console.log(num);
+}
+```
+
+### Output:
+
+```js id="l9p3wx"
+1;
+2;
+3;
+4;
+5;
+```
+
+### Why generators are better:
+
+- Less boilerplate
+- Automatic iterator creation
+- Easier state management
+
+---
+
+# 5. Custom Iterable Over Object Properties
+
+Example: iterate object values
+
+```js id="o2k9xz"
+const user = {
+  name: "John",
+  age: 30,
+  city: "Delhi",
+
+  [Symbol.iterator]() {
+    const values = Object.values(this);
+    let index = 0;
+
+    return {
+      next() {
+        if (index < values.length) {
+          return { value: values[index++], done: false };
+        }
+        return { done: true };
+      },
+    };
+  },
+};
+```
+
+### Usage:
+
+```js id="c7m1qz"
+for (const value of user) {
+  console.log(value);
+}
+```
+
+---
+
+# 6. Iterating Keys, Values, Entries (Advanced Pattern)
+
+### Values iterator:
+
+```js id="k9x2pl"
+[Symbol.iterator]() {
+  return Object.values(this)[Symbol.iterator]();
+}
+```
+
+### Keys iterator:
+
+```js id="z8m1qv"
+[Symbol.iterator]() {
+  return Object.keys(this)[Symbol.iterator]();
+}
+```
+
+### Entries iterator:
+
+```js id="n3p8xq"
+[Symbol.iterator]() {
+  return Object.entries(this)[Symbol.iterator]();
+}
+```
+
+---
+
+# 7. Real-World Example: Paginated API Iterable
+
+```js id="r5k2xv"
+class PaginatedData {
+  constructor(fetchPage) {
+    this.fetchPage = fetchPage;
+    this.page = 1;
+    this.hasMore = true;
+  }
+
+  [Symbol.iterator]() {
+    return {
+      next: async () => {
+        if (!this.hasMore) {
+          return { done: true };
+        }
+
+        const data = await this.fetchPage(this.page);
+
+        if (data.length === 0) {
+          this.hasMore = false;
+          return { done: true };
+        }
+
+        this.page++;
+
+        return { value: data, done: false };
+      },
+    };
+  }
+}
+```
+
+👉 Note: This is conceptual; async iterables should use `Symbol.asyncIterator`.
+
+---
+
+# 8. Async Iterables (Important Interview Topic)
+
+For asynchronous iteration:
+
+```js id="u8v3qp"
+const asyncRange = {
+  start: 1,
+  end: 3,
+
+  [Symbol.asyncIterator]() {
+    let current = this.start;
+
+    return {
+      async next() {
+        if (current <= this.end) {
+          return {
+            value: await Promise.resolve(current++),
+            done: false,
+          };
+        }
+
+        return { done: true };
+      },
+    };
+  },
+};
+```
+
+### Usage:
+
+```js id="m0q8xz"
+(async () => {
+  for await (const num of asyncRange) {
+    console.log(num);
+  }
+})();
+```
+
+---
+
+# 9. Iterable Protocol vs Iterator Protocol
+
+| Concept  | Meaning                   |
+| -------- | ------------------------- |
+| Iterable | Has `[Symbol.iterator]()` |
+| Iterator | Has `.next()` method      |
+
+---
+
+# 10. Common Pitfalls
+
+## ❌ Returning wrong structure
+
+```js id="p9x2mq"
+next() {
+  return current++; // wrong
+}
+```
+
+Must be:
+
+```js id="x7q1mz"
+next() {
+  return { value: current++, done: false };
+}
+```
+
+---
+
+## ❌ Forgetting `Symbol.iterator`
+
+```js id="t1p9xz"
+const obj = {
+  next() {},
+};
+```
+
+This is NOT iterable.
+
+---
+
+## ❌ Sharing iterator state incorrectly
+
+Bad:
+
+```js id="a3k8qp"
+[Symbol.iterator]() {
+  let i = 0;
+
+  return this; // ❌ wrong
+}
+```
+
+Each iteration must return a **fresh iterator**.
+
+---
+
+# 11. Real-World Uses
+
+Custom iterables are used in:
+
+### 1. Arrays (built-in)
+
+```js id="z9x2qp"
+[1, 2, 3][Symbol.iterator]();
+```
+
+### 2. Strings
+
+```js id="m7p3xz"
+for (const char of "hello") {
+}
+```
+
+### 3. DOM collections
+
+```js id="k4x9qp"
+document.querySelectorAll("div");
+```
+
+### 4. Framework internals
+
+- React fiber traversal
+- Vue reactivity iteration
+- Graph traversal systems
+
+---
+
+# 12. Senior-Level Interview Summary
+
+Custom iterables in JavaScript are implemented using the `[Symbol.iterator]` method, which returns an iterator object with a `next()` function following the iterator protocol. This allows objects to be used with `for...of`, spread syntax, and other iteration-based constructs. While manual iterator implementation provides full control over iteration behavior, generator functions offer a cleaner and more maintainable alternative by automatically handling state and iteration logic. For asynchronous data sources, `Symbol.asyncIterator` enables asynchronous iteration using `for await...of`, making iterables a foundational concept in modern JavaScript architecture and data flow design.
+
 ## Question 11. How to implement async iterables using `[Symbol.asyncIterator]`
 
 ## Question 12. How to implement generators for state machines
