@@ -2603,6 +2603,292 @@ A strong interview answer is:
 
 ## Question 10. How to implement tab navigation with keyboard accessibility
 
+## Short answer
+
+Tab navigation in web apps is primarily handled by the browser using the `Tab` key by default. To implement **proper keyboard accessibility**, you ensure:
+
+- Correct semantic HTML (buttons, inputs, links)
+- Logical DOM order
+- Proper `tabindex` usage when needed
+- Keyboard event handling for custom components (Arrow keys, Enter, Space)
+- Visible focus indicators
+
+You usually **don’t build tab navigation from scratch—you enhance or correct it when building custom UI components.**
+
+---
+
+# 1. Default browser tab behavior
+
+By default, browsers already support tab navigation:
+
+```text id="tab1"
+Tab → moves forward
+Shift + Tab → moves backward
+```
+
+Focusable elements by default:
+
+- `<input>`
+- `<button>`
+- `<a href>`
+- `<select>`
+- `<textarea>`
+- elements with `tabindex`
+
+Example:
+
+```html id="tab2"
+<input />
+<button>Click</button>
+<a href="#">Link</a>
+```
+
+No JavaScript needed.
+
+---
+
+# 2. What is `tabindex`?
+
+`tabindex` controls keyboard focus order.
+
+### Values:
+
+| Value | Behavior                            |
+| ----- | ----------------------------------- |
+| `0`   | Focusable in natural DOM order      |
+| `-1`  | Focusable programmatically only     |
+| `>0`  | Custom tab order (⚠️ avoid usually) |
+
+---
+
+## Example
+
+```html id="tab3"
+<div tabindex="0">Focusable div</div>
+```
+
+Now it can be focused using Tab.
+
+---
+
+# 3. Implementing custom tab navigation (accessible pattern)
+
+Used when building components like:
+
+- Custom dropdowns
+- Modals
+- Tabs UI
+- Menus
+
+---
+
+## Example: Keyboard-accessible list navigation
+
+```html id="tab4"
+<ul id="menu">
+  <li tabindex="0">Home</li>
+  <li tabindex="0">About</li>
+  <li tabindex="0">Contact</li>
+</ul>
+```
+
+---
+
+## Add keyboard handling (Arrow navigation)
+
+```javascript id="tab5"
+const items = document.querySelectorAll("#menu li");
+
+items.forEach((item, index) => {
+  item.addEventListener("keydown", (e) => {
+    let nextIndex;
+
+    switch (e.key) {
+      case "ArrowDown":
+        nextIndex = (index + 1) % items.length;
+        items[nextIndex].focus();
+        break;
+
+      case "ArrowUp":
+        nextIndex = (index - 1 + items.length) % items.length;
+        items[nextIndex].focus();
+        break;
+
+      case "Enter":
+      case " ":
+        console.log("Selected:", item.textContent);
+        break;
+    }
+  });
+});
+```
+
+---
+
+# 4. Proper focus management (important for accessibility)
+
+### Example: setting initial focus
+
+```javascript id="tab6"
+document.getElementById("menu").firstElementChild.focus();
+```
+
+---
+
+### Focus trap (used in modals)
+
+When modal opens, focus should stay inside it.
+
+```javascript id="tab7"
+const modal = document.getElementById("modal");
+const focusable = modal.querySelectorAll(
+  'button, [href], input, textarea, [tabindex="0"]',
+);
+
+const first = focusable[0];
+const last = focusable[focusable.length - 1];
+
+modal.addEventListener("keydown", (e) => {
+  if (e.key === "Tab") {
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+});
+```
+
+---
+
+# 5. Tab navigation in a Tabs UI component
+
+Example structure:
+
+```html id="tab8"
+<div role="tablist">
+  <button role="tab">Tab 1</button>
+  <button role="tab">Tab 2</button>
+  <button role="tab">Tab 3</button>
+</div>
+```
+
+---
+
+## Keyboard support
+
+- Tab → enters tab list
+- Arrow keys → switch tabs
+- Enter/Space → activate tab
+
+```javascript id="tab9"
+const tabs = document.querySelectorAll('[role="tab"]');
+
+tabs.forEach((tab, i) => {
+  tab.addEventListener("keydown", (e) => {
+    let next;
+
+    if (e.key === "ArrowRight") {
+      next = (i + 1) % tabs.length;
+    }
+
+    if (e.key === "ArrowLeft") {
+      next = (i - 1 + tabs.length) % tabs.length;
+    }
+
+    if (next !== undefined) {
+      e.preventDefault();
+      tabs[next].focus();
+    }
+
+    if (e.key === "Enter" || e.key === " ") {
+      console.log("Activated:", tab.textContent);
+    }
+  });
+});
+```
+
+---
+
+# 6. Important accessibility principles (interview-critical)
+
+## ✔ Do
+
+- Use semantic elements (`button`, `a`)
+- Keep natural DOM order
+- Use `tabindex="0"` only when needed
+- Ensure visible focus outline
+- Support Enter + Space for actions
+
+---
+
+## ❌ Avoid
+
+### 1. Positive tabindex (bad practice)
+
+```html id="bad1"
+<div tabindex="1"></div>
+<div tabindex="2"></div>
+```
+
+Problems:
+
+- Breaks natural tab flow
+- Confusing for screen readers
+- Hard to maintain
+
+---
+
+### 2. Removing focus outline
+
+```css id="bad2"
+button:focus {
+  outline: none;
+}
+```
+
+This breaks accessibility unless replaced properly.
+
+---
+
+# 7. Better modern approach (recommended)
+
+Instead of building everything manually:
+
+- Use native elements
+- Use ARIA roles only when necessary
+- Enhance behavior with JS
+
+Example:
+
+```html id="tab10"
+<button>Save</button> <button>Cancel</button>
+```
+
+Already fully keyboard accessible.
+
+---
+
+# 8. Event summary
+
+| Key         | Purpose                   |
+| ----------- | ------------------------- |
+| Tab         | Move focus forward        |
+| Shift + Tab | Move backward             |
+| Arrow keys  | Navigate within component |
+| Enter       | Activate                  |
+| Space       | Activate / toggle         |
+
+---
+
+# 9. Interview-level summary
+
+A strong answer:
+
+> Tab navigation is primarily handled by the browser through the Tab key, and accessibility is ensured by using semantic HTML elements. For custom components, we manage focus using `tabindex`, handle keyboard events like Arrow keys for internal navigation, and ensure proper focus trapping where needed (e.g., modals). Avoid overriding default tab behavior unless necessary, and never rely on positive `tabindex` values, as they break natural accessibility flow.
+
 ## Question 11. How to detect if a CSS class exists on an element
 
 ## Question 12. How to implement a drag-and-drop functionality
