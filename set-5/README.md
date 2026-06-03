@@ -2587,6 +2587,298 @@ Private fields in JavaScript classes are created using the `#` prefix and provid
 
 ## Question 10. What are decorators?
 
+### Short Answer
+
+**Decorators in JavaScript are special functions that allow you to modify or enhance classes, methods, properties, or accessors at design time.** They are a form of **meta-programming** used to wrap or extend behavior without changing the original code.
+
+> Note: Decorators are currently a **Stage 3 ECMAScript proposal** (widely used in TypeScript and frameworks like Angular, but not fully standard in all JS runtimes yet).
+
+---
+
+# Decorators in JavaScript (Interview-Ready Explanation)
+
+## 1. What are Decorators?
+
+A decorator is a function that:
+
+- Takes a **target (class, method, property, etc.)**
+- Modifies or enhances its behavior
+- Returns the modified version
+
+Think of it as:
+
+> “A wrapper applied at definition time, not runtime”
+
+---
+
+## 2. Basic Syntax (Conceptual)
+
+```javascript id="d1"
+@decorator
+class MyClass {}
+```
+
+or
+
+```javascript id="d2"
+class MyClass {
+  @decorator
+  method() {}
+}
+```
+
+👉 The `@` symbol is used in decorator syntax (commonly in TypeScript / Babel setups).
+
+---
+
+## 3. Simple Method Decorator Example
+
+### Logging decorator:
+
+```javascript id="d3"
+function log(target, name, descriptor) {
+  const original = descriptor.value;
+
+  descriptor.value = function (...args) {
+    console.log(`Calling ${name} with`, args);
+    return original.apply(this, args);
+  };
+
+  return descriptor;
+}
+
+class MathOps {
+  @log
+  add(a, b) {
+    return a + b;
+  }
+}
+
+const m = new MathOps();
+m.add(2, 3);
+```
+
+### Output:
+
+```
+Calling add with [2, 3]
+```
+
+---
+
+## 4. How Decorators Work Internally
+
+When you write:
+
+```javascript id="d4"
+@decorator
+method() {}
+```
+
+JavaScript effectively does:
+
+```javascript id="d5"
+method = decorator(target, methodName, descriptor) || method;
+```
+
+👉 Decorators run at **class definition time**, not when you call the method.
+
+---
+
+## 5. Types of Decorators
+
+### 1. Class Decorator
+
+Modifies a class itself:
+
+```javascript id="d6"
+function sealed(constructor) {
+  Object.seal(constructor);
+  Object.seal(constructor.prototype);
+}
+
+@sealed
+class User {
+  constructor(name) {
+    this.name = name;
+  }
+}
+```
+
+👉 Prevents adding/removing properties
+
+---
+
+### 2. Method Decorator
+
+Modifies a method behavior:
+
+```javascript id="d7"
+function uppercase(target, name, descriptor) {
+  const original = descriptor.value;
+
+  descriptor.value = function (...args) {
+    return original.apply(this, args).toUpperCase();
+  };
+
+  return descriptor;
+}
+```
+
+---
+
+### 3. Property Decorator (mostly TS)
+
+Used for validating or modifying properties:
+
+```javascript id="d8"
+function readonly(target, name, descriptor) {
+  descriptor.writable = false;
+  return descriptor;
+}
+```
+
+---
+
+## 6. Real-World Use Cases
+
+### 1. Logging / Debugging
+
+```javascript id="d9"
+function log(target, name, descriptor) {
+  const fn = descriptor.value;
+
+  descriptor.value = function (...args) {
+    console.log(`[LOG] ${name}`, args);
+    return fn.apply(this, args);
+  };
+}
+```
+
+---
+
+### 2. Authentication / Authorization
+
+```javascript id="d10"
+function auth(target, name, descriptor) {
+  const fn = descriptor.value;
+
+  descriptor.value = function (...args) {
+    if (!this.userLoggedIn) {
+      throw new Error("Unauthorized");
+    }
+    return fn.apply(this, args);
+  };
+}
+```
+
+---
+
+### 3. Validation (common in frameworks)
+
+```javascript id="d11"
+function minLength(len) {
+  return function (target, name, descriptor) {
+    const original = descriptor.value;
+
+    descriptor.value = function (value) {
+      if (value.length < len) {
+        throw new Error("Too short");
+      }
+      return original.call(this, value);
+    };
+  };
+}
+```
+
+---
+
+## 7. Decorators in Frameworks
+
+### Angular
+
+- Heavy use of decorators:
+  - `@Component`
+  - `@Injectable`
+  - `@NgModule`
+
+```typescript id="d12"
+@Component({
+  selector: "app-root",
+})
+class AppComponent {}
+```
+
+---
+
+### NestJS
+
+- Uses decorators for routing:
+
+```typescript id="d13"
+@Controller("users")
+class UserController {
+  @Get()
+  findAll() {}
+}
+```
+
+---
+
+## 8. Decorators vs Higher-Order Functions
+
+| Feature         | Decorators            | HOF (Higher Order Functions) |
+| --------------- | --------------------- | ---------------------------- |
+| Syntax          | `@decorator`          | `fn(fn)`                     |
+| Timing          | Class definition time | Runtime                      |
+| Use case        | Metadata / structure  | Functional logic             |
+| Framework usage | High                  | Medium                       |
+
+---
+
+## 9. Important Limitations
+
+- Not fully standardized in all JavaScript environments
+- Requires transpilers (Babel/TypeScript) in many cases
+- Can reduce readability if overused
+- Order of execution matters when multiple decorators are applied
+
+---
+
+## 10. Key Execution Order Rule
+
+```javascript id="d14"
+@A
+@B
+class C {}
+```
+
+👉 Execution order:
+
+```
+B → A (bottom to top)
+```
+
+---
+
+## 11. Key Conceptual Insight
+
+Decorators are:
+
+> **Meta-programming tools that modify classes and methods at definition time**
+
+They allow you to:
+
+- Extend behavior without modifying code
+- Implement cross-cutting concerns (logging, auth, validation)
+- Keep business logic clean
+
+---
+
+## 12. Interview-Ready Summary
+
+Decorators in JavaScript are special functions that allow you to modify or enhance classes, methods, or properties at definition time. They enable meta-programming by wrapping or altering behavior without changing the original implementation. Decorators are widely used in frameworks like Angular and NestJS for features such as logging, validation, dependency injection, and authorization. Although still a Stage 3 proposal in JavaScript, they are commonly used today through TypeScript and transpilers.
+
 ## Question 11. Explain the concept of Symbol.iterator
 
 ## Question 12. Difference between deep copy using structuredClone vs JSON methods
