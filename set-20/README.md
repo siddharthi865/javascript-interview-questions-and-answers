@@ -3516,6 +3516,385 @@ await doWork();
 
 ## Question 10. How to implement rate limiting in Node.js API
 
+## Short Answer
+
+Rate limiting in a Node.js API is used to **restrict how many requests a client can make in a given time window**. The simplest way is to use middleware that tracks requests per IP and blocks requests when a limit is exceeded.
+
+In Express, this is commonly done using packages like **`express-rate-limit`**, or manually using **in-memory maps / Redis for production-grade systems**.
+
+---
+
+# 1. Why Rate Limiting is Important
+
+Rate limiting protects APIs from:
+
+- DDoS attacks
+- brute force login attempts
+- API abuse
+- accidental traffic spikes
+- resource exhaustion
+
+---
+
+# 2. Basic Rate Limiting (In-Memory Implementation)
+
+This is a simple interview-friendly version.
+
+```js id="r1k9qp"
+const express = require("express");
+const app = express();
+
+const requests = new Map();
+
+const WINDOW_MS = 60 * 1000; // 1 minute
+const LIMIT = 5; // max requests per IP
+
+app.use((req, res, next) => {
+  const ip = req.ip;
+  const now = Date.now();
+
+  if (!requests.has(ip)) {
+    requests.set(ip, []);
+  }
+
+  const timestamps = requests.get(ip);
+
+  // remove old requests outside window
+  const recentRequests = timestamps.filter((time) => now - time < WINDOW_MS);
+
+  recentRequests.push(now);
+  requests.set(ip, recentRequests);
+
+  if (recentRequests.length > LIMIT) {
+    return res.status(429).json({
+      message: "Too many requests. Please try again later.",
+    });
+  }
+
+  next();
+});
+
+app.get("/", (req, res) => {
+  res.send("Hello World");
+});
+
+app.listen(3000);
+```
+
+---
+
+## How it works:
+
+```txt id="m8k2qp"
+IP → request timestamps stored
+    ↓
+filter old requests
+    ↓
+check count
+    ↓
+allow or block
+```
+
+---
+
+## Limitations:
+
+- Not scalable (memory grows per IP)
+- Not shared across multiple servers
+- Resets on restart
+
+---
+
+# 3. Production Approach: express-rate-limit
+
+## Installation
+
+```bash id="x2k9qp"
+npm install express-rate-limit
+```
+
+---
+
+## Usage
+
+```js id="c7m3xz"
+const express = require("express");
+const rateLimit = require("express-rate-limit");
+
+const app = express();
+
+const limiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // limit each IP to 10 requests per window
+  message: "Too many requests, please try again later.",
+});
+
+app.use(limiter);
+
+app.get("/", (req, res) => {
+  res.send("API working");
+});
+
+app.listen(3000);
+```
+
+---
+
+## What it provides:
+
+- IP-based tracking
+- Automatic cleanup
+- Easy configuration
+- Standard HTTP 429 response
+
+---
+
+# 4. Advanced Production Approach: Redis-Based Rate Limiting
+
+For distributed systems (multiple servers):
+
+👉 In-memory fails
+👉 Redis is required
+
+---
+
+## Why Redis?
+
+- Shared across servers
+- Fast (in-memory store)
+- Persistent counters
+
+---
+
+## Example (Conceptual)
+
+```js id="p3m8qp"
+const redis = require("redis");
+const client = redis.createClient();
+
+const WINDOW = 60; // seconds
+const LIMIT = 10;
+
+app.use(async (req, res, next) => {
+  const ip = req.ip;
+  const key = `rate:${ip}`;
+
+  const requests = await client.incr(key);
+
+  if (requests === 1) {
+    await client.expire(key, WINDOW);
+  }
+
+  if (requests > LIMIT) {
+    return res.status(429).json({
+      message: "Rate limit exceeded",
+    });
+  }
+
+  next();
+});
+```
+
+---
+
+## Flow:
+
+```txt id="t6k2mp"
+Request → Redis counter++
+        → check limit
+        → allow/block
+```
+
+---
+
+# 5. Common Algorithms Used
+
+## 1. Fixed Window (simple, shown above)
+
+```txt id="w3m8qp"
+0–60 sec → 10 requests allowed
+```
+
+✔ Simple
+❌ burst issue at boundary
+
+---
+
+## 2. Sliding Window (more accurate)
+
+Tracks requests continuously over time.
+
+✔ smoother enforcement
+❌ more complex
+
+---
+
+## 3. Token Bucket (industry standard)
+
+```txt id="q9m2xz"
+Tokens refill over time
+Each request consumes 1 token
+```
+
+✔ widely used in APIs
+✔ allows bursts
+✔ smooth traffic control
+
+---
+
+# 6. HTTP Status Code Used
+
+When limit is exceeded:
+
+```js id="h2k9qp"
+res.status(429).json({
+  message: "Too Many Requests",
+});
+```
+
+429 = Too Many Requests
+
+---
+
+# 7. Per-Route Rate Limiting
+
+You can apply limits only on sensitive endpoints:
+
+```js id="m7k3xz"
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+});
+
+app.post("/login", loginLimiter, (req, res) => {
+  res.send("Login route");
+});
+```
+
+---
+
+# 8. Key Considerations (Interview Points)
+
+## 1. IP-based vs User-based
+
+| Type       | Pros     | Cons            |
+| ---------- | -------- | --------------- |
+| IP-based   | simple   | shared IP issue |
+| User-based | accurate | requires auth   |
+
+---
+
+## 2. Distributed Systems
+
+- Use Redis / Memcached
+- Avoid in-memory limits
+
+---
+
+## 3. Performance
+
+- Middleware runs on every request
+- Keep logic lightweight
+
+---
+
+## 4. Security
+
+Rate limiting helps against:
+
+- brute-force login attacks
+- API scraping
+- credential stuffing
+
+---
+
+# 9. Common Pitfalls
+
+## 1. Using in-memory store in production
+
+```js id="n8m3qp"
+// ❌ breaks in cluster / multiple servers
+Map();
+```
+
+---
+
+## 2. Not cleaning old entries
+
+Memory leaks:
+
+```js id="r4k8qp"
+// timestamps accumulate forever
+```
+
+---
+
+## 3. Blocking legitimate users (too strict limits)
+
+Balance is important.
+
+---
+
+## 4. Ignoring reverse proxies
+
+Use:
+
+```js id="z7k2mp"
+app.set("trust proxy", 1);
+```
+
+So `req.ip` is correct behind Nginx / Load Balancer.
+
+---
+
+# 10. Best Practices
+
+### 1. Use Redis in production
+
+✔ scalable
+✔ shared state
+
+---
+
+### 2. Apply per-route limits
+
+```js id="v3m8xz"
+/login → strict limit
+/api → relaxed limit
+```
+
+---
+
+### 3. Return proper status code
+
+```js id="p9k2qp"
+429 Too Many Requests
+```
+
+---
+
+### 4. Combine with authentication
+
+Stronger protection:
+
+```txt id="t2m9qp"
+IP + User ID
+```
+
+---
+
+### 5. Add retry headers (optional)
+
+```js id="c6k3qp"
+res.setHeader("Retry-After", 60);
+```
+
+---
+
+# 11. Final Interview Answer
+
+> Rate limiting in Node.js APIs is used to control the number of requests a client can make within a specific time window to prevent abuse and ensure fair usage. In simple implementations, it can be done using middleware with in-memory storage to track request counts per IP. In production systems, scalable solutions use libraries like `express-rate-limit` or distributed stores like Redis to handle multiple server instances. Rate limiting typically returns HTTP status code 429 when the limit is exceeded and can be applied globally or per route. Common algorithms include fixed window, sliding window, and token bucket, with Redis-based token or sliding window approaches being preferred for production-grade systems.
+
 ## Question 11. How to implement JWT authentication in Node.js
 
 ## Question 12. How to handle concurrent requests in Node.js
