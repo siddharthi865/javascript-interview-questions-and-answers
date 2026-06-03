@@ -2196,6 +2196,213 @@ Avoid when:
 
 ## Question 10. What is memoization? Give example
 
+### Short Answer
+
+**Memoization** is an optimization technique in JavaScript where you **cache the results of expensive function calls** and return the cached result when the same inputs occur again, instead of recomputing.
+
+---
+
+# 1. Core Idea
+
+If a function is called multiple times with the same input:
+
+- First time → compute result
+- Next time → return stored result (cache)
+
+This improves performance significantly for expensive operations.
+
+---
+
+# 2. Simple Example (Without Memoization)
+
+```javascript id="mem1"
+function slowSquare(n) {
+  console.log("Computing...");
+  return n * n;
+}
+
+console.log(slowSquare(5)); // Computing... 25
+console.log(slowSquare(5)); // Computing... 25 (recomputed)
+```
+
+👉 Even though input is same, computation happens again.
+
+---
+
+# 3. With Memoization
+
+```javascript id="mem2"
+function memoizedSquare() {
+  const cache = {};
+
+  return function (n) {
+    if (cache[n]) {
+      return cache[n];
+    }
+
+    console.log("Computing...");
+    const result = n * n;
+    cache[n] = result;
+    return result;
+  };
+}
+
+const square = memoizedSquare();
+
+console.log(square(5)); // Computing... 25
+console.log(square(5)); // 25 (cached)
+```
+
+---
+
+# 4. How it works internally
+
+- `cache` stores input → output mapping
+- Before computing:
+  - check cache
+
+- If exists → return cached result
+- If not → compute and store
+
+---
+
+# 5. Real-world Example (Fibonacci)
+
+## Without memoization (slow)
+
+```javascript id="mem3"
+function fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 1) + fib(n - 2);
+}
+
+console.log(fib(40)); // very slow ❌
+```
+
+👉 Recomputes same values repeatedly
+
+---
+
+## With memoization (fast)
+
+```javascript id="mem4"
+function fibMemo() {
+  const cache = {};
+
+  function fib(n) {
+    if (n in cache) return cache[n];
+
+    if (n <= 1) return n;
+
+    cache[n] = fib(n - 1) + fib(n - 2);
+    return cache[n];
+  }
+
+  return fib;
+}
+
+const fib = fibMemo();
+
+console.log(fib(40)); // fast ✅
+```
+
+---
+
+# 6. Real-world use cases
+
+## 1. Expensive calculations
+
+- Fibonacci
+- Factorials
+- Mathematical computations
+
+---
+
+## 2. API response caching
+
+```javascript id="mem5"
+const cache = {};
+
+async function fetchUser(id) {
+  if (cache[id]) return cache[id];
+
+  const res = await fetch(`/api/user/${id}`);
+  const data = await res.json();
+
+  cache[id] = data;
+  return data;
+}
+```
+
+---
+
+## 3. React optimization (important)
+
+React uses memoization concepts:
+
+- `useMemo()` → memoize computed values
+- `useCallback()` → memoize functions
+
+```javascript id="mem6"
+const result = useMemo(() => expensiveCalc(a, b), [a, b]);
+```
+
+---
+
+# 7. Key benefits
+
+✔ Improves performance
+✔ Avoids repeated calculations
+✔ Reduces CPU usage
+✔ Useful in recursive functions
+
+---
+
+# 8. Limitations / pitfalls
+
+## ❌ Memory usage increases
+
+Because results are stored:
+
+```javascript id="mem7"
+// cache keeps growing
+```
+
+---
+
+## ❌ Not useful for unique inputs
+
+If inputs rarely repeat → memoization is wasted.
+
+---
+
+## ❌ Key limitation (important interview point)
+
+Works best when:
+
+- function is **pure** (same input → same output)
+
+---
+
+# 9. Memoization vs caching
+
+| Concept     | Scope                                    |
+| ----------- | ---------------------------------------- |
+| Memoization | Function-level caching                   |
+| Caching     | Broader (API, browser, DB, system level) |
+
+---
+
+# 10. Real-world analogy
+
+> Memoization is like a calculator that remembers previous answers. If you already asked “5 × 5”, it won’t compute again—it will just recall “25”.
+
+---
+
+# 11. Interview one-liner
+
+> Memoization is an optimization technique in JavaScript where function results are cached based on input arguments so that repeated calls with the same inputs return the cached result instead of recomputing, improving performance for expensive operations.
+
 ## Question 11. Difference between var, let, const in closures
 
 ## Question 12. Explain function hoisting with examples
