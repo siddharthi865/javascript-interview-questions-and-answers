@@ -3348,6 +3348,515 @@ All major stack operations run in **O(1)** time, making arrays an excellent choi
 
 ## Question 10. How to implement a queue using arrays
 
+### Direct Answer
+
+A **queue** is a **First-In-First-Out (FIFO)** data structure. In JavaScript, you can implement a queue using an array:
+
+- `push()` → add an element to the rear
+- `shift()` → remove an element from the front
+
+```js
+const queue = [];
+
+queue.push(10);
+queue.push(20);
+queue.push(30);
+
+console.log(queue.shift()); // 10
+console.log(queue.shift()); // 20
+```
+
+Output:
+
+```js
+10;
+20;
+```
+
+The first element added is the first element removed.
+
+---
+
+# What is a Queue?
+
+Think of people standing in a line:
+
+```text
+Front → [10] [20] [30] ← Rear
+```
+
+The first person in line leaves first.
+
+This is called:
+
+```text
+FIFO = First In, First Out
+```
+
+---
+
+# Simple Queue Implementation
+
+```js
+class Queue {
+  constructor() {
+    this.items = [];
+  }
+
+  enqueue(element) {
+    this.items.push(element);
+  }
+
+  dequeue() {
+    return this.items.shift();
+  }
+
+  front() {
+    return this.items[0];
+  }
+
+  isEmpty() {
+    return this.items.length === 0;
+  }
+
+  size() {
+    return this.items.length;
+  }
+}
+```
+
+---
+
+# Using the Queue
+
+```js
+const queue = new Queue();
+
+queue.enqueue(10);
+queue.enqueue(20);
+queue.enqueue(30);
+
+console.log(queue.front()); // 10
+console.log(queue.dequeue()); // 10
+console.log(queue.size()); // 2
+```
+
+Output:
+
+```js
+10;
+10;
+2;
+```
+
+---
+
+# Core Operations
+
+## 1. Enqueue
+
+Adds an element to the rear.
+
+```js
+queue.enqueue(40);
+```
+
+Internally:
+
+```js
+this.items.push(40);
+```
+
+Time Complexity:
+
+```text
+O(1)
+```
+
+---
+
+## 2. Dequeue
+
+Removes the front element.
+
+```js
+queue.dequeue();
+```
+
+Internally:
+
+```js
+this.items.shift();
+```
+
+Time Complexity:
+
+```text
+O(n)
+```
+
+### Why O(n)?
+
+Because after removing the first element, JavaScript must re-index all remaining elements.
+
+```js
+[10, 20, 30];
+```
+
+After:
+
+```js
+shift();
+```
+
+Becomes:
+
+```js
+[20, 30];
+```
+
+Indexes are updated internally.
+
+---
+
+## 3. Front (Peek)
+
+Returns the first element without removing it.
+
+```js
+front() {
+  return this.items[0];
+}
+```
+
+Example:
+
+```js
+queue.front();
+```
+
+Output:
+
+```js
+10;
+```
+
+Time Complexity:
+
+```text
+O(1)
+```
+
+---
+
+## 4. Check if Empty
+
+```js
+isEmpty() {
+  return this.items.length === 0;
+}
+```
+
+---
+
+## 5. Size
+
+```js
+size() {
+  return this.items.length;
+}
+```
+
+---
+
+# Visual Example
+
+```js
+queue.enqueue(1);
+queue.enqueue(2);
+queue.enqueue(3);
+```
+
+Queue:
+
+```text
+Front → [1] [2] [3] ← Rear
+```
+
+After:
+
+```js
+queue.dequeue();
+```
+
+Queue:
+
+```text
+Front → [2] [3] ← Rear
+```
+
+Returned value:
+
+```js
+1;
+```
+
+---
+
+# Handling Empty Queue
+
+```js
+dequeue() {
+  if (this.isEmpty()) {
+    return undefined;
+  }
+
+  return this.items.shift();
+}
+```
+
+Example:
+
+```js
+const queue = new Queue();
+
+console.log(queue.dequeue());
+```
+
+Output:
+
+```js
+undefined;
+```
+
+---
+
+# Problem with Array-Based Queues
+
+A common interview follow-up:
+
+### Issue
+
+```js
+shift();
+```
+
+is **O(n)**.
+
+For large queues, repeated dequeues become expensive.
+
+---
+
+# Optimized Queue Implementation
+
+Instead of `shift()`, maintain front and rear indexes.
+
+```js
+class Queue {
+  constructor() {
+    this.items = {};
+    this.frontIndex = 0;
+    this.rearIndex = 0;
+  }
+
+  enqueue(value) {
+    this.items[this.rearIndex] = value;
+    this.rearIndex++;
+  }
+
+  dequeue() {
+    if (this.isEmpty()) return undefined;
+
+    const value = this.items[this.frontIndex];
+    delete this.items[this.frontIndex];
+    this.frontIndex++;
+
+    return value;
+  }
+
+  front() {
+    return this.items[this.frontIndex];
+  }
+
+  isEmpty() {
+    return this.rearIndex === this.frontIndex;
+  }
+
+  size() {
+    return this.rearIndex - this.frontIndex;
+  }
+}
+```
+
+---
+
+# Why Is This Better?
+
+No element shifting occurs.
+
+```text
+enqueue → O(1)
+dequeue → O(1)
+```
+
+This is how many production queue implementations work internally.
+
+---
+
+# Real-World Uses of Queues
+
+### 1. Task Scheduling
+
+```text
+Task A
+Task B
+Task C
+```
+
+Tasks are processed in order.
+
+---
+
+### 2. Print Queue
+
+```text
+Document 1
+Document 2
+Document 3
+```
+
+First document submitted prints first.
+
+---
+
+### 3. Breadth-First Search (BFS)
+
+```text
+Graph Traversal
+Tree Traversal
+```
+
+Queues are fundamental to BFS.
+
+---
+
+### 4. Message Processing
+
+```text
+Event Queue
+Job Queue
+Request Queue
+```
+
+Common in Node.js and distributed systems.
+
+---
+
+# Queue vs Stack
+
+| Feature   | Queue           | Stack    |
+| --------- | --------------- | -------- |
+| Principle | FIFO            | LIFO     |
+| Insert    | Rear            | Top      |
+| Remove    | Front           | Top      |
+| Methods   | enqueue/dequeue | push/pop |
+
+Example:
+
+```text
+Queue:
+1 → 2 → 3
+remove => 1
+
+Stack:
+1 → 2 → 3
+remove => 3
+```
+
+---
+
+# Complexity Analysis
+
+### Simple Array Queue
+
+| Operation         | Complexity |
+| ----------------- | ---------- |
+| enqueue (`push`)  | O(1)       |
+| dequeue (`shift`) | O(n)       |
+| front             | O(1)       |
+| size              | O(1)       |
+
+---
+
+### Optimized Queue
+
+| Operation | Complexity |
+| --------- | ---------- |
+| enqueue   | O(1)       |
+| dequeue   | O(1)       |
+| front     | O(1)       |
+| size      | O(1)       |
+
+Space Complexity:
+
+```text
+O(n)
+```
+
+---
+
+# Interview Summary
+
+A queue follows **FIFO (First In, First Out)**.
+
+### Basic Array Queue
+
+```js
+class Queue {
+  constructor() {
+    this.items = [];
+  }
+
+  enqueue(item) {
+    this.items.push(item);
+  }
+
+  dequeue() {
+    return this.items.shift();
+  }
+}
+```
+
+### Optimized Queue (Preferred Interview Answer)
+
+```js
+class Queue {
+  constructor() {
+    this.items = {};
+    this.frontIndex = 0;
+    this.rearIndex = 0;
+  }
+
+  enqueue(value) {
+    this.items[this.rearIndex++] = value;
+  }
+
+  dequeue() {
+    const value = this.items[this.frontIndex];
+    delete this.items[this.frontIndex++];
+    return value;
+  }
+}
+```
+
+Key points:
+
+- Queue = **FIFO**
+- `enqueue()` adds to the rear
+- `dequeue()` removes from the front
+- Array + `shift()` works but is **O(n)**
+- Index-based implementation provides **O(1)** enqueue and dequeue operations and is the preferred interview solution.
+
 ## Question 11. Difference between `bind()`, `call()`, and `apply()`
 
 ## Question 12. How to create a closure and use it in a function
