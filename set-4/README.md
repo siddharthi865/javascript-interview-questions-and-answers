@@ -1954,6 +1954,246 @@ wm.set("key", "value"); // ❌ TypeError
 
 ## Question 9. Explain currying in JavaScript
 
+### Short Answer
+
+**Currying** is a technique in JavaScript where a function with multiple arguments is transformed into a sequence of functions, each taking one argument at a time.
+
+---
+
+# 1. Core Idea
+
+Instead of calling a function like this:
+
+```javascript id="cur1"
+add(2, 3, 4);
+```
+
+You call it like this:
+
+```javascript id="cur2"
+add(2)(3)(4);
+```
+
+---
+
+# 2. Basic Example of Currying
+
+### Normal function
+
+```javascript id="cur3"
+function add(a, b) {
+  return a + b;
+}
+
+console.log(add(2, 3)); // 5
+```
+
+---
+
+### Curried version
+
+```javascript id="cur4"
+function add(a) {
+  return function (b) {
+    return a + b;
+  };
+}
+
+console.log(add(2)(3)); // 5
+```
+
+---
+
+# 3. How currying works internally
+
+Each function returns another function until all arguments are received.
+
+```javascript id="cur5"
+function multiply(a) {
+  return function (b) {
+    return function (c) {
+      return a * b * c;
+    };
+  };
+}
+
+console.log(multiply(2)(3)(4)); // 24
+```
+
+---
+
+# 4. Arrow function version (modern JS)
+
+```javascript id="cur6"
+const add = (a) => (b) => (c) => a + b + c;
+
+console.log(add(1)(2)(3)); // 6
+```
+
+---
+
+# 5. Why currying is useful (important for interviews)
+
+## 1. Function reuse (partial application)
+
+```javascript id="cur7"
+const multiply = (a) => (b) => a * b;
+
+const double = multiply(2);
+const triple = multiply(3);
+
+console.log(double(5)); // 10
+console.log(triple(5)); // 15
+```
+
+---
+
+## 2. Cleaner configuration functions
+
+```javascript id="cur8"
+const log = (level) => (message) => console.log(`[${level}] ${message}`);
+
+const errorLog = log("ERROR");
+
+errorLog("Something went wrong");
+```
+
+---
+
+## 3. Event handling / functional composition
+
+```javascript id="cur9"
+const withUser = (user) => (action) => {
+  console.log(`User: ${user}`);
+  action();
+};
+
+const adminAction = withUser("Admin");
+
+adminAction(() => console.log("Deleted record"));
+```
+
+---
+
+# 6. Real-world analogy
+
+Currying is like ordering coffee:
+
+- First: choose size ☕
+- Then: choose milk 🥛
+- Then: choose sugar 🍬
+
+Each step returns a new “customized order function”.
+
+---
+
+# 7. Currying vs Normal Function
+
+| Feature     | Normal Function | Curried Function |
+| ----------- | --------------- | ---------------- |
+| Arguments   | All at once     | One at a time    |
+| Flexibility | Low             | High             |
+| Reusability | Limited         | High             |
+| Readability | Simple          | Functional style |
+
+---
+
+# 8. Partial Application vs Currying (important interview concept)
+
+## Currying:
+
+Breaks function into single-argument functions.
+
+```javascript id="cur10"
+add(a)(b)(c);
+```
+
+## Partial Application:
+
+Pre-fills some arguments.
+
+```javascript id="cur11"
+function add(a, b, c) {
+  return a + b + c;
+}
+
+const add2 = add.bind(null, 2);
+
+console.log(add2(3, 4)); // 9
+```
+
+👉 Partial application ≠ currying, but they are related.
+
+---
+
+# 9. Generic curry function (advanced interview level)
+
+```javascript id="cur12"
+function curry(fn) {
+  return function curried(...args) {
+    if (args.length >= fn.length) {
+      return fn.apply(this, args);
+    }
+    return (...next) => curried(...args, ...next);
+  };
+}
+```
+
+### Usage:
+
+```javascript id="cur13"
+function sum(a, b, c) {
+  return a + b + c;
+}
+
+const curriedSum = curry(sum);
+
+console.log(curriedSum(1)(2)(3)); // 6
+console.log(curriedSum(1, 2)(3)); // 6
+```
+
+---
+
+# 10. Common pitfalls
+
+## ❌ Overusing currying
+
+Too many nested functions can reduce readability:
+
+```javascript id="cur14"
+a => b => c => d => e => ...
+```
+
+---
+
+## ❌ Misunderstanding execution
+
+```javascript id="cur15"
+add(2, 3)(4); // ❌ if not designed for currying
+```
+
+---
+
+# 11. When to use currying?
+
+Use currying when:
+
+- You need **function reuse**
+- You want **functional composition**
+- You are building **configurable utilities**
+- You work in **functional programming patterns**
+
+Avoid when:
+
+- Simple operations are enough
+- Code readability becomes worse
+
+---
+
+# 12. Interview One-liner
+
+> Currying is a functional programming technique in JavaScript where a function with multiple arguments is transformed into a series of nested functions, each taking a single argument, enabling better reusability, partial application, and function composition.
+
 ## Question 10. What is memoization? Give example
 
 ## Question 11. Difference between var, let, const in closures
