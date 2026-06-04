@@ -2268,6 +2268,339 @@ If you want next-level prep, I can also explain:
 
 ## Question 9. How to dynamically load a script in JavaScript
 
+## Short answer
+
+You can dynamically load a JavaScript file by creating a `<script>` element, setting its `src`, and appending it to the document.
+
+```javascript
+const script = document.createElement("script");
+script.src = "app.js";
+
+document.body.appendChild(script);
+```
+
+For production code, you should also handle loading success and failure using `onload` and `onerror`.
+
+---
+
+# Why Dynamically Load Scripts?
+
+Common use cases:
+
+- Lazy loading third-party libraries
+- Loading analytics only when needed
+- Feature-based code splitting
+- Loading widgets/plugins on demand
+- Improving initial page load performance
+
+---
+
+# 1. Basic Example
+
+```javascript
+const script = document.createElement("script");
+
+script.src = "https://example.com/library.js";
+
+document.body.appendChild(script);
+```
+
+When appended, the browser:
+
+1. Downloads the file
+2. Parses it
+3. Executes it
+
+---
+
+# 2. Handling Success and Failure
+
+```javascript
+const script = document.createElement("script");
+
+script.src = "https://example.com/library.js";
+
+script.onload = () => {
+  console.log("Script loaded successfully");
+};
+
+script.onerror = () => {
+  console.error("Failed to load script");
+};
+
+document.body.appendChild(script);
+```
+
+---
+
+# 3. Promise-Based Script Loader (Interview Favorite)
+
+A reusable solution:
+
+```javascript
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+
+    script.src = src;
+
+    script.onload = () => resolve(script);
+    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+
+    document.head.appendChild(script);
+  });
+}
+```
+
+Usage:
+
+```javascript
+loadScript("https://example.com/library.js")
+  .then(() => {
+    console.log("Library ready");
+  })
+  .catch(console.error);
+```
+
+---
+
+# 4. Async/Await Version
+
+```javascript
+async function init() {
+  try {
+    await loadScript("https://example.com/library.js");
+
+    console.log("Library loaded");
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+init();
+```
+
+This is the modern approach.
+
+---
+
+# 5. Loading Multiple Scripts Sequentially
+
+Sometimes one script depends on another.
+
+```javascript
+await loadScript("jquery.js");
+await loadScript("plugin.js");
+```
+
+This guarantees:
+
+```text
+jquery.js
+     ↓
+plugin.js
+```
+
+loads in order.
+
+---
+
+# 6. Loading Multiple Scripts in Parallel
+
+If scripts are independent:
+
+```javascript
+await Promise.all([
+  loadScript("analytics.js"),
+  loadScript("tracking.js"),
+  loadScript("chat.js"),
+]);
+```
+
+This is faster because downloads happen simultaneously.
+
+---
+
+# 7. Using `async` and `defer`
+
+You can set script attributes dynamically.
+
+### Async
+
+```javascript
+const script = document.createElement("script");
+
+script.src = "app.js";
+script.async = true;
+```
+
+Behavior:
+
+- Downloads in parallel
+- Executes immediately after download
+- Order is not guaranteed
+
+---
+
+### Defer
+
+```javascript
+const script = document.createElement("script");
+
+script.src = "app.js";
+script.defer = true;
+```
+
+Behavior:
+
+- Downloads in parallel
+- Executes after HTML parsing
+- Preserves execution order
+
+---
+
+# 8. Preventing Duplicate Loads
+
+A common production concern:
+
+```javascript
+function loadScript(src) {
+  const existing = document.querySelector(`script[src="${src}"]`);
+
+  if (existing) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+
+    script.src = src;
+
+    script.onload = resolve;
+    script.onerror = reject;
+
+    document.head.appendChild(script);
+  });
+}
+```
+
+This avoids loading the same library multiple times.
+
+---
+
+# 9. ES Module Alternative
+
+Modern applications often use dynamic imports.
+
+```javascript
+const module = await import("./utils.js");
+
+module.doSomething();
+```
+
+Advantages:
+
+- Native code splitting
+- Tree shaking support
+- Better dependency management
+- Promise-based by default
+
+This is generally preferred over injecting script tags for your own application code.
+
+---
+
+# Dynamic `<script>` vs Dynamic `import()`
+
+| Feature                       | Script Element      | Dynamic Import     |
+| ----------------------------- | ------------------- | ------------------ |
+| Loads external JS             | ✅                  | ✅ ES Modules only |
+| Promise-based                 | ❌ (unless wrapped) | ✅                 |
+| Supports code splitting       | ❌                  | ✅                 |
+| Loads third-party CDN scripts | ✅                  | ⚠️ Depends         |
+| Modern app development        | ⚠️ Less common      | ✅ Preferred       |
+
+---
+
+# Common Interview Pitfalls
+
+## ❌ Assuming script loads instantly
+
+```javascript
+loadScript("lib.js");
+
+myLibrary.doSomething();
+```
+
+May fail because the file hasn't finished downloading.
+
+Correct:
+
+```javascript
+await loadScript("lib.js");
+
+myLibrary.doSomething();
+```
+
+---
+
+## ❌ Ignoring load errors
+
+```javascript
+script.onload = ...
+```
+
+Always include:
+
+```javascript
+script.onerror = ...
+```
+
+---
+
+## ❌ Loading dependent scripts in parallel
+
+```javascript
+Promise.all([loadScript("jquery.js"), loadScript("plugin.js")]);
+```
+
+If `plugin.js` requires jQuery, it may execute first and break.
+
+Load sequentially instead.
+
+---
+
+# Event Loop Perspective
+
+When a script is dynamically added:
+
+```javascript
+document.head.appendChild(script);
+```
+
+The browser:
+
+```text
+Create <script>
+      ↓
+Start network request
+      ↓
+Download completes
+      ↓
+Execute script
+      ↓
+Fire onload event
+```
+
+The `onload` callback is queued and executed after the current call stack is clear.
+
+---
+
+# Interview Summary
+
+A strong interview answer is:
+
+> To dynamically load a script, create a `<script>` element, set its `src`, and append it to the DOM. In production, wrap the process in a Promise and use `onload`/`onerror` to handle success and failure. For modern JavaScript applications, dynamic `import()` is often preferred because it is Promise-based and supports code splitting, while dynamically injected script tags remain useful for loading third-party libraries and external resources.
+
 ## Question 10. How to implement tab navigation with keyboard accessibility
 
 ## Question 11. How to detect if a CSS class exists on an element
