@@ -3244,6 +3244,414 @@ Shallow freezing using `Object.freeze()` prevents modification of an object’s 
 
 ## Question 9. How to implement a read-only object using Proxy
 
+## Direct Answer
+
+You can implement a **read-only object** using a **Proxy** by intercepting mutation operations (`set`, `deleteProperty`, `defineProperty`, etc.) and preventing them from modifying the target object.
+
+```js
+const obj = {
+  name: "John",
+  age: 30,
+};
+
+const readOnly = new Proxy(obj, {
+  set() {
+    throw new Error("Object is read-only");
+  },
+});
+
+readOnly.name = "Alice"; // Error
+```
+
+Unlike `Object.freeze()`, a Proxy can provide **custom behavior, error messages, logging, and deep read-only protection**.
+
+---
+
+# 1. Basic Read-Only Proxy
+
+The simplest implementation blocks property assignments.
+
+```js
+const user = {
+  name: "John",
+  age: 25,
+};
+
+const readOnlyUser = new Proxy(user, {
+  get(target, prop, receiver) {
+    return Reflect.get(target, prop, receiver);
+  },
+
+  set(target, prop, value) {
+    throw new Error(`Cannot modify '${String(prop)}'. Object is read-only.`);
+  },
+});
+
+console.log(readOnlyUser.name);
+
+readOnlyUser.age = 30; // Error
+```
+
+Output:
+
+```text
+John
+Error: Cannot modify 'age'. Object is read-only.
+```
+
+---
+
+# 2. Prevent Property Deletion
+
+Without handling `deleteProperty`, users could still remove properties.
+
+```js
+const readOnly = new Proxy(user, {
+  set() {
+    throw new Error("Read-only");
+  },
+
+  deleteProperty() {
+    throw new Error("Cannot delete properties");
+  },
+});
+```
+
+Example:
+
+```js
+delete readOnly.name;
+```
+
+Output:
+
+```text
+Error: Cannot delete properties
+```
+
+---
+
+# 3. Prevent Defining New Properties
+
+Users can also modify objects via:
+
+```js
+Object.defineProperty(obj, "role", {
+  value: "admin",
+});
+```
+
+Block it:
+
+```js
+const readOnly = new Proxy(user, {
+  set() {
+    throw new Error("Read-only");
+  },
+
+  deleteProperty() {
+    throw new Error("Read-only");
+  },
+
+  defineProperty() {
+    throw new Error("Cannot define properties");
+  },
+});
+```
+
+---
+
+# 4. Complete Read-Only Proxy
+
+```js
+function createReadOnly(obj) {
+  return new Proxy(obj, {
+    get(target, prop, receiver) {
+      return Reflect.get(target, prop, receiver);
+    },
+
+    set() {
+      throw new Error("Object is read-only");
+    },
+
+    deleteProperty() {
+      throw new Error("Object is read-only");
+    },
+
+    defineProperty() {
+      throw new Error("Object is read-only");
+    },
+  });
+}
+```
+
+Usage:
+
+```js
+const user = createReadOnly({
+  name: "John",
+});
+
+console.log(user.name);
+
+user.name = "Alice"; // Error
+```
+
+---
+
+# 5. Problem: Nested Objects Are Still Mutable
+
+Consider:
+
+```js
+const user = {
+  name: "John",
+  address: {
+    city: "Delhi",
+  },
+};
+```
+
+Using the previous Proxy:
+
+```js
+user.address.city = "Mumbai";
+```
+
+still works because only the top-level object is protected.
+
+---
+
+# 6. Deep Read-Only Proxy
+
+A common interview follow-up is implementing recursive protection.
+
+```js
+function createReadOnly(obj) {
+  return new Proxy(obj, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver);
+
+      if (value && typeof value === "object") {
+        return createReadOnly(value);
+      }
+
+      return value;
+    },
+
+    set() {
+      throw new Error("Object is read-only");
+    },
+
+    deleteProperty() {
+      throw new Error("Object is read-only");
+    },
+
+    defineProperty() {
+      throw new Error("Object is read-only");
+    },
+  });
+}
+```
+
+Usage:
+
+```js
+const state = createReadOnly({
+  user: {
+    profile: {
+      name: "John",
+    },
+  },
+});
+
+state.user.profile.name = "Alice";
+```
+
+Output:
+
+```text
+Error: Object is read-only
+```
+
+---
+
+# 7. Avoid Creating Multiple Proxies
+
+The recursive version creates a new Proxy every time a nested object is accessed.
+
+Optimization:
+
+```js
+const cache = new WeakMap();
+
+function createReadOnly(obj) {
+  if (cache.has(obj)) {
+    return cache.get(obj);
+  }
+
+  const proxy = new Proxy(obj, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver);
+
+      if (value && typeof value === "object") {
+        return createReadOnly(value);
+      }
+
+      return value;
+    },
+
+    set() {
+      throw new Error("Read-only");
+    },
+  });
+
+  cache.set(obj, proxy);
+
+  return proxy;
+}
+```
+
+This is similar to techniques used in reactive frameworks.
+
+---
+
+# 8. Proxy Read-Only vs Object.freeze()
+
+## `Object.freeze()`
+
+```js
+Object.freeze(user);
+```
+
+Pros:
+
+- Native
+- Fast
+- Simple
+
+Cons:
+
+- Shallow
+- No custom behavior
+- Silent failures (outside strict mode)
+
+---
+
+## Proxy Read-Only
+
+```js
+const readOnly = new Proxy(user, handler);
+```
+
+Pros:
+
+- Custom errors
+- Deep protection
+- Logging
+- Validation
+- Dynamic behavior
+
+Cons:
+
+- Slight runtime overhead
+- More complex
+
+---
+
+# Comparison
+
+| Feature          | Object.freeze | Proxy           |
+| ---------------- | ------------- | --------------- |
+| Read-only        | ✅            | ✅              |
+| Custom errors    | ❌            | ✅              |
+| Deep protection  | ❌            | ✅              |
+| Logging          | ❌            | ✅              |
+| Dynamic behavior | ❌            | ✅              |
+| Performance      | Faster        | Slightly slower |
+
+---
+
+# 9. Real-World Uses
+
+### Redux Dev Tools
+
+Prevent accidental state mutations.
+
+```js
+state.user.name = "Alice";
+```
+
+Throw immediately.
+
+---
+
+### Configuration Objects
+
+```js
+const config = createReadOnly({
+  API_URL: "https://api.example.com",
+});
+```
+
+---
+
+### Library APIs
+
+Expose internal state safely.
+
+```js
+return createReadOnly(internalState);
+```
+
+Consumers can inspect but not modify.
+
+---
+
+# Common Interview Questions
+
+### Why use `Reflect.get()`?
+
+Instead of:
+
+```js
+return target[prop];
+```
+
+use:
+
+```js
+return Reflect.get(target, prop, receiver);
+```
+
+because it preserves:
+
+- getters
+- prototype chains
+- correct `this` binding
+
+---
+
+### Can Proxy make an object truly immutable?
+
+Not completely.
+
+If code still has access to the original target:
+
+```js
+obj.name = "Alice";
+```
+
+it can bypass the Proxy.
+
+To enforce immutability, expose only the Proxy and keep the target private.
+
+---
+
+# Senior-Level Interview Summary
+
+A read-only object can be implemented using a `Proxy` by intercepting mutation operations such as `set`, `deleteProperty`, and `defineProperty` and rejecting them. Compared to `Object.freeze()`, a Proxy offers greater flexibility, including custom error handling, deep recursive protection, logging, and runtime validation. Production-quality implementations typically combine recursive proxying with `WeakMap` caching to efficiently provide deep read-only views of complex object graphs while preserving normal property access through `Reflect`.
+
 ## Question 10. How to implement custom iterables using `[Symbol.iterator]`
 
 ## Question 11. How to implement async iterables using `[Symbol.asyncIterator]`
