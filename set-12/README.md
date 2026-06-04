@@ -1763,6 +1763,337 @@ el.getAttribute("xyz"); // null
 
 ## Question 9. Difference between event bubbling and event capturing
 
+## Short Answer
+
+When an event occurs on an element, it travels through the DOM in three phases:
+
+1. **Capturing Phase** (top → target)
+2. **Target Phase** (on the clicked element)
+3. **Bubbling Phase** (target → top)
+
+**Event Capturing** means handling the event while it travels **down** the DOM tree.
+
+**Event Bubbling** means handling the event while it travels **up** the DOM tree.
+
+By default, most event listeners work in the **bubbling phase**.
+
+---
+
+# Example DOM Structure
+
+```html
+<div id="grandparent">
+  <div id="parent">
+    <button id="child">Click Me</button>
+  </div>
+</div>
+```
+
+DOM Tree:
+
+```text
+grandparent
+    │
+  parent
+    │
+  child
+```
+
+---
+
+# Event Bubbling
+
+When the button is clicked:
+
+```js
+document.getElementById("grandparent").addEventListener("click", () => {
+  console.log("grandparent");
+});
+
+document.getElementById("parent").addEventListener("click", () => {
+  console.log("parent");
+});
+
+document.getElementById("child").addEventListener("click", () => {
+  console.log("child");
+});
+```
+
+Clicking the button outputs:
+
+```text
+child
+parent
+grandparent
+```
+
+### Why?
+
+The event starts at the target and bubbles upward:
+
+```text
+child
+  ↑
+parent
+  ↑
+grandparent
+```
+
+This is the default behavior.
+
+---
+
+# Event Capturing
+
+To listen during the capturing phase:
+
+```js
+document
+  .getElementById("grandparent")
+  .addEventListener("click", () => console.log("grandparent"), true);
+
+document
+  .getElementById("parent")
+  .addEventListener("click", () => console.log("parent"), true);
+
+document
+  .getElementById("child")
+  .addEventListener("click", () => console.log("child"), true);
+```
+
+Output:
+
+```text
+grandparent
+parent
+child
+```
+
+The event travels downward:
+
+```text
+grandparent
+  ↓
+parent
+  ↓
+child
+```
+
+---
+
+# The Three Event Phases
+
+When clicking the button:
+
+```text
+1. Capturing Phase
+   document
+      ↓
+   html
+      ↓
+   body
+      ↓
+   grandparent
+      ↓
+   parent
+      ↓
+   child
+
+2. Target Phase
+   child
+
+3. Bubbling Phase
+   child
+      ↑
+   parent
+      ↑
+   grandparent
+      ↑
+   body
+      ↑
+   html
+      ↑
+   document
+```
+
+---
+
+# Mixing Capturing and Bubbling
+
+```js
+grandparent.addEventListener(
+  "click",
+  () => console.log("grandparent capture"),
+  true,
+);
+
+parent.addEventListener("click", () => console.log("parent bubble"));
+
+child.addEventListener("click", () => console.log("child"));
+```
+
+Click button:
+
+```text
+grandparent capture
+child
+parent bubble
+```
+
+Capturing listeners run first, then target, then bubbling listeners.
+
+---
+
+# Using `event.eventPhase`
+
+```js
+element.addEventListener("click", (event) => {
+  console.log(event.eventPhase);
+});
+```
+
+Values:
+
+| Value | Phase     |
+| ----- | --------- |
+| 1     | Capturing |
+| 2     | Target    |
+| 3     | Bubbling  |
+
+---
+
+# Stopping Propagation
+
+## `stopPropagation()`
+
+```js
+child.addEventListener("click", (e) => {
+  e.stopPropagation();
+  console.log("child");
+});
+```
+
+Output:
+
+```text
+child
+```
+
+Parent and grandparent listeners won't execute.
+
+---
+
+## `stopImmediatePropagation()`
+
+Stops:
+
+1. Event propagation
+2. Remaining listeners on the same element
+
+```js
+button.addEventListener("click", (e) => {
+  e.stopImmediatePropagation();
+  console.log("First");
+});
+
+button.addEventListener("click", () => {
+  console.log("Second");
+});
+```
+
+Output:
+
+```text
+First
+```
+
+---
+
+# Why Bubbling Is Important
+
+Event delegation relies on bubbling.
+
+```html
+<ul id="list">
+  <li>Item 1</li>
+  <li>Item 2</li>
+  <li>Item 3</li>
+</ul>
+```
+
+Instead of attaching listeners to every `<li>`:
+
+```js
+document.getElementById("list").addEventListener("click", (event) => {
+  console.log(event.target.textContent);
+});
+```
+
+The click bubbles from the `<li>` to the `<ul>`.
+
+This is:
+
+- More memory efficient
+- Better for dynamic elements
+- Commonly used in large applications
+
+---
+
+# Common Interview Questions
+
+### Does every event bubble?
+
+No.
+
+Examples that do **not** bubble:
+
+- `focus`
+- `blur`
+- `mouseenter`
+- `mouseleave`
+
+Examples that bubble:
+
+- `click`
+- `keydown`
+- `keyup`
+- `input`
+
+---
+
+### Which phase is used by default?
+
+```js
+element.addEventListener("click", handler);
+```
+
+Equivalent to:
+
+```js
+element.addEventListener("click", handler, false);
+```
+
+Default = **bubbling phase**.
+
+---
+
+# Comparison Table
+
+| Feature                       | Event Capturing | Event Bubbling |
+| ----------------------------- | --------------- | -------------- |
+| Direction                     | Top → Target    | Target → Top   |
+| Phase Number                  | 1               | 3              |
+| Default Listener Phase        | ❌ No           | ✅ Yes         |
+| `addEventListener(..., true)` | ✅              | ❌             |
+| Event Delegation              | Rarely Used     | Commonly Used  |
+| Execution Order               | First           | Last           |
+
+---
+
+# Interview-Ready Answer
+
+> Event capturing and event bubbling describe how events propagate through the DOM. In the capturing phase, the event travels from the root element down to the target element. In the bubbling phase, it travels from the target element back up through its ancestors. By default, event listeners are attached in the bubbling phase. For example, when a button inside a div is clicked, the click event first reaches the button, then bubbles up to the div and other ancestors. Capturing can be enabled by passing `true` or `{ capture: true }` to `addEventListener()`. Event bubbling is particularly important because it enables event delegation, a common performance optimization technique in JavaScript applications.
+
 ## Question 10. How to get the current timestamp in JavaScript?
 
 ## Question 11. Difference between `Date.now()` and `new Date()`
