@@ -1837,6 +1837,244 @@ const add = (a, b) => a + b;
 
 ## Question 9. Difference between function declaration and function expression
 
+**Short answer:**
+A **function declaration** defines a named function that is hoisted completely, while a **function expression** defines a function assigned to a variable and is not hoisted in the same way (only the variable is hoisted, not the function definition).
+
+---
+
+# 🔍 Detailed Interview Explanation
+
+In JavaScript, both function declaration and function expression are ways to define functions, but they differ in **hoisting, syntax, and usage behavior**.
+
+---
+
+# 1. 🧱 Function Declaration
+
+## 📌 Syntax:
+
+```js id="fd1"
+function add(a, b) {
+  return a + b;
+}
+```
+
+---
+
+## 📌 Key characteristics:
+
+### ✔ Fully hoisted
+
+You can call it before its definition:
+
+```js id="fd2"
+console.log(add(2, 3)); // 5
+
+function add(a, b) {
+  return a + b;
+}
+```
+
+👉 Entire function is moved to the top during memory creation phase.
+
+---
+
+### ✔ Named function
+
+Always has a name (`add` in this case).
+
+---
+
+### ✔ Best for reusable logic
+
+Used for utility/helper functions.
+
+---
+
+# 2. 🧩 Function Expression
+
+## 📌 Syntax:
+
+```js id="fe1"
+const add = function (a, b) {
+  return a + b;
+};
+```
+
+---
+
+## 📌 Key characteristics:
+
+### ❌ Not fully hoisted
+
+Only the variable is hoisted, not the function body.
+
+```js id="fe2"
+console.log(add); // undefined
+
+var add = function (a, b) {
+  return a + b;
+};
+```
+
+👉 Function is assigned only at runtime.
+
+---
+
+### ✔ Can be anonymous or named
+
+```js id="fe3"
+const greet = function () {
+  return "Hello";
+};
+```
+
+Or named:
+
+```js id="fe4"
+const greet = function sayHello() {
+  return "Hello";
+};
+```
+
+---
+
+### ✔ Can be assigned dynamically
+
+```js id="fe5"
+let operation;
+
+if (true) {
+  operation = function (a, b) {
+    return a - b;
+  };
+}
+
+console.log(operation(5, 2)); // 3
+```
+
+---
+
+# 📊 Key Differences Table
+
+| Feature          | Function Declaration        | Function Expression              |
+| ---------------- | --------------------------- | -------------------------------- |
+| Syntax           | `function add() {}`         | `const add = function() {}`      |
+| Hoisting         | Fully hoisted               | Only variable hoisted            |
+| Execution timing | Available before definition | Available only after assignment  |
+| Name required    | Yes                         | Optional                         |
+| Flexibility      | Less flexible               | More flexible                    |
+| Use case         | Utility functions           | Dynamic or conditional functions |
+
+---
+
+# 🧠 Hoisting Behavior (Very Important)
+
+## Function Declaration:
+
+```js id="h1"
+sayHi(); // works
+
+function sayHi() {
+  console.log("Hi");
+}
+```
+
+---
+
+## Function Expression:
+
+```js id="h2"
+sayHi(); // ❌ TypeError or undefined
+
+var sayHi = function () {
+  console.log("Hi");
+};
+```
+
+---
+
+### 🔥 Why this happens:
+
+During memory phase:
+
+### Function declaration:
+
+```js id="h3"
+// fully loaded into memory
+sayHi → function definition
+```
+
+### Function expression:
+
+```js id="h4"
+// only variable is hoisted
+sayHi → undefined
+```
+
+---
+
+# ⚠️ Common Interview Pitfalls
+
+---
+
+## 1. Confusing hoisting behavior
+
+```js id="p1"
+console.log(fn); // undefined
+
+var fn = function () {
+  return "Hello";
+};
+```
+
+---
+
+## 2. TDZ with let/const expressions
+
+```js id="p2"
+console.log(fn); // ReferenceError
+
+const fn = function () {};
+```
+
+---
+
+## 3. Assuming both behave the same
+
+👉 They do NOT behave the same during execution context creation.
+
+---
+
+# 🚀 Best Practices
+
+- Use **function declarations** for general reusable functions
+- Use **function expressions** when:
+  - You need conditional assignment
+  - You want to pass functions as values
+  - You want better control over scope
+
+- Prefer `const` with function expressions to avoid reassignment bugs
+
+```js id="bp1"
+const multiply = function (a, b) {
+  return a * b;
+};
+```
+
+---
+
+# 🎯 Final Summary
+
+- **Function Declaration**
+  - Fully hoisted
+  - Can be called before definition
+  - Best for reusable utilities
+
+- **Function Expression**
+  - Not fully hoisted
+  - Assigned to variables at runtime
+  - More flexible and commonly used in modern JS
+
 ## Question 10. What are arrow functions? Give examples
 
 ## Question 11. What are template literals in JavaScript?
