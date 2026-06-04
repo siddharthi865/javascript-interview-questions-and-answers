@@ -3461,6 +3461,352 @@ Multiple layers provide protection.
 
 ## Question 9. How to prevent event loop blocking for CPU-intensive tasks
 
+## ✅ Short Answer
+
+To prevent **event loop blocking** in Node.js for CPU-intensive tasks, you should **move heavy computation off the main thread** using one of these approaches:
+
+1. **Worker Threads (best for CPU-heavy JS tasks)**
+2. **Child Processes (for isolation / external programs)**
+3. **Clustering (for scaling, not CPU splitting)**
+4. **Queues + Background Workers (for async job processing)**
+5. **Native addons (for extreme performance cases)**
+
+The core principle:
+
+> Never run CPU-heavy work on the main event loop thread.
+
+---
+
+# 🧠 Why Event Loop Blocking Happens
+
+Node.js runs JavaScript on a **single thread** inside Node.js.
+
+If you run heavy computation:
+
+```js
+function heavyTask() {
+  while (true) {}
+}
+```
+
+Then:
+
+```txt
+Event Loop
+   ↓
+Blocked ❌
+   ↓
+No I/O
+No HTTP responses
+No timers
+```
+
+Even simple API requests stop responding.
+
+---
+
+# 🚨 Example of Blocking Code
+
+```js id="b9x1kz"
+app.get("/compute", (req, res) => {
+  let sum = 0;
+
+  for (let i = 0; i < 1e10; i++) {
+    sum += i;
+  }
+
+  res.send({ sum });
+});
+```
+
+### Problem:
+
+- Blocks entire server
+- Blocks all other requests
+- Breaks scalability
+
+---
+
+# ✅ Solution 1: Worker Threads (Best Practice)
+
+Worker Threads allow CPU-heavy tasks in parallel threads.
+
+---
+
+## Example: Offload CPU Task
+
+### main.js
+
+```js id="c1k9qz"
+const { Worker } = require("worker_threads");
+
+app.get("/compute", (req, res) => {
+  const worker = new Worker("./worker.js", {
+    workerData: 1000000000,
+  });
+
+  worker.on("message", (result) => {
+    res.send({ result });
+  });
+
+  worker.on("error", (err) => {
+    res.status(500).send(err.message);
+  });
+});
+```
+
+---
+
+### worker.js
+
+```js id="h3m9vp"
+const { parentPort, workerData } = require("worker_threads");
+
+let sum = 0;
+
+for (let i = 0; i < workerData; i++) {
+  sum += i;
+}
+
+parentPort.postMessage(sum);
+```
+
+---
+
+## Why it works
+
+```txt
+Main Thread → stays free
+Worker Thread → handles CPU work
+```
+
+No blocking occurs.
+
+---
+
+# ⚙️ Solution 2: Child Processes
+
+Use when:
+
+- Running separate programs
+- Python scripts
+- Heavy isolation needed
+
+```js id="w0k7dp"
+const { spawn } = require("child_process");
+
+const child = spawn("node", ["heavy.js"]);
+
+child.stdout.on("data", (data) => {
+  console.log(data.toString());
+});
+```
+
+### Pros:
+
+- Strong isolation
+- Separate memory
+
+### Cons:
+
+- Higher overhead than worker threads
+
+---
+
+# 🚀 Solution 3: Job Queues (Production Standard)
+
+Use background processing systems:
+
+- Redis queues
+- BullMQ
+- RabbitMQ
+
+Example architecture:
+
+```txt id="z3p7qk"
+API Server
+   ↓
+Queue (Redis)
+   ↓
+Worker Process
+   ↓
+CPU-heavy task
+```
+
+---
+
+## Example with BullMQ
+
+```js id="v5q2mn"
+queue.add("image-processing", {
+  imageId: 123,
+});
+```
+
+Worker:
+
+```js id="l9d0rx"
+queue.process(async (job) => {
+  await heavyImageProcessing(job.data);
+});
+```
+
+---
+
+## Why queues are powerful
+
+- Scalable horizontally
+- Retry support
+- Rate control
+- Fault tolerance
+
+---
+
+# ⚖️ Solution 4: Cluster (NOT for CPU tasks)
+
+Clustering uses multiple processes:
+
+cluster module
+
+```txt
+Worker 1 → event loop
+Worker 2 → event loop
+Worker 3 → event loop
+```
+
+### But:
+
+❌ Does NOT split a single CPU task
+✔ Only distributes requests
+
+---
+
+## Wrong expectation:
+
+```txt
+"One request → split across workers"
+```
+
+Not true.
+
+Each request still runs on one worker.
+
+---
+
+# ⚡ Solution 5: Break Tasks into Chunks (Cooperative Scheduling)
+
+Instead of blocking:
+
+```js
+for (let i = 0; i < 1e9; i++) {}
+```
+
+Split work:
+
+```js id="k4z1wv"
+function chunkedTask(i = 0) {
+  const limit = i + 1e6;
+
+  for (; i < limit; i++) {
+    // small work
+  }
+
+  if (i < 1e9) {
+    setImmediate(() => chunkedTask(i));
+  }
+}
+```
+
+### Benefit:
+
+- Keeps event loop responsive
+- No extra threads needed
+
+---
+
+# ⚡ Solution 6: WebAssembly (Advanced)
+
+For compute-heavy tasks:
+
+- Image processing
+- Crypto
+- ML inference
+
+WASM can run faster than JS in some cases.
+
+---
+
+# 📊 Comparison
+
+| Method          | Best For          | Blocking Risk     | Complexity |
+| --------------- | ----------------- | ----------------- | ---------- |
+| Worker Threads  | CPU-heavy JS      | ❌ No             | Medium     |
+| Child Processes | External programs | ❌ No             | High       |
+| Queues          | Background jobs   | ❌ No             | High       |
+| Chunking        | Small CPU tasks   | ⚠️ Low            | Low        |
+| Cluster         | HTTP scaling      | ❌ No CPU offload | Low        |
+
+---
+
+# 🧠 Key Interview Insight
+
+> Node.js is single-threaded for JavaScript execution, so any CPU-intensive operation blocks the event loop unless explicitly moved to another thread, process, or asynchronous job system.
+
+---
+
+# 🚨 Common Mistakes
+
+## ❌ Using setTimeout for CPU tasks
+
+```js
+setTimeout(() => heavyTask(), 0);
+```
+
+Does NOT solve blocking.
+
+---
+
+## ❌ Using cluster instead of worker threads
+
+Cluster helps concurrency, not computation splitting.
+
+---
+
+## ❌ Running heavy loops in request handlers
+
+```js
+app.get("/", () => {
+  heavyLoop(); // bad
+});
+```
+
+---
+
+# 🧠 Mental Model
+
+Think of Node.js like this:
+
+```txt
+Event Loop = Single cashier
+CPU task = Long transaction
+```
+
+If cashier is busy:
+
+- Everyone waits ❌
+
+So you either:
+
+- Hire assistants (worker threads)
+- Open multiple counters (cluster)
+- Offload work (queues)
+
+---
+
+# 🎯 Interview Summary
+
+> To prevent event loop blocking in Node.js, CPU-intensive tasks should be offloaded from the main thread. The best approach is using Worker Threads, which allow parallel execution of JavaScript in separate threads within the same process. Alternatively, Child Processes can be used for isolated execution, and job queues like BullMQ are commonly used in production systems for asynchronous background processing. Clustering helps scale request handling but does not split CPU work. For small tasks, chunking using setImmediate or setTimeout can maintain responsiveness. The key principle is to ensure the event loop remains free to handle I/O operations efficiently.
+
 ## Question 10. How to implement caching in Node.js with LRU cache
 
 ## Question 11. Difference between callback-based APIs and promise-based APIs in Node.js
