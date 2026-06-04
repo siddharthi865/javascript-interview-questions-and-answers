@@ -1920,6 +1920,213 @@ Array.from(items).forEach((el) => {
 
 ## Question 9. How to prevent default behavior of events?
 
+## Short Answer
+
+You prevent the default behavior of an event in JavaScript using:
+
+```js
+event.preventDefault();
+```
+
+It stops the browser’s **default action** associated with that event.
+
+---
+
+# 1. What is “default behavior”?
+
+Many HTML elements have built-in behaviors, for example:
+
+- Clicking a link → navigates to another page
+- Submitting a form → refreshes page / sends request
+- Right-click → opens context menu
+- Checkbox click → toggles checked state
+
+`preventDefault()` stops these default actions.
+
+---
+
+# 2. Basic Syntax
+
+```js
+element.addEventListener("event", function (event) {
+  event.preventDefault();
+});
+```
+
+---
+
+# 3. Example 1: Prevent link navigation
+
+### HTML:
+
+```html
+<a href="https://google.com" id="link">Go to Google</a>
+```
+
+### JS:
+
+```js
+document.getElementById("link").addEventListener("click", function (e) {
+  e.preventDefault();
+  console.log("Navigation blocked!");
+});
+```
+
+👉 Result:
+
+- Link does NOT open Google
+- Only logs message
+
+---
+
+# 4. Example 2: Prevent form submission
+
+### HTML:
+
+```html
+<form id="myForm">
+  <input type="text" />
+  <button type="submit">Submit</button>
+</form>
+```
+
+### JS:
+
+```js
+document.getElementById("myForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+  console.log("Form submission prevented");
+});
+```
+
+👉 Result:
+
+- Page does NOT reload
+- You can handle form manually (AJAX, fetch, etc.)
+
+---
+
+# 5. Example 3: Prevent checkbox toggle
+
+```js
+checkbox.addEventListener("click", function (e) {
+  e.preventDefault();
+});
+```
+
+👉 Checkbox will NOT change state
+
+---
+
+# 6. Important Interview Concept
+
+### ❗ `preventDefault()` does NOT stop event propagation
+
+It only stops the default browser action.
+
+To stop event bubbling:
+
+```js
+event.stopPropagation();
+```
+
+---
+
+### Difference:
+
+| Method            | Purpose                        |
+| ----------------- | ------------------------------ |
+| preventDefault()  | Stops browser default behavior |
+| stopPropagation() | Stops event bubbling/capturing |
+
+---
+
+# 7. Real-world Example (Very Important)
+
+### Custom form handling:
+
+```js
+form.addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  const value = document.querySelector("input").value;
+  console.log("Sending data:", value);
+
+  // fetch("/api", { method: "POST", body: JSON.stringify({ value }) });
+});
+```
+
+👉 Used in:
+
+- React forms
+- AJAX submissions
+- SPA applications
+
+---
+
+# 8. Common Interview Traps
+
+---
+
+## ❓ 1. Does preventDefault stop event bubbling?
+
+❌ No
+
+---
+
+## ❓ 2. Does it stop event execution?
+
+❌ No — handler still runs
+
+It only stops browser’s default action.
+
+---
+
+## ❓ 3. Can you use it without event object?
+
+❌ No
+
+```js
+element.onclick = function () {
+  event.preventDefault(); // ❌ undefined unless event passed
+};
+```
+
+Correct:
+
+```js
+element.onclick = function (event) {
+  event.preventDefault();
+};
+```
+
+---
+
+## ❓ 4. What happens if you forget preventDefault in forms?
+
+👉 Page reloads (default behavior of submit)
+
+---
+
+# 9. Passive Event Listener (Advanced Interview Point)
+
+Sometimes `preventDefault()` may not work if listener is passive:
+
+```js
+window.addEventListener("touchmove", handler, { passive: true });
+```
+
+👉 In passive mode:
+
+- `preventDefault()` is ignored
+- Used for performance optimization (scrolling)
+
+---
+
+# 💡 Final Interview Summary
+
+> `event.preventDefault()` is used to stop the default browser behavior associated with an event, such as form submission, link navigation, or checkbox toggling. It does not stop event propagation; it only prevents the browser’s built-in action. For stopping bubbling, `stopPropagation()` is used.
+
 ## Question 10. What is event delegation?
 
 ## Question 11. How to remove an event listener?
