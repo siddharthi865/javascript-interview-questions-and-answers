@@ -4131,6 +4131,686 @@ A strong interview answer should also discuss:
 
 ## Question 9. How to implement chain of responsibility pattern in JS
 
+The Chain of Responsibility Pattern is a behavioral design pattern where a request is passed through a chain of handlers, and each handler decides either to:
+
+- process the request
+- pass it to the next handler
+- stop the chain
+
+It helps decouple the sender of a request from the receiver.
+
+This pattern is heavily used in:
+
+- Express/Koa middleware
+- event bubbling
+- validation pipelines
+- logging systems
+- authentication chains
+- request processing
+- UI event propagation
+
+---
+
+# Core Idea
+
+```txt id="jlwm45"
+Request
+   ↓
+Handler 1
+   ↓
+Handler 2
+   ↓
+Handler 3
+```
+
+Each handler determines:
+
+```txt id="jlwm46"
+Can I handle this?
+   YES → Handle request
+   NO  → Pass to next
+```
+
+---
+
+# Basic Chain of Responsibility Implementation
+
+---
+
+# 1. Base Handler
+
+```js id="jlwm47"
+class Handler {
+  setNext(handler) {
+    this.nextHandler = handler;
+
+    return handler;
+  }
+
+  handle(request) {
+    if (this.nextHandler) {
+      return this.nextHandler.handle(request);
+    }
+
+    return null;
+  }
+}
+```
+
+---
+
+# 2. Concrete Handlers
+
+```js id="jlwm48"
+class AuthHandler extends Handler {
+  handle(request) {
+    if (!request.authenticated) {
+      return "Authentication failed";
+    }
+
+    return super.handle(request);
+  }
+}
+```
+
+```js id="jlwm49"
+class RoleHandler extends Handler {
+  handle(request) {
+    if (request.role !== "admin") {
+      return "Access denied";
+    }
+
+    return super.handle(request);
+  }
+}
+```
+
+```js id="jlwm50"
+class FinalHandler extends Handler {
+  handle(request) {
+    return "Request processed successfully";
+  }
+}
+```
+
+---
+
+# 3. Build the Chain
+
+```js id="jlwm51"
+const auth = new AuthHandler();
+const role = new RoleHandler();
+const finalHandler = new FinalHandler();
+
+auth.setNext(role).setNext(finalHandler);
+```
+
+---
+
+# 4. Usage
+
+```js id="jlwm52"
+const result = auth.handle({
+  authenticated: true,
+  role: "admin",
+});
+
+console.log(result);
+```
+
+Output:
+
+```txt id="jlwm53"
+Request processed successfully
+```
+
+---
+
+# How the Chain Works
+
+```txt id="jlwm54"
+AuthHandler
+   ↓
+RoleHandler
+   ↓
+FinalHandler
+```
+
+If authentication fails:
+
+```txt id="jlwm55"
+AuthHandler stops chain
+```
+
+---
+
+# Real-World Example: Support System
+
+Classic interview example.
+
+---
+
+# Support Handlers
+
+```js id="jlwm56"
+class BasicSupport extends Handler {
+  handle(issue) {
+    if (issue.level === "basic") {
+      return "Handled by basic support";
+    }
+
+    return super.handle(issue);
+  }
+}
+```
+
+```js id="jlwm57"
+class AdvancedSupport extends Handler {
+  handle(issue) {
+    if (issue.level === "advanced") {
+      return "Handled by advanced support";
+    }
+
+    return super.handle(issue);
+  }
+}
+```
+
+```js id="jlwm58"
+class ManagerSupport extends Handler {
+  handle(issue) {
+    return "Handled by manager";
+  }
+}
+```
+
+Usage:
+
+```js id="jlwm59"
+basic.setNext(advanced).setNext(manager);
+```
+
+---
+
+# Functional JavaScript Implementation
+
+Modern JS often uses functions instead of classes.
+
+---
+
+# Middleware-Style Chain
+
+```js id="jlwm60"
+function compose(middlewares) {
+  return function (context) {
+    function dispatch(index) {
+      const middleware = middlewares[index];
+
+      if (!middleware) {
+        return;
+      }
+
+      middleware(context, () => {
+        dispatch(index + 1);
+      });
+    }
+
+    dispatch(0);
+  };
+}
+```
+
+Usage:
+
+```js id="jlwm61"
+const chain = compose([
+  (ctx, next) => {
+    console.log("Middleware 1");
+    next();
+  },
+
+  (ctx, next) => {
+    console.log("Middleware 2");
+    next();
+  },
+]);
+
+chain({});
+```
+
+This is essentially how Express/Koa middleware works.
+
+---
+
+# Async Chain of Responsibility
+
+Very important modern variation.
+
+---
+
+# Async Middleware Chain
+
+```js id="jlwm62"
+function compose(middlewares) {
+  return async function (context) {
+    async function dispatch(index) {
+      const middleware = middlewares[index];
+
+      if (!middleware) {
+        return;
+      }
+
+      await middleware(context, () => dispatch(index + 1));
+    }
+
+    await dispatch(0);
+  };
+}
+```
+
+Usage:
+
+```js id="’wini63"
+const chain = compose([
+  async (ctx, next) => {
+    console.log("Start");
+
+    await next();
+
+    console.log("End");
+  },
+]);
+```
+
+---
+
+# Express Middleware = Chain of Responsibility
+
+```js id="
+
+```
+
+# Express Middleware = Chain of Responsibility
+
+Express middleware is one of the most common real-world implementations of Chain of Responsibility.
+
+```js
+app.use((req, res, next) => {
+  console.log("Logger");
+
+  next();
+});
+
+app.use((req, res, next) => {
+  if (!req.user) {
+    return res.status(401).send("Unauthorized");
+  }
+
+  next();
+});
+```
+
+Each middleware:
+
+- handles part of the request
+- optionally terminates the chain
+- otherwise forwards control using `next()`
+
+---
+
+# DOM Event Bubbling
+
+The browser event system also uses this pattern.
+
+```txt
+Button
+   ↓
+Div
+   ↓
+Body
+   ↓
+Document
+```
+
+Example:
+
+```js
+button.addEventListener("click", () => {
+  console.log("Button clicked");
+});
+
+document.addEventListener("click", () => {
+  console.log("Document clicked");
+});
+```
+
+Events propagate through a chain of handlers.
+
+---
+
+# Validation Pipeline Example
+
+Very common frontend/backend use case.
+
+---
+
+# Validators
+
+```js
+class RequiredValidator extends Handler {
+  handle(data) {
+    if (!data.name) {
+      return "Name is required";
+    }
+
+    return super.handle(data);
+  }
+}
+```
+
+```js
+class EmailValidator extends Handler {
+  handle(data) {
+    if (!data.email.includes("@")) {
+      return "Invalid email";
+    }
+
+    return super.handle(data);
+  }
+}
+```
+
+```js
+class SuccessHandler extends Handler {
+  handle() {
+    return "Validation passed";
+  }
+}
+```
+
+Usage:
+
+```js
+required.setNext(email).setNext(success);
+```
+
+---
+
+# Logging Chain Example
+
+```js
+class ErrorLogger extends Handler {
+  handle(log) {
+    if (log.level === "error") {
+      console.log("Error:", log.message);
+    } else {
+      super.handle(log);
+    }
+  }
+}
+```
+
+```js
+class DebugLogger extends Handler {
+  handle(log) {
+    if (log.level === "debug") {
+      console.log("Debug:", log.message);
+    } else {
+      super.handle(log);
+    }
+  }
+}
+```
+
+---
+
+# Request Lifecycle Visualization
+
+```txt
+Incoming Request
+   ↓
+Auth Middleware
+   ↓
+Validation Middleware
+   ↓
+Rate Limiter
+   ↓
+Controller
+   ↓
+Response
+```
+
+Each layer has one responsibility.
+
+---
+
+# Chain of Responsibility vs Middleware
+
+Interview nuance.
+
+Middleware is essentially a specialized form of Chain of Responsibility.
+
+| Chain of Responsibility         | Middleware                         |
+| ------------------------------- | ---------------------------------- |
+| General behavioral pattern      | Web/request-focused implementation |
+| Request passed through handlers | Request/response lifecycle         |
+| Can stop or forward             | Uses `next()`                      |
+
+---
+
+# Chain of Responsibility vs Observer
+
+| Chain of Responsibility  | Observer                   |
+| ------------------------ | -------------------------- |
+| One handler at a time    | One-to-many notifications  |
+| Sequential processing    | Broadcast updates          |
+| Usually synchronous flow | Event-driven subscriptions |
+
+---
+
+# Chain of Responsibility vs Command
+
+| Chain of Responsibility           | Command                   |
+| --------------------------------- | ------------------------- |
+| Multiple handlers process request | Encapsulates operation    |
+| Focus on routing/processing       | Focus on action execution |
+
+---
+
+# Advantages
+
+| Benefit               | Explanation                    |
+| --------------------- | ------------------------------ |
+| Loose coupling        | Sender unaware of handlers     |
+| Flexible pipelines    | Add/remove handlers easily     |
+| Single responsibility | Each handler isolated          |
+| Extensible            | Easy to introduce new handlers |
+| Reusable              | Handlers composable            |
+
+---
+
+# Common Pitfalls
+
+---
+
+# 1. Forgetting to Pass Forward
+
+Bad:
+
+```js
+handle(request) {
+  console.log("Handled");
+}
+```
+
+Chain stops unintentionally.
+
+Correct:
+
+```js
+return super.handle(request);
+```
+
+or:
+
+```js
+next();
+```
+
+---
+
+# 2. Deep Chains
+
+Too many handlers can make debugging difficult.
+
+---
+
+# 3. Circular Chains
+
+Bad configuration:
+
+```txt
+A → B → C → A
+```
+
+Can cause infinite loops.
+
+---
+
+# 4. Shared Mutable State
+
+Handlers modifying shared objects carelessly can create hard-to-debug bugs.
+
+---
+
+# 5. Async Error Handling
+
+In async chains, unhandled promise rejections are common.
+
+Use:
+
+```js
+try {
+  await next();
+} catch (err) {
+  console.error(err);
+}
+```
+
+---
+
+# Modern Functional Style
+
+Modern JavaScript often prefers function pipelines over class hierarchies.
+
+---
+
+# Functional Handler Example
+
+```js
+const handlers = [
+  (ctx, next) => {
+    console.log("Auth");
+    next();
+  },
+
+  (ctx, next) => {
+    console.log("Validation");
+    next();
+  },
+];
+```
+
+This is cleaner and more idiomatic in JS ecosystems.
+
+---
+
+# Best Practices
+
+---
+
+# Keep Handlers Focused
+
+One responsibility per handler.
+
+Good:
+
+```txt
+AuthHandler
+CacheHandler
+ValidationHandler
+```
+
+---
+
+# Support Early Exit
+
+Handlers should be able to stop the chain cleanly.
+
+---
+
+# Preserve Order Carefully
+
+Execution order is critical.
+
+Example:
+
+```txt
+Auth before authorization
+Validation before controller
+```
+
+---
+
+# Prefer Async/Await for Modern Pipelines
+
+Cleaner than nested callbacks.
+
+---
+
+# Avoid Heavy Business Logic
+
+Handlers should mainly coordinate request processing.
+
+---
+
+# Interview Summary
+
+The Chain of Responsibility Pattern passes requests through a sequence of handlers where each handler can process, reject, or forward the request.
+
+Key concepts:
+
+- sequential request processing
+- loose coupling
+- handler delegation
+- request pipelines
+- early termination
+
+Common JavaScript implementations:
+
+- Express middleware
+- Koa middleware
+- validation pipelines
+- event propagation
+- logging systems
+
+Modern implementations often use:
+
+- higher-order functions
+- middleware composition
+- async/await pipelines
+
+A strong interview answer should also discuss:
+
+- middleware relationship
+- async chains
+- event bubbling
+- validation pipelines
+- `next()` delegation
+- short-circuiting
+- chain vs observer
+- chain vs command patterns
+
 ## Question 10. How to handle circular dependencies in modules
 
 ## Question 11. How to optimize memory usage in JavaScript applications
