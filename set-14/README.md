@@ -2804,6 +2804,345 @@ optional chaining (?.)
 
 ## Question 9. Difference between `document.readyState` and `DOMContentLoaded`
 
+## Concise Answer
+
+Both are related to page loading, but they serve different purposes:
+
+- **`document.readyState`** is a property that tells you the current loading state of the document (`loading`, `interactive`, or `complete`).
+- **`DOMContentLoaded`** is an event that fires once the HTML has been fully parsed and the DOM is ready.
+
+A common pattern is to check `document.readyState` first and use `DOMContentLoaded` only if the page is still loading.
+
+---
+
+# 1. `document.readyState`
+
+`document.readyState` indicates the current state of document loading.
+
+```js
+console.log(document.readyState);
+```
+
+Possible values:
+
+| State           | Meaning                                                     |
+| --------------- | ----------------------------------------------------------- |
+| `"loading"`     | HTML is still being parsed                                  |
+| `"interactive"` | DOM is parsed and ready                                     |
+| `"complete"`    | DOM, images, stylesheets, and subresources finished loading |
+
+---
+
+### Example
+
+```js
+console.log(document.readyState);
+```
+
+Output may be:
+
+```js
+"loading";
+```
+
+or
+
+```js
+"interactive";
+```
+
+or
+
+```js
+"complete";
+```
+
+depending on when the code runs.
+
+---
+
+# 2. `DOMContentLoaded`
+
+This is an event fired when:
+
+✅ HTML is fully parsed
+
+✅ DOM tree is built
+
+❌ Images may still be loading
+
+❌ Videos may still be loading
+
+❌ Some external resources may still be loading
+
+```js
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("DOM Ready");
+});
+```
+
+---
+
+# 3. Timeline Comparison
+
+Consider this HTML:
+
+```html
+<html>
+  <head>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <img src="large-image.jpg" />
+  </body>
+</html>
+```
+
+Loading order:
+
+```text
+HTML Parsing Starts
+        ↓
+readyState = "loading"
+        ↓
+DOM Built
+        ↓
+DOMContentLoaded Fires
+readyState = "interactive"
+        ↓
+Images Loaded
+CSS Loaded
+Other Resources Loaded
+        ↓
+readyState = "complete"
+window.load Fires
+```
+
+---
+
+# 4. Example Showing `readyState` Changes
+
+```js
+document.onreadystatechange = () => {
+  console.log(document.readyState);
+};
+```
+
+Possible output:
+
+```js
+loading;
+interactive;
+complete;
+```
+
+---
+
+# 5. Equivalent DOM Ready Check
+
+### Using DOMContentLoaded
+
+```js
+document.addEventListener("DOMContentLoaded", init);
+```
+
+---
+
+### Using readyState
+
+```js
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+```
+
+This is more robust.
+
+---
+
+# 6. Why `DOMContentLoaded` Alone Can Be Problematic
+
+Imagine your script loads after the DOM is already ready:
+
+```html
+<body>
+  ...
+  <script src="app.js"></script>
+</body>
+```
+
+Inside `app.js`:
+
+```js
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("Ready");
+});
+```
+
+If the event has already fired before this listener is attached:
+
+```js
+Nothing happens.
+```
+
+---
+
+### Better Approach
+
+```js
+function init() {
+  console.log("Ready");
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+```
+
+Works regardless of when the script executes.
+
+---
+
+# 7. `DOMContentLoaded` vs `load`
+
+Interviewers often ask this too.
+
+### DOMContentLoaded
+
+```js
+document.addEventListener("DOMContentLoaded", callback);
+```
+
+Waits for:
+
+✅ HTML parsing
+
+Does NOT wait for:
+
+❌ Images
+
+❌ Videos
+
+❌ Iframes
+
+---
+
+### Load Event
+
+```js
+window.addEventListener("load", callback);
+```
+
+Waits for:
+
+✅ DOM
+
+✅ Images
+
+✅ CSS
+
+✅ Fonts
+
+✅ Iframes
+
+Everything.
+
+---
+
+# 8. Practical Example
+
+### DOMContentLoaded
+
+```js
+document.addEventListener("DOMContentLoaded", () => {
+  console.log(document.querySelector("#app"));
+});
+```
+
+Perfect for:
+
+- DOM manipulation
+- Event listeners
+- Initial UI setup
+
+---
+
+### Load Event
+
+```js
+window.addEventListener("load", () => {
+  console.log(document.querySelector("img").width);
+});
+```
+
+Useful when image dimensions are needed.
+
+---
+
+# 9. Common Interview Pitfalls
+
+## Pitfall 1: Assuming DOMContentLoaded waits for images
+
+```js
+document.addEventListener("DOMContentLoaded", () => {
+  console.log(img.width);
+});
+```
+
+Image may not be loaded yet.
+
+---
+
+## Pitfall 2: Using only DOMContentLoaded in late-loaded scripts
+
+```js
+document.addEventListener("DOMContentLoaded", init);
+```
+
+May miss the event if it already fired.
+
+Use `readyState` check.
+
+---
+
+## Pitfall 3: Confusing `interactive` and `complete`
+
+```text
+interactive
+```
+
+means DOM is ready.
+
+```text
+complete
+```
+
+means everything is loaded.
+
+---
+
+# 10. Comparison Table
+
+| Feature                        | `document.readyState`                | `DOMContentLoaded` |
+| ------------------------------ | ------------------------------------ | ------------------ |
+| Type                           | Property                             | Event              |
+| Purpose                        | Reports loading status               | Signals DOM ready  |
+| Values                         | `loading`, `interactive`, `complete` | N/A                |
+| Fires once                     | N/A                                  | Yes                |
+| Can check current state        | Yes                                  | No                 |
+| Useful for late-loaded scripts | Yes                                  | Not by itself      |
+| Indicates DOM parsed           | `interactive`                        | Yes                |
+
+---
+
+# Interview Summary
+
+> `document.readyState` is a property that indicates the current loading state of the document (`loading`, `interactive`, or `complete`), while `DOMContentLoaded` is an event that fires once the HTML has been fully parsed and the DOM is ready. `readyState` lets you check the current state at any time, whereas `DOMContentLoaded` is a one-time event. A common robust pattern is to check `document.readyState` and attach a `DOMContentLoaded` listener only if the document is still loading.
+
 ## Question 10. Explain JavaScript's event loop with call stack and task queue
 
 ## Question 11. Difference between microtasks and macrotasks
