@@ -1600,6 +1600,153 @@ In JavaScript, **everything is technically a function**, but:
 
 ## Question 9. How to check if a variable is an array?
 
+**Direct answer:**
+The most reliable way to check if a variable is an array in JavaScript is:
+
+```javascript
+Array.isArray(value);
+```
+
+---
+
+# Detailed Explanation (Interview Perspective)
+
+In JavaScript, arrays are **special objects**, so using `typeof` is not sufficient:
+
+```javascript
+typeof [1, 2, 3]; // "object" ❌ not helpful
+```
+
+So we need proper ways to detect arrays.
+
+---
+
+# 1. Best and Recommended Way: `Array.isArray()`
+
+### Example:
+
+```javascript id="a1"
+console.log(Array.isArray([1, 2, 3])); // true
+console.log(Array.isArray({ a: 1 })); // false
+```
+
+### Why it is best:
+
+- Built specifically for array detection
+- Works across frames/iframes
+- Standard and reliable (ES5+)
+
+---
+
+# 2. Alternative: `instanceof Array`
+
+```javascript id="a2"
+console.log([1, 2, 3] instanceof Array); // true
+```
+
+### How it works:
+
+It checks if the object exists in the `Array` prototype chain.
+
+---
+
+## ⚠️ Limitation (important interview point)
+
+`instanceof` can fail across different execution contexts:
+
+```javascript
+// In iframe or different window:
+arr instanceof Array; // may return false
+```
+
+👉 Because each frame has its own global `Array` constructor.
+
+---
+
+# 3. Old workaround: Object.prototype.toString
+
+```javascript id="a3"
+Object.prototype.toString.call([1, 2, 3]); // "[object Array]"
+```
+
+### Example:
+
+```javascript id="a4"
+function isArray(value) {
+  return Object.prototype.toString.call(value) === "[object Array]";
+}
+```
+
+### Why it works:
+
+- Uses internal `[[Class]]` tagging system
+- Reliable even across frames
+
+---
+
+# 4. Comparison Table
+
+| Method             | Recommended   | Cross-frame safe | Notes              |
+| ------------------ | ------------- | ---------------- | ------------------ |
+| `Array.isArray()`  | ✅ Yes (best) | ✅ Yes           | Modern standard    |
+| `instanceof Array` | ⚠️ Sometimes  | ❌ No            | Prototype-based    |
+| `toString.call()`  | ⚠️ fallback   | ✅ Yes           | Low-level approach |
+| `typeof`           | ❌ No         | ❌ No            | Returns "object"   |
+
+---
+
+# 5. Common Interview Tricky Case
+
+```javascript id="a5"
+console.log(typeof []); // "object"
+```
+
+👉 This is why beginners get confused.
+
+---
+
+# 6. Edge Case: Array-like objects
+
+Some objects look like arrays but are NOT arrays:
+
+```javascript id="a6"
+function test() {
+  console.log(arguments);
+}
+```
+
+`arguments` is array-like but not an array:
+
+```javascript id="a7"
+Array.isArray(arguments); // false
+```
+
+Convert to array:
+
+```javascript id="a8"
+const arr = Array.from(arguments);
+```
+
+---
+
+# 7. Real-world usage
+
+### Safe array handling:
+
+```javascript id="a9"
+function process(data) {
+  if (Array.isArray(data)) {
+    data.forEach((item) => console.log(item));
+  }
+}
+```
+
+---
+
+# 8. Interview Summary Answer
+
+> The best way to check if a variable is an array in JavaScript is using `Array.isArray()`, which is reliable and handles cross-context cases. Alternatives like `instanceof Array` or `Object.prototype.toString.call()` exist, but they have limitations. `typeof` is not suitable because arrays are treated as objects in JavaScript.
+
 ## Question 10. Difference between isArray() and instanceof Array
 
 ## Question 11. Explain string methods like split(), join(), includes()
