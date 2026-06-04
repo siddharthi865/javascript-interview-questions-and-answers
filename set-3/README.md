@@ -2708,6 +2708,269 @@ console.log(test()); // Promise { 10 }
 
 ## Question 10. Explain callback functions with examples
 
+## Short Answer
+
+A **callback function** is a function that is passed as an argument to another function and is executed later, either after some operation completes or when a specific event occurs.
+
+---
+
+# 1. What is a Callback Function?
+
+In JavaScript, functions are **first-class citizens**, meaning they can:
+
+- Be passed as arguments
+- Be returned from other functions
+- Be stored in variables
+
+A **callback** is simply a function passed into another function to be “called back” later.
+
+---
+
+# 2. Basic Example
+
+```javascript id="a1b2c3"
+function greet(name, callback) {
+  console.log("Hello " + name);
+  callback();
+}
+
+function sayBye() {
+  console.log("Goodbye!");
+}
+
+greet("John", sayBye);
+```
+
+### Output:
+
+```
+Hello John
+Goodbye!
+```
+
+👉 Here, `sayBye` is a callback function.
+
+---
+
+# 3. Why Callbacks are Used
+
+Callbacks are mainly used for:
+
+- Asynchronous operations
+- Event handling
+- Code reusability
+- Custom behavior injection
+
+---
+
+# 4. Synchronous Callback Example
+
+Even synchronous functions can use callbacks.
+
+```javascript id="d4e5f6"
+function calculate(a, b, callback) {
+  return callback(a, b);
+}
+
+function add(x, y) {
+  return x + y;
+}
+
+function multiply(x, y) {
+  return x * y;
+}
+
+console.log(calculate(2, 3, add)); // 5
+console.log(calculate(2, 3, multiply)); // 6
+```
+
+👉 Same function behaves differently depending on callback.
+
+---
+
+# 5. Asynchronous Callback Example
+
+## setTimeout Example
+
+```javascript id="g7h8i9"
+console.log("Start");
+
+setTimeout(() => {
+  console.log("This is a callback after 2 seconds");
+}, 2000);
+
+console.log("End");
+```
+
+### Output:
+
+```
+Start
+End
+This is a callback after 2 seconds
+```
+
+👉 The function passed to `setTimeout` is a callback executed later.
+
+---
+
+# 6. Real-world Async Callback (API Simulation)
+
+```javascript id="j1k2l3"
+function fetchData(callback) {
+  setTimeout(() => {
+    const data = "User Data Loaded";
+    callback(data);
+  }, 2000);
+}
+
+fetchData(function (result) {
+  console.log(result);
+});
+```
+
+### Output:
+
+```
+User Data Loaded
+```
+
+---
+
+# 7. Event Listener Callback
+
+```javascript id="m4n5o6"
+document.addEventListener("click", function () {
+  console.log("Document clicked!");
+});
+```
+
+👉 Function runs only when the event occurs.
+
+---
+
+# 8. Callback Hell (Important Interview Topic)
+
+When callbacks are nested too deeply, code becomes hard to read and maintain.
+
+```javascript id="p7q8r9"
+doTask1(function (result1) {
+  doTask2(result1, function (result2) {
+    doTask3(result2, function (result3) {
+      doTask4(result3, function (result4) {
+        console.log(result4);
+      });
+    });
+  });
+});
+```
+
+### Problems:
+
+- Hard to read
+- Hard to debug
+- Difficult to maintain
+
+👉 This led to Promises and async/await.
+
+---
+
+# 9. Callback vs Promise (Comparison)
+
+| Feature        | Callback        | Promise              |
+| -------------- | --------------- | -------------------- |
+| Readability    | Poor in nesting | Better               |
+| Error handling | Difficult       | Structured (`catch`) |
+| Chaining       | Hard            | Easy                 |
+| Modern usage   | Less preferred  | Preferred            |
+
+---
+
+# 10. Error Handling in Callbacks
+
+```javascript id="s1t2u3"
+function fetchData(callback) {
+  const error = false;
+
+  if (error) {
+    callback("Error occurred", null);
+  } else {
+    callback(null, "Data loaded");
+  }
+}
+
+fetchData(function (err, data) {
+  if (err) {
+    console.log(err);
+  } else {
+    console.log(data);
+  }
+});
+```
+
+👉 Node.js often uses this **error-first callback pattern**.
+
+---
+
+# 11. Real-World Analogy
+
+### Callback = “Call me when done”
+
+Imagine ordering food:
+
+1. You place an order
+2. You give your phone number (callback)
+3. Restaurant calls you when food is ready
+
+---
+
+# 12. Common Interview Pitfalls
+
+### 1. Thinking callbacks are only async
+
+❌ Wrong
+Callbacks can be both synchronous and asynchronous.
+
+---
+
+### 2. Forgetting execution timing
+
+```javascript id="v3w4x5"
+function test(callback) {
+  console.log("Before");
+  callback();
+  console.log("After");
+}
+
+test(() => console.log("Inside callback"));
+```
+
+### Output:
+
+```
+Before
+Inside callback
+After
+```
+
+---
+
+### 3. Callback is not invoked immediately
+
+It is executed **only when called explicitly** or by async API.
+
+---
+
+# 13. Interview Summary
+
+👉 A callback function is a function passed into another function as an argument and executed later, either synchronously or asynchronously, to allow flexible and reusable code execution.
+
+---
+
+## One-liner (Interview-ready)
+
+👉 _“A callback function is a function passed as an argument to another function, which gets executed later either after a task completes or when an event occurs, enabling asynchronous and event-driven programming in JavaScript.”_
+
 ## Question 11. What are Promises? How do they work?
 
 ## Question 12. Difference between then chaining and async/await
