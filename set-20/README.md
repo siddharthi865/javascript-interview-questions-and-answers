@@ -3231,6 +3231,289 @@ try {
 
 ## Question 9. How to handle unhandled promise rejections in Node.js
 
+## Short Answer
+
+In Node.js, **unhandled promise rejections** can be handled using:
+
+1. **`.catch()` on Promises (best practice)**
+2. **`try...catch` with async/await**
+3. **Global handler: `process.on('unhandledRejection')` (last safety net)**
+
+The correct approach is to **always handle errors at the Promise level**, and use global handlers only for logging and crash prevention.
+
+---
+
+# 1. What is an Unhandled Promise Rejection?
+
+It happens when a Promise is rejected but no `.catch()` or `try...catch` handles it.
+
+### Example (Problematic Code)
+
+```js id="k2m9qz"
+Promise.reject(new Error("Something failed"));
+```
+
+Or:
+
+```js id="v7n2pm"
+async function test() {
+  throw new Error("Fail");
+}
+
+test(); // ❌ no await or catch
+```
+
+Node.js treats this as an **unhandled rejection**.
+
+---
+
+# 2. Why It Matters
+
+Unhandled rejections can lead to:
+
+- Silent failures
+- Broken application state
+- Memory leaks
+- In modern Node.js → **process crash (in strict mode or future versions)**
+
+---
+
+# 3. Proper Way #1: Always Use `.catch()`
+
+```js id="x8p2mn"
+fetchData()
+  .then((data) => {
+    console.log(data);
+  })
+  .catch((err) => {
+    console.error("Error handled:", err);
+  });
+```
+
+✔ Ensures every Promise is handled
+✔ Prevents unhandled rejection warnings
+
+---
+
+# 4. Proper Way #2: Use async/await with try...catch
+
+This is the **preferred modern approach**.
+
+```js id="b4k9xq"
+async function run() {
+  try {
+    const data = await fetchData();
+    console.log(data);
+  } catch (err) {
+    console.error("Caught error:", err);
+  }
+}
+
+run();
+```
+
+✔ Clean
+✔ Centralized error handling
+✔ Prevents unhandled rejections completely
+
+---
+
+# 5. Common Mistake (Very Important)
+
+### ❌ Forgetting await
+
+```js id="p3m8qz"
+async function run() {
+  try {
+    fetchData(); // ❌ missing await
+  } catch (err) {
+    console.log("This will NOT catch errors");
+  }
+}
+```
+
+Because the Promise runs outside try/catch scope.
+
+---
+
+# 6. Proper Way #3: Global Handler (Safety Net)
+
+Node.js provides a global event:
+
+```js id="n7x2kp"
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection:", reason);
+});
+```
+
+---
+
+## What it gives you:
+
+- Logs unhandled errors
+- Helps debugging
+- Prevents silent failures
+
+---
+
+## BUT Important:
+
+👉 This is NOT a replacement for proper handling
+👉 It is only a **last line of defense**
+
+---
+
+# 7. Recommended Production Pattern
+
+### Log + Graceful Shutdown (Best Practice)
+
+```js id="m9x2qp"
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled Rejection detected:", reason);
+
+  // Optional: cleanup resources
+  server.close(() => {
+    process.exit(1); // fail fast
+  });
+});
+```
+
+---
+
+## Why shutdown?
+
+Because unhandled rejections often indicate:
+
+- DB failure
+- broken state
+- critical bug
+
+Continuing execution may corrupt application state.
+
+---
+
+# 8. Also Handle Uncaught Exceptions
+
+Related but different:
+
+```js id="q8m3xz"
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+  process.exit(1);
+});
+```
+
+Difference:
+
+| Type               | Cause                         |
+| ------------------ | ----------------------------- |
+| unhandledRejection | Promise rejection not handled |
+| uncaughtException  | Sync runtime error            |
+
+---
+
+# 9. Modern Node.js Behavior
+
+Depending on Node version:
+
+- Old versions → warning only
+- Newer versions → warning + potential future crash behavior
+
+So best practice is:
+
+```txt id="t6k2mp"
+Always handle Promises explicitly
+Never rely on global handlers alone
+```
+
+---
+
+# 10. Handling in Express.js (Real-world Case)
+
+### Bad
+
+```js id="h2n9qp"
+app.get("/user", async (req, res) => {
+  const user = await getUser(); // ❌ no error handling
+  res.json(user);
+});
+```
+
+---
+
+### Good
+
+```js id="c8m2xz"
+app.get("/user", async (req, res, next) => {
+  try {
+    const user = await getUser();
+    res.json(user);
+  } catch (err) {
+    next(err);
+  }
+});
+```
+
+---
+
+Or use wrapper:
+
+```js id="f7k3mn"
+const asyncHandler = (fn) => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
+```
+
+---
+
+# 11. Best Practices (Interview Ready)
+
+### 1. Always handle Promises locally
+
+```js id="p9m2xq"
+await task().catch(handleError);
+```
+
+---
+
+### 2. Prefer async/await + try/catch
+
+```js id="r4k8qp"
+try {
+  await task();
+} catch (err) {}
+```
+
+---
+
+### 3. Avoid fire-and-forget Promises
+
+```js id="x1m9qp"
+// ❌ bad
+doWork();
+```
+
+---
+
+### 4. Use global handler only for logging + shutdown
+
+```js id="z7n2kp"
+process.on("unhandledRejection", handler);
+```
+
+---
+
+### 5. Always await async functions
+
+```js id="w3m8xz"
+await doWork();
+```
+
+---
+
+# 12. Final Interview Answer
+
+> Unhandled promise rejections occur when a Promise is rejected but no `.catch()` or `try...catch` handles the error. In Node.js, they should be prevented by always handling Promises explicitly using `.catch()` or async/await with try/catch blocks. As a safety net, Node provides the `process.on('unhandledRejection')` event to log and optionally terminate the process, but it should not replace proper error handling. In production systems, unhandled rejections are typically treated as critical errors, and applications often shut down gracefully to avoid inconsistent states.
+
 ## Question 10. How to implement rate limiting in Node.js API
 
 ## Question 11. How to implement JWT authentication in Node.js
