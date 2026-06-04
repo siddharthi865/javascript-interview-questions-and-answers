@@ -2703,6 +2703,401 @@ if (err instanceof TypeError) {
 
 ## Question 9. Difference between `hasOwnProperty()` and `in` operator
 
+## Direct Answer
+
+The key difference is:
+
+- **`hasOwnProperty()`** checks whether a property exists **directly on the object itself**.
+- **`in` operator** checks whether a property exists **either on the object or anywhere in its prototype chain**.
+
+```javascript
+obj.hasOwnProperty("prop");
+```
+
+vs
+
+```javascript
+"prop" in obj;
+```
+
+---
+
+# 1. Basic Example
+
+```javascript
+const person = {
+  name: "John",
+};
+
+console.log(person.hasOwnProperty("name"));
+console.log("name" in person);
+```
+
+### Output
+
+```text
+true
+true
+```
+
+Both return `true` because `name` is an own property.
+
+---
+
+# 2. Prototype Chain Example
+
+```javascript
+const parent = {
+  role: "admin",
+};
+
+const user = Object.create(parent);
+
+user.name = "John";
+```
+
+Prototype chain:
+
+```text
+user
+ ↓
+parent
+ ↓
+Object.prototype
+ ↓
+null
+```
+
+---
+
+## Using `hasOwnProperty()`
+
+```javascript
+console.log(user.hasOwnProperty("name"));
+console.log(user.hasOwnProperty("role"));
+```
+
+Output:
+
+```text
+true
+false
+```
+
+Because:
+
+- `name` belongs directly to `user`
+- `role` is inherited
+
+---
+
+## Using `in`
+
+```javascript
+console.log("name" in user);
+console.log("role" in user);
+```
+
+Output:
+
+```text
+true
+true
+```
+
+Because `in` searches the entire prototype chain.
+
+---
+
+# 3. Visual Comparison
+
+```javascript
+const parent = {
+  x: 10,
+};
+
+const child = Object.create(parent);
+
+child.y = 20;
+```
+
+```text
+child
+ ├── y
+ ↓
+parent
+ ├── x
+```
+
+### Results
+
+| Check                       | Result   |
+| --------------------------- | -------- |
+| `child.hasOwnProperty("y")` | ✅ true  |
+| `child.hasOwnProperty("x")` | ❌ false |
+| `"y" in child`              | ✅ true  |
+| `"x" in child`              | ✅ true  |
+
+---
+
+# 4. Common Interview Trap
+
+```javascript
+const arr = [];
+```
+
+Check:
+
+```javascript
+console.log(arr.hasOwnProperty("push"));
+```
+
+Output:
+
+```text
+false
+```
+
+Because `push` is inherited from `Array.prototype`.
+
+---
+
+But:
+
+```javascript
+console.log("push" in arr);
+```
+
+Output:
+
+```text
+true
+```
+
+Because `in` sees inherited properties.
+
+---
+
+# 5. Checking for Undefined Properties
+
+Many developers write:
+
+```javascript
+if (obj.prop !== undefined)
+```
+
+This can be misleading.
+
+Example:
+
+```javascript
+const obj = {
+  prop: undefined,
+};
+```
+
+```javascript
+console.log(obj.prop !== undefined);
+```
+
+Output:
+
+```text
+false
+```
+
+Even though the property exists.
+
+Better:
+
+```javascript
+console.log(obj.hasOwnProperty("prop"));
+```
+
+Output:
+
+```text
+true
+```
+
+or
+
+```javascript
+console.log("prop" in obj);
+```
+
+Output:
+
+```text
+true
+```
+
+---
+
+# 6. Modern Alternative: `Object.hasOwn()`
+
+Instead of:
+
+```javascript
+obj.hasOwnProperty("name");
+```
+
+Modern JavaScript recommends:
+
+```javascript
+Object.hasOwn(obj, "name");
+```
+
+Example:
+
+```javascript
+console.log(Object.hasOwn(user, "name"));
+```
+
+Benefits:
+
+- Works with null-prototype objects
+- Cannot be overridden accidentally
+
+---
+
+# 7. Interview Trap: Null Prototype Objects
+
+```javascript
+const obj = Object.create(null);
+
+obj.name = "John";
+```
+
+Now:
+
+```javascript
+obj.hasOwnProperty("name");
+```
+
+Output:
+
+```text
+TypeError
+```
+
+Because:
+
+```text
+Object.create(null)
+```
+
+creates an object with no `Object.prototype`.
+
+---
+
+Safe solution:
+
+```javascript
+Object.hasOwn(obj, "name");
+```
+
+---
+
+# 8. Overriding `hasOwnProperty`
+
+```javascript
+const obj = {
+  hasOwnProperty() {
+    return false;
+  },
+  name: "John",
+};
+```
+
+```javascript
+console.log(obj.hasOwnProperty("name"));
+```
+
+Output:
+
+```text
+false
+```
+
+Unexpected!
+
+Safe alternatives:
+
+```javascript
+Object.hasOwn(obj, "name");
+```
+
+or
+
+```javascript
+Object.prototype.hasOwnProperty.call(obj, "name");
+```
+
+---
+
+# 9. When to Use Each
+
+## Use `hasOwnProperty()` / `Object.hasOwn()`
+
+When you only care about properties that belong directly to the object.
+
+```javascript
+if (Object.hasOwn(config, "port")) {
+  // use port
+}
+```
+
+---
+
+## Use `in`
+
+When inherited properties should count.
+
+```javascript
+if ("toString" in obj) {
+  console.log("Property exists somewhere");
+}
+```
+
+---
+
+# Performance
+
+For normal applications, performance differences are negligible.
+
+Choose based on semantics, not speed.
+
+---
+
+# Interview Summary
+
+| Feature                     | `hasOwnProperty()` / `Object.hasOwn()` | `in` |
+| --------------------------- | -------------------------------------- | ---- |
+| Checks own properties       | ✅                                     | ✅   |
+| Checks inherited properties | ❌                                     | ✅   |
+| Searches prototype chain    | ❌                                     | ✅   |
+| Works for existence checks  | ✅                                     | ✅   |
+| Preferred modern method     | `Object.hasOwn()`                      | N/A  |
+
+### Example
+
+```javascript
+const parent = { x: 1 };
+const child = Object.create(parent);
+
+child.y = 2;
+
+console.log(child.hasOwnProperty("x")); // false
+console.log("x" in child); // true
+```
+
+---
+
+### One-Line Interview Answer
+
+**`hasOwnProperty()` (or the modern `Object.hasOwn()`) checks whether a property exists directly on an object, while the `in` operator checks whether the property exists anywhere in the object’s prototype chain, including inherited properties.**
+
 ## Question 10. Difference between `function` and `async function`
 
 ## Question 11. How does `import()` differ from static `import`?
