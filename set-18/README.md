@@ -3038,6 +3038,522 @@ Key interview concepts:
 
 ## Question 9. How to upload files using JavaScript
 
+## ✅ Direct Answer
+
+Files can be uploaded in JavaScript by:
+
+1. Selecting a file using an `<input type="file">`
+2. Creating a `FormData` object
+3. Sending it to the server using `fetch()` or `XMLHttpRequest`
+
+```javascript
+const fileInput = document.querySelector("#file");
+
+const formData = new FormData();
+formData.append("file", fileInput.files[0]);
+
+fetch("/upload", {
+  method: "POST",
+  body: formData,
+});
+```
+
+---
+
+# 🧠 How File Uploads Work
+
+When a user selects a file:
+
+```html
+<input type="file" id="file" />
+```
+
+The selected files are available through:
+
+```javascript
+const input = document.getElementById("file");
+
+console.log(input.files);
+```
+
+`files` is a `FileList` object containing one or more `File` objects.
+
+---
+
+# Understanding the File Object
+
+```javascript
+const file = input.files[0];
+
+console.log(file.name);
+console.log(file.size);
+console.log(file.type);
+console.log(file.lastModified);
+```
+
+Example output:
+
+```javascript
+{
+  name: "resume.pdf",
+  size: 102400,
+  type: "application/pdf"
+}
+```
+
+---
+
+# Basic Upload Using Fetch
+
+## HTML
+
+```html
+<input type="file" id="file" /> <button id="upload">Upload</button>
+```
+
+## JavaScript
+
+```javascript
+document.getElementById("upload").addEventListener("click", async () => {
+  const file = document.getElementById("file").files[0];
+
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  try {
+    const response = await fetch("/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
+
+    console.log(result);
+  } catch (err) {
+    console.error(err);
+  }
+});
+```
+
+---
+
+# Why Use FormData?
+
+`FormData` creates a `multipart/form-data` request.
+
+```javascript
+const formData = new FormData();
+
+formData.append("file", file);
+```
+
+Equivalent to an HTML form:
+
+```html
+<form enctype="multipart/form-data"></form>
+```
+
+The browser automatically generates:
+
+```http
+Content-Type: multipart/form-data; boundary=...
+```
+
+---
+
+# Important Interview Pitfall
+
+### ❌ Don't manually set Content-Type
+
+Wrong:
+
+```javascript
+fetch("/upload", {
+  method: "POST",
+  headers: {
+    "Content-Type": "multipart/form-data",
+  },
+  body: formData,
+});
+```
+
+This breaks the boundary generation.
+
+Correct:
+
+```javascript
+fetch("/upload", {
+  method: "POST",
+  body: formData,
+});
+```
+
+Let the browser set the header.
+
+---
+
+# Uploading Multiple Files
+
+## HTML
+
+```html
+<input type="file" id="files" multiple />
+```
+
+## JavaScript
+
+```javascript
+const files = document.getElementById("files").files;
+
+const formData = new FormData();
+
+for (const file of files) {
+  formData.append("files", file);
+}
+
+fetch("/upload", {
+  method: "POST",
+  body: formData,
+});
+```
+
+---
+
+# Uploading Additional Data
+
+```javascript
+const formData = new FormData();
+
+formData.append("file", file);
+formData.append("userId", "123");
+formData.append("category", "documents");
+```
+
+Server receives:
+
+```text
+file
+userId
+category
+```
+
+in the same multipart request.
+
+---
+
+# Drag-and-Drop Upload
+
+## HTML
+
+```html
+<div id="drop-zone">Drop files here</div>
+```
+
+## JavaScript
+
+```javascript
+const zone = document.getElementById("drop-zone");
+
+zone.addEventListener("dragover", (e) => {
+  e.preventDefault();
+});
+
+zone.addEventListener("drop", (e) => {
+  e.preventDefault();
+
+  const files = e.dataTransfer.files;
+
+  console.log(files);
+});
+```
+
+Files can then be uploaded using `FormData`.
+
+---
+
+# File Validation Before Upload
+
+### Check File Type
+
+```javascript
+const file = input.files[0];
+
+if (!file.type.startsWith("image/")) {
+  alert("Images only");
+  return;
+}
+```
+
+---
+
+### Check File Size
+
+```javascript
+const MAX_SIZE = 5 * 1024 * 1024;
+
+if (file.size > MAX_SIZE) {
+  alert("File too large");
+}
+```
+
+---
+
+# Previewing Images Before Upload
+
+```javascript
+const file = input.files[0];
+
+const url = URL.createObjectURL(file);
+
+document.getElementById("preview").src = url;
+```
+
+Alternative:
+
+```javascript
+const reader = new FileReader();
+
+reader.onload = () => {
+  preview.src = reader.result;
+};
+
+reader.readAsDataURL(file);
+```
+
+---
+
+# Upload Progress Tracking
+
+This is a common interview topic.
+
+## Using XMLHttpRequest
+
+`fetch()` does not provide a simple built-in upload progress event.
+
+XHR does:
+
+```javascript
+const xhr = new XMLHttpRequest();
+
+xhr.open("POST", "/upload");
+
+xhr.upload.onprogress = (event) => {
+  const percent = (event.loaded / event.total) * 100;
+
+  console.log(percent.toFixed(2) + "%");
+};
+
+xhr.send(formData);
+```
+
+---
+
+# File Upload with Fetch
+
+```javascript
+async function uploadFile(file) {
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  const response = await fetch("/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error("Upload failed");
+  }
+
+  return response.json();
+}
+```
+
+---
+
+# Cancelling an Upload
+
+Using `AbortController`:
+
+```javascript
+const controller = new AbortController();
+
+fetch("/upload", {
+  method: "POST",
+  body: formData,
+  signal: controller.signal,
+});
+
+// cancel upload
+controller.abort();
+```
+
+This rejects the fetch promise with an `AbortError`.
+
+---
+
+# Reading Files Before Upload
+
+Using `FileReader`:
+
+```javascript
+const reader = new FileReader();
+
+reader.onload = () => {
+  console.log(reader.result);
+};
+
+reader.readAsText(file);
+```
+
+Other methods:
+
+```javascript
+reader.readAsDataURL(file);
+reader.readAsArrayBuffer(file);
+```
+
+Useful for:
+
+- previews
+- client-side processing
+- CSV parsing
+- image manipulation
+
+---
+
+# Modern Alternative: File API
+
+```javascript
+const file = input.files[0];
+
+const text = await file.text();
+
+console.log(text);
+```
+
+ArrayBuffer:
+
+```javascript
+const buffer = await file.arrayBuffer();
+```
+
+Modern browsers support these methods directly on `File`.
+
+---
+
+# Security Considerations
+
+### Never Trust Client Validation
+
+Client-side checks:
+
+```javascript
+if (file.size > MAX_SIZE)
+```
+
+improve UX but are not security.
+
+Always validate again on the server:
+
+- file type
+- MIME type
+- file size
+- virus scanning
+- file name sanitization
+
+---
+
+# Common Interview Pitfalls
+
+### ❌ Using JSON for File Uploads
+
+```javascript
+body: JSON.stringify(file);
+```
+
+Files should typically be sent with `FormData`.
+
+---
+
+### ❌ Accessing File Before Selection
+
+```javascript
+input.files[0].name;
+```
+
+Can throw if no file is selected.
+
+Check:
+
+```javascript
+if (!input.files.length) return;
+```
+
+---
+
+### ❌ Manually Setting Multipart Header
+
+Let the browser generate the boundary automatically.
+
+---
+
+### ❌ Assuming Fetch Has Upload Progress
+
+For upload progress bars:
+
+```javascript
+xhr.upload.onprogress;
+```
+
+is still the simplest approach.
+
+---
+
+# Fetch vs XMLHttpRequest for Uploads
+
+| Feature         | Fetch                             | XMLHttpRequest      |
+| --------------- | --------------------------------- | ------------------- |
+| Promise-based   | ✅                                | ❌                  |
+| async/await     | ✅                                | ❌                  |
+| AbortController | ✅                                | ❌ (uses `abort()`) |
+| Upload progress | ⚠️ Limited/simple support missing | ✅                  |
+| Modern API      | ✅                                | ❌                  |
+| Legacy support  | ❌ Older browsers                 | ✅                  |
+
+---
+
+# 🚀 Interview-Ready Summary
+
+File uploads in JavaScript are typically implemented using:
+
+1. `<input type="file">`
+2. `FormData`
+3. `fetch()` or `XMLHttpRequest`
+
+```javascript
+const formData = new FormData();
+formData.append("file", file);
+
+await fetch("/upload", {
+  method: "POST",
+  body: formData,
+});
+```
+
+Key concepts interviewers expect:
+
+- `File` and `FileList`
+- `FormData`
+- multipart/form-data
+- Drag-and-drop uploads
+- File validation
+- `FileReader`
+- Upload progress tracking (`xhr.upload.onprogress`)
+- Upload cancellation with `AbortController`
+- Client-side vs server-side validation
+
 ## Question 10. How to track upload progress using JavaScript
 
 ## Question 11. Difference between `localStorage` and `IndexedDB`
