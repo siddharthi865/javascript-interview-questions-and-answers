@@ -2877,6 +2877,475 @@ function flattenArray(arr) {
 
 ## Question 9. How to implement a simple stack using arrays
 
+### Direct Answer
+
+A **stack** is a **Last-In-First-Out (LIFO)** data structure. In JavaScript, you can implement a stack easily using an array:
+
+- `push()` → add element to the top
+- `pop()` → remove element from the top
+
+```js
+const stack = [];
+
+stack.push(10);
+stack.push(20);
+stack.push(30);
+
+console.log(stack.pop()); // 30
+console.log(stack.pop()); // 20
+```
+
+Output:
+
+```js
+30;
+20;
+```
+
+---
+
+# What is a Stack?
+
+Think of a stack of plates:
+
+```text
+Top
+ ┌─────┐
+ │ 30  │
+ ├─────┤
+ │ 20  │
+ ├─────┤
+ │ 10  │
+ └─────┘
+Bottom
+```
+
+The last plate added is the first one removed.
+
+This is called:
+
+```text
+LIFO = Last In, First Out
+```
+
+---
+
+# Simple Stack Implementation
+
+```js
+class Stack {
+  constructor() {
+    this.items = [];
+  }
+
+  push(element) {
+    this.items.push(element);
+  }
+
+  pop() {
+    return this.items.pop();
+  }
+
+  peek() {
+    return this.items[this.items.length - 1];
+  }
+
+  isEmpty() {
+    return this.items.length === 0;
+  }
+
+  size() {
+    return this.items.length;
+  }
+}
+```
+
+---
+
+# Using the Stack
+
+```js
+const stack = new Stack();
+
+stack.push(10);
+stack.push(20);
+stack.push(30);
+
+console.log(stack.peek());
+console.log(stack.pop());
+console.log(stack.size());
+```
+
+Output:
+
+```js
+30;
+30;
+2;
+```
+
+---
+
+# Core Operations
+
+## 1. Push
+
+Adds an item to the top.
+
+```js
+stack.push(40);
+```
+
+Internally:
+
+```js
+this.items.push(40);
+```
+
+Time Complexity:
+
+```text
+O(1)
+```
+
+---
+
+## 2. Pop
+
+Removes the top item.
+
+```js
+stack.pop();
+```
+
+Internally:
+
+```js
+this.items.pop();
+```
+
+Time Complexity:
+
+```text
+O(1)
+```
+
+---
+
+## 3. Peek (Top Element)
+
+Returns the top element without removing it.
+
+```js
+peek() {
+  return this.items[this.items.length - 1];
+}
+```
+
+Example:
+
+```js
+stack.peek();
+```
+
+Output:
+
+```js
+30;
+```
+
+Time Complexity:
+
+```text
+O(1)
+```
+
+---
+
+## 4. Check if Empty
+
+```js
+isEmpty() {
+  return this.items.length === 0;
+}
+```
+
+Example:
+
+```js
+console.log(stack.isEmpty());
+```
+
+Output:
+
+```js
+false;
+```
+
+---
+
+## 5. Size
+
+```js
+size() {
+  return this.items.length;
+}
+```
+
+Example:
+
+```js
+console.log(stack.size());
+```
+
+Output:
+
+```js
+3;
+```
+
+---
+
+# Visual Example
+
+```js
+stack.push(1);
+stack.push(2);
+stack.push(3);
+```
+
+Stack:
+
+```text
+Top
+3
+2
+1
+```
+
+After:
+
+```js
+stack.pop();
+```
+
+Stack:
+
+```text
+Top
+2
+1
+```
+
+Returned value:
+
+```js
+3;
+```
+
+---
+
+# Handling Empty Stack
+
+A good implementation should safely handle empty stacks.
+
+```js
+pop() {
+  if (this.isEmpty()) {
+    return undefined;
+  }
+
+  return this.items.pop();
+}
+```
+
+Example:
+
+```js
+const stack = new Stack();
+
+console.log(stack.pop());
+```
+
+Output:
+
+```js
+undefined;
+```
+
+---
+
+# Real-World Uses of Stacks
+
+### 1. Function Call Stack
+
+```js
+function a() {
+  b();
+}
+
+function b() {
+  c();
+}
+
+function c() {}
+
+a();
+```
+
+Execution stack:
+
+```text
+c()
+b()
+a()
+```
+
+---
+
+### 2. Undo/Redo Systems
+
+```text
+Undo Last Action
+Redo Last Action
+```
+
+Typically implemented using stacks.
+
+---
+
+### 3. Browser History
+
+```text
+Page A
+Page B
+Page C
+```
+
+Back button pops pages from a stack-like structure.
+
+---
+
+### 4. Expression Evaluation
+
+Used in:
+
+```text
+(2 + 3) * 5
+```
+
+Parsers and compilers heavily use stacks.
+
+---
+
+# Array-Based Stack vs Linked List Stack
+
+| Feature        | Array Stack | Linked List Stack |
+| -------------- | ----------- | ----------------- |
+| Implementation | Simple      | More complex      |
+| Memory         | Efficient   | Extra node memory |
+| Push/Pop       | O(1)        | O(1)              |
+| Random Access  | O(1)        | O(n)              |
+
+In JavaScript, arrays are usually preferred unless there are very specific requirements.
+
+---
+
+# Common Interview Follow-Up
+
+### Implement Stack Without Using `push()` and `pop()`
+
+```js
+class Stack {
+  constructor() {
+    this.items = {};
+    this.top = 0;
+  }
+
+  push(value) {
+    this.items[this.top] = value;
+    this.top++;
+  }
+
+  pop() {
+    if (this.top === 0) return undefined;
+
+    this.top--;
+
+    const value = this.items[this.top];
+    delete this.items[this.top];
+
+    return value;
+  }
+}
+```
+
+This demonstrates understanding of the underlying mechanics.
+
+---
+
+# Complexity Analysis
+
+| Operation | Time Complexity |
+| --------- | --------------- |
+| Push      | O(1)            |
+| Pop       | O(1)            |
+| Peek      | O(1)            |
+| Size      | O(1)            |
+| isEmpty   | O(1)            |
+
+Space Complexity:
+
+```text
+O(n)
+```
+
+where `n` is the number of elements stored.
+
+---
+
+# Interview Summary
+
+A stack follows **LIFO (Last In, First Out)**.
+
+```js
+class Stack {
+  constructor() {
+    this.items = [];
+  }
+
+  push(item) {
+    this.items.push(item);
+  }
+
+  pop() {
+    return this.items.pop();
+  }
+
+  peek() {
+    return this.items[this.items.length - 1];
+  }
+
+  isEmpty() {
+    return this.items.length === 0;
+  }
+
+  size() {
+    return this.items.length;
+  }
+}
+```
+
+Key operations:
+
+- `push()` → add to top
+- `pop()` → remove from top
+- `peek()` → view top element
+- `isEmpty()` → check if stack is empty
+- `size()` → number of elements
+
+All major stack operations run in **O(1)** time, making arrays an excellent choice for implementing stacks in JavaScript.
+
 ## Question 10. How to implement a queue using arrays
 
 ## Question 11. Difference between `bind()`, `call()`, and `apply()`
