@@ -3701,6 +3701,580 @@ Yes, but with constraints and interop rules.
 
 ## Question 9. Explain code splitting and lazy loading in JS
 
+# Code Splitting and Lazy Loading in JavaScript
+
+## Short Answer
+
+- **Code Splitting** is the technique of breaking a large JavaScript bundle into smaller chunks that can be loaded separately.
+- **Lazy Loading** means loading those chunks only when they are actually needed.
+
+Together, they improve:
+
+- Initial page load time
+- Performance
+- Time to Interactive (TTI)
+- User experience
+
+Modern applications commonly use **dynamic `import()`** for code splitting and lazy loading.
+
+---
+
+# Why Do We Need Code Splitting?
+
+Imagine a large application:
+
+```txt
+app.js
+├── Dashboard
+├── Settings
+├── Profile
+├── Admin Panel
+├── Charts
+├── Reports
+└── Analytics
+```
+
+Without code splitting:
+
+```txt
+bundle.js = 5 MB
+```
+
+Every user downloads everything, even if they never visit:
+
+- Admin pages
+- Reports
+- Analytics
+
+This increases:
+
+- Network usage
+- Startup time
+- Parse time
+- Memory usage
+
+---
+
+# What Is Code Splitting?
+
+Code splitting breaks one large bundle into multiple bundles.
+
+### Before
+
+```txt
+bundle.js
+```
+
+### After
+
+```txt
+main.js
+dashboard.js
+settings.js
+admin.js
+reports.js
+```
+
+Only required chunks are loaded initially.
+
+---
+
+# Traditional Import (No Splitting)
+
+```js
+import Dashboard from "./Dashboard.js";
+import Settings from "./Settings.js";
+import Admin from "./Admin.js";
+```
+
+All modules are bundled together.
+
+---
+
+# Dynamic Import
+
+ES2020 introduced:
+
+```js
+import("./module.js");
+```
+
+This returns a Promise.
+
+```js
+const module = await import("./module.js");
+```
+
+Because the module is loaded at runtime, bundlers can place it in a separate chunk.
+
+---
+
+# Basic Lazy Loading Example
+
+```js
+button.addEventListener("click", async () => {
+  const module = await import("./chart.js");
+
+  module.renderChart();
+});
+```
+
+### What Happens?
+
+Initial load:
+
+```txt
+main.js
+```
+
+User clicks button:
+
+```txt
+chart.js downloaded
+```
+
+Only then is the chart code loaded.
+
+---
+
+# Output Order Question (Interview Favorite)
+
+```js
+console.log("Start");
+
+import("./module.js").then(() => {
+  console.log("Loaded");
+});
+
+console.log("End");
+```
+
+Suppose:
+
+```js
+// module.js
+console.log("Module executed");
+```
+
+### Output
+
+```txt
+Start
+End
+Module executed
+Loaded
+```
+
+---
+
+## Why?
+
+`import()` is asynchronous.
+
+The current script continues executing before the module finishes loading.
+
+---
+
+# Route-Based Code Splitting
+
+Most common production use case.
+
+### Bad
+
+```js
+import Home from "./Home";
+import Dashboard from "./Dashboard";
+import Admin from "./Admin";
+```
+
+All routes load immediately.
+
+---
+
+### Good
+
+```js
+const Dashboard = () => import("./Dashboard");
+
+const Admin = () => import("./Admin");
+```
+
+Routes load only when visited.
+
+---
+
+# Example with React
+
+```js
+const Dashboard = React.lazy(() => import("./Dashboard"));
+```
+
+Used with:
+
+```jsx
+<Suspense fallback={<div>Loading...</div>}>
+  <Dashboard />
+</Suspense>
+```
+
+---
+
+# Conditional Lazy Loading
+
+Load only when necessary.
+
+```js
+if (user.isAdmin) {
+  const admin = await import("./admin.js");
+
+  admin.init();
+}
+```
+
+Regular users never download admin code.
+
+---
+
+# Lazy Loading Large Libraries
+
+Suppose:
+
+```js
+import * as THREE from "three";
+```
+
+The library is huge.
+
+Instead:
+
+```js
+async function open3DViewer() {
+  const THREE = await import("three");
+
+  // use library
+}
+```
+
+The library downloads only when needed.
+
+---
+
+# Webpack Code Splitting
+
+Webpack automatically creates chunks for dynamic imports.
+
+```js
+import("./analytics");
+```
+
+Output:
+
+```txt
+main.bundle.js
+analytics.chunk.js
+```
+
+Network flow:
+
+```txt
+Page Load
+   ↓
+main.bundle.js
+
+User Action
+   ↓
+analytics.chunk.js
+```
+
+---
+
+# Named Chunks (Webpack)
+
+```js
+import(
+  /* webpackChunkName: "analytics" */
+  "./analytics"
+);
+```
+
+Generated file:
+
+```txt
+analytics.js
+```
+
+instead of:
+
+```txt
+chunk-239847.js
+```
+
+---
+
+# Lazy Loading Images vs JS
+
+Interviewers sometimes ask this.
+
+### JavaScript Lazy Loading
+
+```js
+import("./gallery.js");
+```
+
+Loads code later.
+
+---
+
+### Image Lazy Loading
+
+```html
+<img src="image.jpg" loading="lazy" />
+```
+
+Loads image later.
+
+Both reduce initial page load cost.
+
+---
+
+# Tree Shaking vs Code Splitting
+
+A common confusion.
+
+---
+
+## Tree Shaking
+
+Removes unused code.
+
+```js
+import { add } from "./utils";
+```
+
+Unused exports removed.
+
+---
+
+## Code Splitting
+
+Separates code into chunks.
+
+```js
+import("./utils");
+```
+
+Creates a separate file.
+
+---
+
+### Summary
+
+```txt
+Tree Shaking
+=
+Remove unused code
+
+Code Splitting
+=
+Separate code into chunks
+```
+
+---
+
+# Lazy Loading vs Eager Loading
+
+## Eager Loading
+
+```js
+import "./analytics";
+```
+
+Downloads immediately.
+
+---
+
+## Lazy Loading
+
+```js
+await import("./analytics");
+```
+
+Downloads only when required.
+
+---
+
+# Advantages
+
+### Faster Initial Load
+
+```txt
+5 MB → 500 KB
+```
+
+initial download
+
+---
+
+### Better Performance
+
+Less JS:
+
+- downloaded
+- parsed
+- compiled
+- executed
+
+---
+
+### Lower Memory Usage
+
+Unused features don't occupy memory.
+
+---
+
+### Better User Experience
+
+Users can interact sooner.
+
+---
+
+# Trade-Offs
+
+### More Network Requests
+
+Instead of:
+
+```txt
+1 large bundle
+```
+
+You may get:
+
+```txt
+main.js
+chunk1.js
+chunk2.js
+chunk3.js
+```
+
+---
+
+### Loading Delays
+
+First access may require downloading a chunk.
+
+```txt
+Click Dashboard
+↓
+Download Dashboard Chunk
+↓
+Render
+```
+
+---
+
+### Need Loading States
+
+```js
+showSpinner();
+await import("./dashboard");
+hideSpinner();
+```
+
+---
+
+# Real-World Example
+
+```js
+async function openEditor() {
+  const editor = await import("./richTextEditor.js");
+
+  editor.init();
+}
+```
+
+Benefits:
+
+- Users who never edit content don't download editor code.
+- Faster startup.
+- Smaller initial bundle.
+
+---
+
+# Common Interview Questions
+
+## Q1: Does `import()` return a Promise?
+
+Yes.
+
+```js
+const module = await import("./module.js");
+```
+
+---
+
+## Q2: Can code splitting work without lazy loading?
+
+Yes.
+
+Bundlers can create multiple chunks that are still loaded immediately.
+
+---
+
+## Q3: Is `require()` lazy loading?
+
+Not really.
+
+```js
+const mod = require("./mod");
+```
+
+It loads synchronously at runtime.
+
+Modern lazy loading typically refers to dynamic `import()`.
+
+---
+
+## Q4: What enables code splitting in ES Modules?
+
+Dynamic imports:
+
+```js
+import("./module.js");
+```
+
+Static imports:
+
+```js
+import module from "./module.js";
+```
+
+cannot be split dynamically because they are resolved at build time.
+
+---
+
+# Interview Summary
+
+> **Code Splitting** is the process of breaking a large JavaScript bundle into smaller chunks, while **Lazy Loading** is the technique of loading those chunks only when they are needed. Modern JavaScript achieves this using dynamic `import()`, allowing faster initial page loads, better performance, and reduced resource usage.
+
+### Example
+
+```js
+button.addEventListener("click", async () => {
+  const chart = await import("./chart.js");
+  chart.render();
+});
+```
+
+### Key Takeaways
+
+- `import()` returns a Promise.
+- Dynamic imports enable code splitting.
+- Lazy loading reduces initial bundle size.
+- Commonly used for routes, large libraries, dashboards, editors, and admin panels.
+- Tree shaking removes unused code; code splitting separates code into chunks.
+- Essential optimization technique in modern React, Vue, Angular, and large-scale JavaScript applications.
+
 ## Question 10. Difference between mutable and immutable operations on arrays and objects
 
 ## Question 11. How to prevent race conditions in asynchronous code?
