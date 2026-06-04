@@ -3017,6 +3017,484 @@ Extend Proxy:
 
 ## Question 9. How to implement a simple pub/sub system in JavaScript
 
+## Concise Answer
+
+A **Pub/Sub (Publish-Subscribe)** system is a messaging pattern where:
+
+- **Publishers** emit events/messages.
+- **Subscribers** listen for specific events.
+- Neither knows about the other directly.
+
+A simple implementation uses an object (or `Map`) to store event names and their subscribed callbacks.
+
+```js
+class EventBus {
+  constructor() {
+    this.events = {};
+  }
+
+  subscribe(event, callback) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+
+    this.events[event].push(callback);
+  }
+
+  publish(event, data) {
+    if (!this.events[event]) return;
+
+    this.events[event].forEach((callback) => {
+      callback(data);
+    });
+  }
+}
+```
+
+---
+
+# What Problem Does Pub/Sub Solve?
+
+Without Pub/Sub:
+
+```js
+function saveUser(user) {
+  updateUI(user);
+  sendAnalytics(user);
+  notifyAdmin(user);
+}
+```
+
+The function becomes tightly coupled to multiple systems.
+
+With Pub/Sub:
+
+```js
+eventBus.publish("user:saved", user);
+```
+
+Any number of subscribers can react independently.
+
+---
+
+# Basic Implementation
+
+## Step 1: Create Event Storage
+
+```js
+class EventBus {
+  constructor() {
+    this.events = {};
+  }
+}
+```
+
+Structure:
+
+```js
+{
+  "user:login": [
+    callback1,
+    callback2
+  ],
+
+  "order:created": [
+    callback3
+  ]
+}
+```
+
+---
+
+## Step 2: Subscribe
+
+```js
+subscribe(event, callback) {
+  if (!this.events[event]) {
+    this.events[event] = [];
+  }
+
+  this.events[event].push(callback);
+}
+```
+
+Usage:
+
+```js
+bus.subscribe("login", (user) => {
+  console.log("Welcome", user);
+});
+```
+
+---
+
+## Step 3: Publish
+
+```js
+publish(event, data) {
+  if (!this.events[event]) return;
+
+  this.events[event].forEach(callback => {
+    callback(data);
+  });
+}
+```
+
+Usage:
+
+```js
+bus.publish("login", "John");
+```
+
+Output:
+
+```js
+Welcome John
+```
+
+---
+
+# Complete Example
+
+```js
+class EventBus {
+  constructor() {
+    this.events = {};
+  }
+
+  subscribe(event, callback) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+
+    this.events[event].push(callback);
+  }
+
+  publish(event, data) {
+    if (!this.events[event]) return;
+
+    this.events[event].forEach((callback) => {
+      callback(data);
+    });
+  }
+}
+
+const bus = new EventBus();
+
+bus.subscribe("userCreated", (user) => {
+  console.log("Email sent to", user.name);
+});
+
+bus.subscribe("userCreated", (user) => {
+  console.log("Analytics tracked", user.name);
+});
+
+bus.publish("userCreated", {
+  name: "Alice",
+});
+```
+
+Output:
+
+```js
+Email sent to Alice
+Analytics tracked Alice
+```
+
+---
+
+# Adding Unsubscribe Support
+
+Interviewers almost always ask for this.
+
+```js
+class EventBus {
+  constructor() {
+    this.events = {};
+  }
+
+  subscribe(event, callback) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+
+    this.events[event].push(callback);
+
+    return () => {
+      this.events[event] = this.events[event].filter((cb) => cb !== callback);
+    };
+  }
+
+  publish(event, data) {
+    if (!this.events[event]) return;
+
+    this.events[event].forEach((cb) => cb(data));
+  }
+}
+```
+
+Usage:
+
+```js
+const unsubscribe = bus.subscribe("message", (msg) => console.log(msg));
+
+bus.publish("message", "Hello");
+
+unsubscribe();
+
+bus.publish("message", "World");
+```
+
+Output:
+
+```js
+Hello;
+```
+
+`World` is not printed because the listener was removed.
+
+---
+
+# Using Map Instead of Object
+
+A more robust implementation:
+
+```js
+class EventBus {
+  constructor() {
+    this.events = new Map();
+  }
+
+  subscribe(event, callback) {
+    if (!this.events.has(event)) {
+      this.events.set(event, new Set());
+    }
+
+    this.events.get(event).add(callback);
+
+    return () => {
+      this.events.get(event)?.delete(callback);
+    };
+  }
+
+  publish(event, data) {
+    this.events.get(event)?.forEach((cb) => cb(data));
+  }
+}
+```
+
+### Why `Map + Set`?
+
+Benefits:
+
+- no prototype collisions
+- faster lookups
+- automatic duplicate prevention (`Set`)
+- cleaner API
+
+---
+
+# Implementing `once()`
+
+Execute a subscriber only one time.
+
+```js
+once(event, callback) {
+  const unsubscribe = this.subscribe(event, data => {
+    callback(data);
+    unsubscribe();
+  });
+}
+```
+
+Usage:
+
+```js
+bus.once("ready", () => {
+  console.log("Runs once");
+});
+```
+
+---
+
+# Async Pub/Sub
+
+Sometimes subscribers are async.
+
+```js
+async publish(event, data) {
+  const callbacks = this.events.get(event);
+
+  if (!callbacks) return;
+
+  await Promise.all(
+    [...callbacks].map(cb => cb(data))
+  );
+}
+```
+
+Usage:
+
+```js
+bus.subscribe("fetch", async () => {
+  await fetch("/api");
+});
+```
+
+---
+
+# Pub/Sub vs Observer Pattern
+
+A very common interview question.
+
+| Observer                | Pub/Sub                            |
+| ----------------------- | ---------------------------------- |
+| Subject knows observers | Publisher doesn't know subscribers |
+| Direct relationship     | Indirect relationship              |
+| Tighter coupling        | Looser coupling                    |
+| Usually one subject     | Central event broker               |
+
+Observer:
+
+```js
+subject.attach(observer);
+```
+
+Pub/Sub:
+
+```js
+eventBus.publish("event");
+```
+
+---
+
+# Real-World Examples
+
+### Browser Events
+
+```js
+button.addEventListener("click", handler);
+```
+
+Similar to Pub/Sub:
+
+- browser publishes click
+- handlers subscribe
+
+---
+
+### Node.js EventEmitter
+
+```js
+emitter.on("data", callback);
+
+emitter.emit("data", payload);
+```
+
+Node's `EventEmitter` is essentially a Pub/Sub implementation.
+
+---
+
+### Redux
+
+```js
+store.subscribe(listener);
+```
+
+Uses a related publish/subscribe concept.
+
+---
+
+# Common Pitfalls
+
+## ❌ Memory Leaks
+
+```js
+bus.subscribe("event", callback);
+```
+
+If never removed:
+
+```text
+subscriber remains in memory
+```
+
+Always provide unsubscribe support.
+
+---
+
+## ❌ One Subscriber Crashes All
+
+Bad:
+
+```js
+callbacks.forEach((cb) => cb(data));
+```
+
+If one callback throws:
+
+```js
+throw Error();
+```
+
+Remaining subscribers won't run.
+
+Better:
+
+```js
+callbacks.forEach((cb) => {
+  try {
+    cb(data);
+  } catch (err) {
+    console.error(err);
+  }
+});
+```
+
+---
+
+## ❌ Duplicate Subscriptions
+
+```js
+bus.subscribe("login", cb);
+bus.subscribe("login", cb);
+```
+
+Using `Set` instead of arrays prevents duplicates.
+
+---
+
+# Time Complexity
+
+Assume `n` subscribers.
+
+### Subscribe
+
+```text
+O(1)
+```
+
+### Unsubscribe
+
+```text
+O(1) with Set
+O(n) with Array
+```
+
+### Publish
+
+```text
+O(n)
+```
+
+Must notify all subscribers.
+
+---
+
+# Interview Summary
+
+> A Pub/Sub system decouples publishers from subscribers using an event broker. Publishers emit events, subscribers register callbacks, and the broker routes messages between them. A typical JavaScript implementation stores event names and callbacks in a `Map` or object, supports `subscribe`, `publish`, and `unsubscribe`, and is commonly used in event-driven architectures, UI frameworks, and systems like Node.js `EventEmitter`.
+
 ## Question 10. Difference between mutable and immutable operations on arrays/objects
 
 ## Question 11. Difference between deep equality and shallow equality
