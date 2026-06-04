@@ -2115,6 +2115,355 @@ A concise senior-level answer:
 
 ## Question 9. What is the difference between map, filter, and forEach?
 
+### **Short Answer**
+
+All three methods iterate over arrays, but they serve different purposes:
+
+- **`forEach()`** → Executes a function for each element; used for **side effects** and returns `undefined`.
+- **`map()`** → Transforms each element and returns a **new array** of the same length.
+- **`filter()`** → Selects elements that satisfy a condition and returns a **new array** (possibly shorter).
+
+---
+
+# **Detailed Explanation (Interview Perspective)**
+
+## **1. `forEach()`**
+
+### **Purpose**
+
+Perform an action for each element.
+
+### **Syntax**
+
+```javascript
+array.forEach((element, index, array) => {
+  // logic
+});
+```
+
+### **Example**
+
+```javascript
+const numbers = [1, 2, 3];
+
+numbers.forEach((num) => {
+  console.log(num);
+});
+```
+
+### **Output**
+
+```javascript
+1;
+2;
+3;
+```
+
+### **Return Value**
+
+```javascript
+const result = numbers.forEach((num) => num * 2);
+
+console.log(result); // undefined
+```
+
+### **Use Cases**
+
+- Logging
+- DOM updates
+- API calls
+- Side effects
+
+---
+
+## **2. `map()`**
+
+### **Purpose**
+
+Transform each element into a new value.
+
+### **Syntax**
+
+```javascript
+const newArray = array.map(callback);
+```
+
+### **Example**
+
+```javascript
+const numbers = [1, 2, 3];
+
+const doubled = numbers.map((num) => num * 2);
+
+console.log(doubled);
+```
+
+### **Output**
+
+```javascript
+[2, 4, 6];
+```
+
+### **Original Array**
+
+```javascript
+console.log(numbers);
+```
+
+Output:
+
+```javascript
+[1, 2, 3];
+```
+
+`map()` does not modify the original array.
+
+### **Characteristics**
+
+- Returns a new array.
+- Output array length is always the same as the input array length.
+
+---
+
+## **3. `filter()`**
+
+### **Purpose**
+
+Keep only elements that match a condition.
+
+### **Syntax**
+
+```javascript
+const newArray = array.filter(callback);
+```
+
+### **Example**
+
+```javascript
+const numbers = [1, 2, 3, 4, 5];
+
+const evenNumbers = numbers.filter((num) => num % 2 === 0);
+
+console.log(evenNumbers);
+```
+
+### **Output**
+
+```javascript
+[2, 4];
+```
+
+### **Characteristics**
+
+- Returns a new array.
+- Length may be smaller than the original.
+- Elements that return `true` are kept.
+
+---
+
+# **Side-by-Side Example**
+
+### Original Array
+
+```javascript
+const numbers = [1, 2, 3, 4];
+```
+
+### `forEach()`
+
+```javascript
+numbers.forEach((num) => {
+  console.log(num * 2);
+});
+```
+
+Output:
+
+```javascript
+2;
+4;
+6;
+8;
+```
+
+Returns:
+
+```javascript
+undefined;
+```
+
+---
+
+### `map()`
+
+```javascript
+const doubled = numbers.map((num) => num * 2);
+
+console.log(doubled);
+```
+
+Output:
+
+```javascript
+[2, 4, 6, 8];
+```
+
+---
+
+### `filter()`
+
+```javascript
+const even = numbers.filter((num) => num % 2 === 0);
+
+console.log(even);
+```
+
+Output:
+
+```javascript
+[2, 4];
+```
+
+---
+
+# **Comparison Table**
+
+| Feature                 | `forEach()` | `map()`           | `filter()`         |
+| ----------------------- | ----------- | ----------------- | ------------------ |
+| Returns new array       | ❌ No       | ✅ Yes            | ✅ Yes             |
+| Return value            | `undefined` | Transformed array | Filtered array     |
+| Length preserved        | N/A         | ✅ Yes            | ❌ Not necessarily |
+| Used for transformation | ❌          | ✅                | ❌                 |
+| Used for filtering      | ❌          | ❌                | ✅                 |
+| Side effects            | ✅ Common   | ⚠️ Avoid          | ⚠️ Avoid           |
+
+---
+
+# **Common Interview Mistakes**
+
+## 1. Using `map()` Without Using the Returned Array
+
+```javascript
+numbers.map((num) => {
+  console.log(num);
+});
+```
+
+This works, but `forEach()` is more appropriate because no new array is needed.
+
+---
+
+## 2. Using `forEach()` for Transformation
+
+```javascript
+const result = [];
+
+numbers.forEach((num) => {
+  result.push(num * 2);
+});
+```
+
+Better:
+
+```javascript
+const result = numbers.map((num) => num * 2);
+```
+
+---
+
+## 3. Forgetting to Return in `map()`
+
+```javascript
+const result = numbers.map((num) => {
+  num * 2;
+});
+
+console.log(result);
+```
+
+Output:
+
+```javascript
+[undefined, undefined, undefined, undefined];
+```
+
+Correct:
+
+```javascript
+const result = numbers.map((num) => num * 2);
+```
+
+or
+
+```javascript
+const result = numbers.map((num) => {
+  return num * 2;
+});
+```
+
+---
+
+# **Can They Be Chained?**
+
+Yes, and this is very common.
+
+```javascript
+const numbers = [1, 2, 3, 4, 5];
+
+const result = numbers.filter((num) => num % 2 === 0).map((num) => num * 10);
+
+console.log(result);
+```
+
+Output:
+
+```javascript
+[20, 40];
+```
+
+---
+
+# **Performance Consideration**
+
+For very large arrays:
+
+```javascript
+array.filter(...).map(...)
+```
+
+creates intermediate arrays.
+
+Sometimes a single `reduce()` can be more efficient:
+
+```javascript
+const result = numbers.reduce((acc, num) => {
+  if (num % 2 === 0) {
+    acc.push(num * 10);
+  }
+  return acc;
+}, []);
+```
+
+However, readability is usually more important unless performance is critical.
+
+---
+
+# **Best Practices**
+
+- Use **`forEach()`** for side effects (logging, DOM updates, API calls).
+- Use **`map()`** when transforming data.
+- Use **`filter()`** when selecting a subset of data.
+- Avoid mutating arrays inside `map()` or `filter()`.
+- Prefer functional methods over manual loops when they improve readability.
+
+---
+
+## **Interview Tip**
+
+A concise interview answer:
+
+> "`forEach()` is used for executing code on each element and returns nothing useful. `map()` transforms every element and returns a new array of the same length. `filter()` returns a new array containing only elements that satisfy a condition. When you need a transformed array, use `map`; when you need a subset, use `filter`; and when you only need side effects, use `forEach`."
+
 ## Question 10. How to copy an array without affecting the original?
 
 ## Question 11. Explain JSON. How to parse and stringify JSON?
