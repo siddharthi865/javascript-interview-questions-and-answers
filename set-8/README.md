@@ -2113,6 +2113,312 @@ arr.forEach((n) => {
 
 ## Question 9. Explain async/await syntax
 
+## Direct Answer
+
+**`async/await`** is syntactic sugar over Promises in JavaScript that allows you to write asynchronous code in a **synchronous-looking style**.
+
+- `async` makes a function return a Promise
+- `await` pauses execution until a Promise resolves or rejects
+
+---
+
+# 1. Basic Syntax
+
+```js id="aa1"
+async function fetchData() {
+  const response = await fetch("https://api.example.com/data");
+  const data = await response.json();
+
+  return data;
+}
+```
+
+---
+
+# 2. What `async` does
+
+When you mark a function as `async`, it always returns a Promise:
+
+```js id="aa2"
+async function test() {
+  return 10;
+}
+
+test().then(console.log); // 10
+```
+
+👉 Equivalent to:
+
+```js id="aa3"
+function test() {
+  return Promise.resolve(10);
+}
+```
+
+---
+
+# 3. What `await` does
+
+`await` pauses execution inside an `async` function until the Promise resolves.
+
+```js id="aa4"
+function delay() {
+  return new Promise((resolve) => setTimeout(resolve, 1000));
+}
+
+async function run() {
+  console.log("Start");
+
+  await delay(); // pauses here
+
+  console.log("End");
+}
+
+run();
+```
+
+Output (after 1 second):
+
+```
+Start
+End
+```
+
+---
+
+# 4. How async/await works internally
+
+This:
+
+```js id="aa5"
+async function fn() {
+  const data = await fetchData();
+  return data;
+}
+```
+
+is equivalent to:
+
+```js id="aa6"
+function fn() {
+  return fetchData().then((data) => {
+    return data;
+  });
+}
+```
+
+👉 So `async/await` is just cleaner Promise chaining.
+
+---
+
+# 5. Sequential vs Parallel Execution
+
+## ❌ Sequential (slow if independent)
+
+```js id="aa7"
+async function run() {
+  const a = await fetch("/api/a");
+  const b = await fetch("/api/b");
+}
+```
+
+Each waits for the previous one.
+
+---
+
+## ✅ Parallel (better performance)
+
+```js id="aa8"
+async function run() {
+  const aPromise = fetch("/api/a");
+  const bPromise = fetch("/api/b");
+
+  const a = await aPromise;
+  const b = await bPromise;
+}
+```
+
+Or better:
+
+```js id="aa9"
+const [a, b] = await Promise.all([fetch("/api/a"), fetch("/api/b")]);
+```
+
+---
+
+# 6. Error Handling with try/catch
+
+```js id="aa10"
+async function run() {
+  try {
+    const res = await fetch("/api/data");
+
+    if (!res.ok) {
+      throw new Error("Network error");
+    }
+
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error("Error:", error);
+  }
+}
+```
+
+---
+
+# 7. Important Rules
+
+## Rule 1: `await` only works inside async functions
+
+```js id="aa11"
+// ❌ SyntaxError
+const data = await fetch("/api");
+```
+
+Correct:
+
+```js id="aa12"
+async function run() {
+  const data = await fetch("/api");
+}
+```
+
+---
+
+## Rule 2: Top-level await (ES2022+)
+
+In modern modules:
+
+```js id="aa13"
+const data = await fetch("/api");
+```
+
+Only works in ES modules.
+
+---
+
+## Rule 3: async always returns Promise
+
+```js id="aa14"
+async function test() {
+  return 5;
+}
+
+console.log(test()); // Promise { 5 }
+```
+
+---
+
+# 8. Async/Await vs Promises
+
+| Feature        | Promises           | async/await      |
+| -------------- | ------------------ | ---------------- |
+| Readability    | Medium             | High             |
+| Syntax style   | Chaining `.then()` | Synchronous-like |
+| Error handling | `.catch()`         | try/catch        |
+| Debugging      | Harder             | Easier           |
+| Control flow   | Nested chains      | Linear code      |
+
+---
+
+# 9. Common Pitfalls
+
+---
+
+## Pitfall 1: Forgetting await
+
+```js id="aa15"
+async function run() {
+  const data = fetch("/api"); // ❌ Promise, not result
+}
+```
+
+---
+
+## Pitfall 2: Sequential execution mistake
+
+```js id="aa16"
+await fetch(a);
+await fetch(b);
+```
+
+👉 Slower if requests are independent.
+
+---
+
+## Pitfall 3: Using await in forEach
+
+```js id="aa17"
+arr.forEach(async (item) => {
+  await process(item);
+});
+```
+
+❌ Does not behave sequentially.
+
+---
+
+## Correct way:
+
+```js id="aa18"
+for (const item of arr) {
+  await process(item);
+}
+```
+
+---
+
+# 10. Real-world Use Cases
+
+## API calls
+
+```js id="aa19"
+async function getUser() {
+  const res = await fetch("/user");
+  return await res.json();
+}
+```
+
+---
+
+## Multiple dependent steps
+
+```js id="aa20"
+async function processOrder() {
+  const user = await getUser();
+  const order = await createOrder(user.id);
+  return order;
+}
+```
+
+---
+
+## Parallel execution optimization
+
+```js id="aa21"
+async function loadData() {
+  const [user, posts] = await Promise.all([fetchUser(), fetchPosts()]);
+}
+```
+
+---
+
+# 11. Event Loop Insight (Interview-Level Concept)
+
+- `await` pauses function execution
+- Function is suspended, not blocking the thread
+- Control returns to event loop
+- Resumes in **microtask queue** when Promise resolves
+
+👉 This is why async/await is non-blocking.
+
+---
+
+# 12. Interview Summary
+
+> `async/await` is a modern JavaScript syntax built on top of Promises that allows asynchronous code to be written in a synchronous style. An `async` function always returns a Promise, while `await` pauses execution until a Promise resolves. It improves readability, simplifies error handling with try/catch, and makes asynchronous flow easier to manage compared to traditional Promise chaining.
+
 ## Question 10. Difference between Promise.all and Promise.race
 
 ## Question 11. How to handle multiple async operations sequentially
