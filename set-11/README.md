@@ -2526,6 +2526,317 @@ text.indexOf("hello") !== -1;
 
 ## Question 9. How to convert a number to a string in binary, octal, or hexadecimal?
 
+## Short Answer
+
+Use the `Number.prototype.toString(radix)` method.
+
+```js id="m4k9q2"
+const num = 255;
+
+console.log(num.toString(2)); // binary
+console.log(num.toString(8)); // octal
+console.log(num.toString(16)); // hexadecimal
+```
+
+Output:
+
+```js id="p7v3xn"
+11111111;
+377;
+ff;
+```
+
+The `radix` can be any integer from **2 to 36**.
+
+---
+
+# Syntax
+
+```js id="k2d8wr"
+number.toString(radix);
+```
+
+### Parameters
+
+| Radix | Number System |
+| ----- | ------------- |
+| 2     | Binary        |
+| 8     | Octal         |
+| 10    | Decimal       |
+| 16    | Hexadecimal   |
+
+---
+
+# 1. Convert Number to Binary
+
+```js id="x5n1ta"
+const num = 10;
+
+console.log(num.toString(2));
+```
+
+Output:
+
+```js id="g8m4pz"
+1010;
+```
+
+---
+
+## Add Binary Prefix
+
+```js id="n3t9yb"
+const binary = "0b" + num.toString(2);
+
+console.log(binary);
+```
+
+Output:
+
+```js id="w6k2rq"
+0b1010;
+```
+
+---
+
+# 2. Convert Number to Octal
+
+```js id="d9q7lh"
+const num = 64;
+
+console.log(num.toString(8));
+```
+
+Output:
+
+```js id="u1p5mx"
+100;
+```
+
+---
+
+## Add Octal Prefix
+
+```js id="e4z8jc"
+const octal = "0o" + num.toString(8);
+```
+
+Output:
+
+```js id="r7v2na"
+0o100;
+```
+
+---
+
+# 3. Convert Number to Hexadecimal
+
+```js id="f6n3kp"
+const num = 255;
+
+console.log(num.toString(16));
+```
+
+Output:
+
+```js id="v9t4ws"
+ff;
+```
+
+---
+
+## Uppercase Hex
+
+```js id="c8m1qy"
+console.log(num.toString(16).toUpperCase());
+```
+
+Output:
+
+```js id="z5k7xp"
+FF;
+```
+
+---
+
+## Add Hex Prefix
+
+```js id="j2r8nb"
+const hex = "0x" + num.toString(16);
+```
+
+Output:
+
+```js id="h4p9vt"
+0xff;
+```
+
+---
+
+# Examples
+
+```js id="y7w3ka"
+const num = 42;
+
+console.log("Binary:", num.toString(2));
+console.log("Octal:", num.toString(8));
+console.log("Decimal:", num.toString(10));
+console.log("Hex:", num.toString(16));
+```
+
+Output:
+
+```js id="n1x8cq"
+Binary: 101010
+Octal: 52
+Decimal: 42
+Hex: 2a
+```
+
+---
+
+# Converting Back to Decimal
+
+Use `parseInt()` with a radix.
+
+## Binary → Decimal
+
+```js id="q3v7mr"
+parseInt("1010", 2);
+```
+
+Output:
+
+```js id="a6p2kx"
+10;
+```
+
+---
+
+## Octal → Decimal
+
+```js id="t9n4yb"
+parseInt("100", 8);
+```
+
+Output:
+
+```js id="m7r1qp"
+64;
+```
+
+---
+
+## Hex → Decimal
+
+```js id="s5k8vd"
+parseInt("ff", 16);
+```
+
+Output:
+
+```js id="u2c9jn"
+255;
+```
+
+---
+
+# Common Interview Pitfalls
+
+## 1. Calling `toString()` on Numeric Literals
+
+This causes a syntax error:
+
+```js id="p4x7mz"
+10.toString(); // ❌
+```
+
+JavaScript interprets the first dot as a decimal point.
+
+### Correct Ways
+
+```js id="r8n3qy"
+(10).toString();
+```
+
+or
+
+```js id="w1k6tb"
+(10).toString();
+```
+
+Output:
+
+```js id="f9v2pa"
+"10";
+```
+
+---
+
+## 2. Hexadecimal Letters are Lowercase
+
+```js id="d7m4qx"
+(255).toString(16);
+```
+
+Output:
+
+```js id="e5p8zr"
+"ff";
+```
+
+If uppercase is required:
+
+```js id="c3n9vk"
+(255).toString(16).toUpperCase();
+```
+
+---
+
+## 3. Negative Numbers
+
+```js id="h6q2tw"
+(-10).toString(2);
+```
+
+Output:
+
+```js id="j8m5xp"
+"-1010";
+```
+
+JavaScript does not return a two's-complement representation here; it simply prefixes a minus sign.
+
+---
+
+# Radix Range
+
+`toString(radix)` supports bases from **2 to 36**.
+
+```js id="k4v7nb"
+(35).toString(36);
+```
+
+Output:
+
+```js id="m2q8xt"
+"z";
+```
+
+Digits beyond 9 use:
+
+```text
+a-z
+```
+
+for values 10–35.
+
+---
+
+# Interview-Friendly Summary
+
+> To convert a number into binary, octal, or hexadecimal in JavaScript, use `number.toString(radix)`. Pass `2` for binary, `8` for octal, and `16` for hexadecimal. The method returns a string representation of the number in the specified base. To convert back to decimal, use `parseInt(value, radix)`. A common interview pitfall is that numeric literals require parentheses when calling methods, e.g., `(10).toString(2)`.
+
 ## Question 10. How to round a number to a fixed number of decimal places?
 
 ## Question 11. Difference between parseFloat and Number()
