@@ -2642,6 +2642,379 @@ It's concise, readable, and less error-prone.
 
 ## Question 8. How to implement a reactive object (like Vue's reactivity system)
 
+## Concise Answer
+
+You can implement a **basic reactive object (Vue-like reactivity)** in JavaScript using a **`Proxy`** that intercepts `get` and `set` operations, combined with a **dependency tracking system (effect functions + subscribers)**.
+
+Core idea:
+
+- `get` → collect dependencies (track who is using the value)
+- `set` → trigger updates (re-run dependent functions)
+
+---
+
+# 1. Core Concept of Reactivity
+
+A reactive system is built on:
+
+### 🔹 Dependency Tracking
+
+When a function reads a property → we “remember” it depends on that property.
+
+### 🔹 Change Notification
+
+When a property changes → we re-run all dependent functions.
+
+---
+
+# 2. Minimal Reactive System (Vue-like)
+
+## Step 1: Dependency Map
+
+We use:
+
+- `WeakMap` → target object → property map
+- `Map` → property → set of effects
+
+```js id="rq2x7c"
+const targetMap = new WeakMap();
+```
+
+---
+
+## Step 2: Track Dependencies
+
+```js id="p7k9sa"
+let activeEffect = null;
+
+function track(target, key) {
+  if (!activeEffect) return;
+
+  let depsMap = targetMap.get(target);
+  if (!depsMap) {
+    depsMap = new Map();
+    targetMap.set(target, depsMap);
+  }
+
+  let dep = depsMap.get(key);
+  if (!dep) {
+    dep = new Set();
+    depsMap.set(key, dep);
+  }
+
+  dep.add(activeEffect);
+}
+```
+
+---
+
+## Step 3: Trigger Updates
+
+```js id="x1m8qv"
+function trigger(target, key) {
+  const depsMap = targetMap.get(target);
+  if (!depsMap) return;
+
+  const dep = depsMap.get(key);
+  if (!dep) return;
+
+  dep.forEach((effect) => effect());
+}
+```
+
+---
+
+## Step 4: Effect Runner
+
+```js id="v9t3lm"
+function effect(fn) {
+  activeEffect = fn;
+  fn(); // run once to collect dependencies
+  activeEffect = null;
+}
+```
+
+---
+
+## Step 5: Reactive Proxy
+
+```js id="c4n8zx"
+function reactive(obj) {
+  return new Proxy(obj, {
+    get(target, key, receiver) {
+      track(target, key);
+      return Reflect.get(target, key, receiver);
+    },
+
+    set(target, key, value, receiver) {
+      const result = Reflect.set(target, key, value, receiver);
+      trigger(target, key);
+      return result;
+    },
+  });
+}
+```
+
+---
+
+# 3. Example Usage
+
+```js id="m2p7kd"
+const state = reactive({ count: 0 });
+
+effect(() => {
+  console.log("Count changed:", state.count);
+});
+
+state.count = 1;
+state.count = 2;
+```
+
+---
+
+## Output
+
+```
+Count changed: 0
+Count changed: 1
+Count changed: 2
+```
+
+---
+
+# 4. What Is Happening Internally?
+
+### Step-by-step
+
+### 1. Initial run
+
+```js
+effect(() => console.log(state.count));
+```
+
+- `activeEffect = fn`
+- `get` is triggered → track dependency
+- function runs once
+
+---
+
+### 2. Read access
+
+```js
+state.count;
+```
+
+Triggers:
+
+```js
+track(target, "count");
+```
+
+We store:
+
+```
+count → [effect]
+```
+
+---
+
+### 3. Write access
+
+```js
+state.count = 1;
+```
+
+Triggers:
+
+```js
+trigger(target, "count");
+```
+
+Which re-runs all effects.
+
+---
+
+# 5. WeakMap Structure (Important Interview Concept)
+
+Memory structure looks like:
+
+```text
+WeakMap (targetMap)
+  └── state object
+        └── Map (depsMap)
+              └── "count"
+                    └── Set (effects)
+```
+
+---
+
+# 6. Why WeakMap is Important
+
+We use:
+
+```js
+WeakMap;
+```
+
+because:
+
+- If object is garbage collected → dependencies also disappear
+- Prevents memory leaks
+- Vue 3 uses same concept
+
+---
+
+# 7. Handling Multiple Effects
+
+```js id="d7kq1z"
+effect(() => console.log(state.count));
+effect(() => console.log(state.count * 2));
+```
+
+Now dependency set:
+
+```
+count → [effect1, effect2]
+```
+
+Both re-run when `count` changes.
+
+---
+
+# 8. Avoid Infinite Loops (Important Pitfall)
+
+Bad:
+
+```js id="p1x8lm"
+effect(() => {
+  state.count++;
+});
+```
+
+This causes infinite re-triggering.
+
+### Why?
+
+- `get` → track
+- `set` → trigger
+- triggers itself repeatedly
+
+---
+
+# 9. Optimized Version (Batching idea)
+
+Real frameworks use:
+
+- microtask queue
+- scheduler
+- batching updates
+
+Simple idea:
+
+```js id="z3q9np"
+const queue = new Set();
+let isFlushing = false;
+
+function queueEffect(effect) {
+  queue.add(effect);
+
+  if (!isFlushing) {
+    isFlushing = true;
+
+    queueMicrotask(() => {
+      queue.forEach((fn) => fn());
+      queue.clear();
+      isFlushing = false;
+    });
+  }
+}
+```
+
+---
+
+# 10. Real Vue-like Architecture
+
+Vue 3 uses:
+
+- `Proxy` → reactivity core
+- `WeakMap` → dependency storage
+- `effect()` → reactive runner
+- scheduler → batching updates
+- computed properties → cached effects
+
+---
+
+# 11. Advanced Enhancements
+
+## Computed properties
+
+```js id="x8m2qa"
+function computed(getter) {
+  let value;
+  let dirty = true;
+
+  const runner = effect(() => {
+    value = getter();
+  });
+
+  return {
+    get value() {
+      if (dirty) {
+        runner();
+        dirty = false;
+      }
+      return value;
+    },
+  };
+}
+```
+
+---
+
+## Deep reactivity
+
+Extend Proxy:
+
+- nested objects → recursively wrap with `reactive()`
+
+---
+
+# 12. Common Interview Pitfalls
+
+### ❌ Not tracking dependencies correctly
+
+→ effects never re-run
+
+---
+
+### ❌ Using Map instead of WeakMap
+
+→ memory leaks
+
+---
+
+### ❌ Missing cleanup
+
+→ stale subscriptions accumulate
+
+---
+
+### ❌ Triggering same effect infinitely
+
+→ recursion loop
+
+---
+
+# 13. One-Line Mental Model
+
+> Reactivity = Proxy (detect access/change) + Dependency graph (track effects) + Scheduler (run updates efficiently)
+
+---
+
+# 14. Interview Summary
+
+> A reactive system like Vue is built using a Proxy to intercept `get` and `set` operations. On `get`, dependencies (effect functions) are tracked using a WeakMap-based structure. On `set`, all dependent effects are triggered to re-run. This creates a dependency graph between state and side effects, enabling automatic UI updates. Advanced implementations also include batching, computed caching, and cleanup mechanisms for performance optimization.
+
 ## Question 9. How to implement a simple pub/sub system in JavaScript
 
 ## Question 10. Difference between mutable and immutable operations on arrays/objects
