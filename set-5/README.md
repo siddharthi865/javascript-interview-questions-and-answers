@@ -2049,6 +2049,256 @@ A Proxy in JavaScript is a wrapper around an object that allows you to intercept
 
 ## Question 8. What is Reflect API?
 
+### Short Answer
+
+The **Reflect API** is a built-in JavaScript object that provides **standardized methods for performing object operations** (like getting, setting, deleting properties) in a functional way. It is often used together with **Proxy** to ensure default or consistent behavior when intercepting operations.
+
+---
+
+# Reflect API in JavaScript (Interview-Ready Explanation)
+
+## 1. What is Reflect?
+
+`Reflect` is a global object introduced in ES6 that contains **static methods** corresponding to JavaScript’s internal object operations.
+
+Example:
+
+```javascript id="r1"
+Reflect.get(obj, key);
+Reflect.set(obj, key, value);
+Reflect.deleteProperty(obj, key);
+```
+
+👉 Think of it as a **utility wrapper for object operations**.
+
+---
+
+## 2. Why Reflect Exists?
+
+Before Reflect, operations were done like this:
+
+```javascript id="r2"
+obj.name;
+obj.name = "John";
+delete obj.name;
+```
+
+But in **Proxy handlers**, you need a reliable way to forward default behavior.
+
+So instead of manually doing:
+
+```javascript id="r3"
+target[prop];
+```
+
+we use:
+
+```javascript id="r4"
+Reflect.get(target, prop);
+```
+
+👉 This ensures consistent, standardized behavior.
+
+---
+
+## 3. Basic Example
+
+```javascript id="r5"
+const user = {
+  name: "Alice",
+};
+
+console.log(Reflect.get(user, "name")); // Alice
+```
+
+Equivalent to:
+
+```javascript id="r6"
+console.log(user.name);
+```
+
+---
+
+## 4. Reflect vs Direct Object Operations
+
+| Operation       | Direct            | Reflect                            |
+| --------------- | ----------------- | ---------------------------------- |
+| Get property    | `obj.key`         | `Reflect.get(obj, key)`            |
+| Set property    | `obj.key = value` | `Reflect.set(obj, key, value)`     |
+| Delete property | `delete obj.key`  | `Reflect.deleteProperty(obj, key)` |
+
+---
+
+## 5. Key Feature: Returns Boolean Results
+
+Unlike direct operations, Reflect methods return **success/failure status**.
+
+### Example:
+
+```javascript id="r7"
+const obj = {};
+
+console.log(Reflect.set(obj, "name", "John")); // true
+console.log(Reflect.deleteProperty(obj, "name")); // true
+```
+
+👉 This is useful for error handling.
+
+---
+
+## 6. Most Important Use Case: Proxy Integration
+
+Reflect is heavily used inside **Proxy handlers** to preserve default behavior.
+
+### Example: Logging Proxy
+
+```javascript id="r8"
+const user = {
+  name: "Alice",
+};
+
+const proxy = new Proxy(user, {
+  get(target, prop, receiver) {
+    console.log(`Getting: ${prop}`);
+    return Reflect.get(target, prop, receiver);
+  },
+
+  set(target, prop, value, receiver) {
+    console.log(`Setting: ${prop} = ${value}`);
+    return Reflect.set(target, prop, value, receiver);
+  },
+});
+
+proxy.name;
+proxy.age = 25;
+```
+
+### Output:
+
+```text id="r9"
+Getting: name
+Setting: age = 25
+```
+
+👉 Reflect ensures the original behavior is preserved correctly.
+
+---
+
+## 7. Why Not Use Direct Access in Proxy?
+
+Inside Proxy, you could do:
+
+```javascript id="r10"
+target[prop];
+```
+
+But Reflect is preferred because:
+
+### ✔ It preserves correct behavior with:
+
+- Prototype chain
+- Getter/setter correctness
+- `this` binding via receiver
+
+---
+
+## 8. Example: Safe Default Behavior
+
+```javascript id="r11"
+const user = {
+  name: "John",
+};
+
+const proxy = new Proxy(user, {
+  get(target, prop, receiver) {
+    return Reflect.get(target, prop, receiver) || "Not Found";
+  },
+});
+
+console.log(proxy.age); // Not Found
+```
+
+---
+
+## 9. Reflect Methods (Important for Interviews)
+
+| Method                     | Purpose            |
+| -------------------------- | ------------------ |
+| `Reflect.get()`            | Get property value |
+| `Reflect.set()`            | Set property value |
+| `Reflect.has()`            | `in` operator      |
+| `Reflect.deleteProperty()` | Delete property    |
+| `Reflect.ownKeys()`        | Get all keys       |
+| `Reflect.apply()`          | Call a function    |
+| `Reflect.construct()`      | Use `new` operator |
+
+---
+
+## 10. Reflect.apply Example
+
+```javascript id="r12"
+function sum(a, b) {
+  return a + b;
+}
+
+console.log(Reflect.apply(sum, null, [2, 3])); // 5
+```
+
+👉 Equivalent to `sum(2, 3)`
+
+---
+
+## 11. Reflect.construct Example
+
+```javascript id="r13"
+function Person(name) {
+  this.name = name;
+}
+
+const p = Reflect.construct(Person, ["Alice"]);
+console.log(p.name); // Alice
+```
+
+👉 Equivalent to `new Person("Alice")`
+
+---
+
+## 12. Key Conceptual Insight
+
+Reflect is not “new functionality” — it is:
+
+> A **clean, standardized API for existing JavaScript internal operations**
+
+It mirrors low-level operations defined in the ECMAScript spec.
+
+---
+
+## 13. Proxy + Reflect = Best Practice Pattern
+
+Modern JavaScript meta-programming pattern:
+
+```javascript id="r14"
+const proxy = new Proxy(obj, {
+  get(target, prop, receiver) {
+    return Reflect.get(target, prop, receiver);
+  },
+  set(target, prop, value, receiver) {
+    return Reflect.set(target, prop, value, receiver);
+  },
+});
+```
+
+👉 This ensures:
+
+- Correct default behavior
+- No accidental breaking of object semantics
+
+---
+
+## 14. Interview-Ready Summary
+
+The Reflect API in JavaScript provides a set of built-in methods for performing object operations such as getting, setting, deleting properties, and invoking functions in a standardized way. It is primarily used in conjunction with Proxy to forward default behavior cleanly and correctly. Unlike direct object operations, Reflect methods return boolean success values and ensure proper handling of edge cases like prototype chains and property descriptors. It essentially exposes JavaScript’s internal object operations as a consistent API for meta-programming.
+
 ## Question 9. How to create private fields in JS classes
 
 ## Question 10. What are decorators?
