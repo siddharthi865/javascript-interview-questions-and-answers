@@ -2491,6 +2491,317 @@ Output:
 
 ## Question 8. How to detect if a browser supports a certain feature (feature detection)
 
+## Concise Answer
+
+Feature detection in JavaScript means checking whether a browser supports a specific API or feature **before using it**, instead of relying on browser type or version.
+
+The most common approach is:
+
+```js
+if ("geolocation" in navigator) {
+  // supported
+}
+```
+
+or
+
+```js
+if (typeof IntersectionObserver !== "undefined") {
+  // supported
+}
+```
+
+---
+
+# 1. What is Feature Detection?
+
+Feature detection is the practice of checking **whether a feature exists in the runtime environment** before using it.
+
+### Why it matters (important interview point)
+
+Browsers are:
+
+- constantly evolving
+- inconsistent across versions
+- not reliably detectable via user-agent strings
+
+So instead of:
+
+❌ Browser detection:
+
+```js
+if (isChrome) { ... }
+```
+
+We do:
+
+✅ Feature detection:
+
+```js
+if ("fetch" in window) { ... }
+```
+
+---
+
+# 2. Basic Pattern: `in` Operator
+
+### Example: Check if `fetch` exists
+
+```js
+if ("fetch" in window) {
+  fetch("/api/data");
+} else {
+  console.log("Fetch not supported");
+}
+```
+
+### Why it works:
+
+- `"fetch"` is a property on `window` in modern browsers
+
+---
+
+# 3. Checking Global Constructors
+
+Many APIs are exposed as global constructors.
+
+### Example: `IntersectionObserver`
+
+```js
+if (typeof IntersectionObserver !== "undefined") {
+  const observer = new IntersectionObserver(callback);
+}
+```
+
+### Example: `ResizeObserver`
+
+```js
+if (typeof ResizeObserver !== "undefined") {
+  const ro = new ResizeObserver(() => {});
+}
+```
+
+---
+
+# 4. Checking Nested Features
+
+### Example: Geolocation
+
+```js
+if ("geolocation" in navigator) {
+  navigator.geolocation.getCurrentPosition((pos) => {
+    console.log(pos);
+  });
+}
+```
+
+---
+
+# 5. Checking Methods on Elements
+
+### Example: `classList`
+
+```js
+const el = document.createElement("div");
+
+if ("classList" in el) {
+  el.classList.add("active");
+}
+```
+
+---
+
+# 6. Safe Property Access Pattern
+
+Sometimes safer to combine checks:
+
+```js
+if (window && window.navigator && "clipboard" in navigator) {
+  navigator.clipboard.writeText("Hello");
+}
+```
+
+---
+
+# 7. Optional Chaining (Modern Approach)
+
+Optional chaining simplifies detection:
+
+```js
+if (navigator?.clipboard?.writeText) {
+  navigator.clipboard.writeText("Hello");
+}
+```
+
+---
+
+# 8. Feature Detection for CSS Support
+
+Use:
+
+```js
+if (CSS.supports("display", "grid")) {
+  console.log("CSS Grid supported");
+}
+```
+
+### Example:
+
+```js
+if (CSS.supports("backdrop-filter", "blur(10px)")) {
+  console.log("Blur supported");
+}
+```
+
+---
+
+# 9. Using `window.matchMedia`
+
+For responsive or media features:
+
+```js
+if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+  console.log("Dark mode preferred");
+}
+```
+
+---
+
+# 10. Robust Pattern: Try-Catch Detection
+
+Used when feature existence isn't enough.
+
+### Example: Clipboard API (permissions-sensitive)
+
+```js
+try {
+  await navigator.clipboard.writeText("Hello");
+  console.log("Copied!");
+} catch (err) {
+  console.log("Clipboard not supported or permission denied");
+}
+```
+
+---
+
+# 11. Polyfill Strategy (Important Interview Topic)
+
+Feature detection is often combined with polyfills:
+
+```js
+if (!Array.prototype.flat) {
+  Array.prototype.flat = function () {
+    return this.reduce((acc, val) => acc.concat(val), []);
+  };
+}
+```
+
+---
+
+# 12. Avoid This (Browser Detection)
+
+❌ Bad approach:
+
+```js
+if (navigator.userAgent.includes("Chrome")) {
+  // unsafe
+}
+```
+
+### Why it's bad:
+
+- User agents can be spoofed
+- Same feature may exist across browsers
+- Breaks with updates
+
+---
+
+# 13. Real-World Example: Safe API Usage
+
+### Fetch fallback pattern:
+
+```js
+function getData(url) {
+  if (typeof fetch !== "undefined") {
+    return fetch(url).then((res) => res.json());
+  }
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    xhr.open("GET", url);
+
+    xhr.onload = () => resolve(JSON.parse(xhr.responseText));
+    xhr.onerror = reject;
+
+    xhr.send();
+  });
+}
+```
+
+---
+
+# 14. Feature Detection vs Capability Detection
+
+| Type                 | Meaning                                         |
+| -------------------- | ----------------------------------------------- |
+| Feature detection    | Check if API exists                             |
+| Capability detection | Check if feature actually works (more advanced) |
+
+Example:
+
+- API exists ≠ permission granted (clipboard, geolocation)
+
+---
+
+# 15. Common Interview Pitfalls
+
+## ❌ Assuming presence means full support
+
+```js
+if ("fetch" in window) {
+  // still may fail in older implementations
+}
+```
+
+---
+
+## ❌ Not handling partial support
+
+Example: `Intl` exists but not all locales supported.
+
+---
+
+## ❌ Skipping fallback logic
+
+Always provide fallback or polyfill when needed.
+
+---
+
+# 16. Best Practices
+
+### Prefer:
+
+```js
+"feature" in object
+typeof Feature !== "undefined"
+CSS.supports()
+matchMedia()
+optional chaining (?.)
+```
+
+### Avoid:
+
+- User-agent sniffing
+- Assumptions based on browser name
+- Silent failures without fallback
+
+---
+
+# Interview Summary
+
+> Feature detection in JavaScript is the practice of checking whether a browser supports a specific API or feature before using it. This is typically done using the `in` operator, `typeof` checks, optional chaining, or APIs like `CSS.supports()`. It is preferred over browser detection because it is more reliable, future-proof, and works across different environments.
+
 ## Question 9. Difference between `document.readyState` and `DOMContentLoaded`
 
 ## Question 10. Explain JavaScript's event loop with call stack and task queue
