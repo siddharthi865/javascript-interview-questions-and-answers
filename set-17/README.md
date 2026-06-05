@@ -1990,6 +1990,282 @@ A strong interview answer is:
 
 ## Question 8. How to get computed style of an element
 
+## Short answer
+
+You can get the computed (final applied) CSS styles of an element using:
+
+```javascript
+window.getComputedStyle(element);
+```
+
+This returns the **resolved styles after all CSS rules, inheritance, and browser defaults are applied**.
+
+---
+
+# 1. Basic usage
+
+```html id="g9k2q1"
+<div id="box" style="color: red; font-size: 20px;">Hello</div>
+
+<script>
+  const box = document.getElementById("box");
+
+  const styles = window.getComputedStyle(box);
+
+  console.log(styles.color);
+  console.log(styles.fontSize);
+</script>
+```
+
+### Output (example)
+
+```text id="p8v2lm"
+rgb(255, 0, 0)
+20px
+```
+
+---
+
+# 2. What is “computed style”?
+
+Computed style is the **final value the browser uses to render an element**, after considering:
+
+- External CSS
+- Inline styles
+- Browser default styles
+- Inherited styles
+- Specificity rules
+- Cascade resolution
+
+Example:
+
+```css id="c1x9aa"
+div {
+  font-size: 16px;
+}
+
+#box {
+  font-size: 20px;
+}
+```
+
+Even if multiple rules exist, computed style gives the final one.
+
+---
+
+# 3. Syntax
+
+```javascript id="h2m9wd"
+const styles = window.getComputedStyle(element, pseudoElement);
+```
+
+### Parameters
+
+| Parameter       | Meaning                          |
+| --------------- | -------------------------------- |
+| `element`       | DOM element                      |
+| `pseudoElement` | Optional (`::before`, `::after`) |
+
+---
+
+# 4. Accessing properties
+
+You can access styles in two ways:
+
+### Dot notation (not recommended for all properties)
+
+```javascript id="k3p8vx"
+styles.color;
+```
+
+### Bracket notation (safe for all CSS properties)
+
+```javascript id="w9n1qz"
+styles.getPropertyValue("font-size");
+```
+
+---
+
+# 5. Example: Getting multiple styles
+
+```javascript id="x7l0rt"
+const box = document.getElementById("box");
+const styles = window.getComputedStyle(box);
+
+console.log("Color:", styles.getPropertyValue("color"));
+console.log("Padding:", styles.getPropertyValue("padding"));
+console.log("Display:", styles.getPropertyValue("display"));
+```
+
+---
+
+# 6. Inline style vs computed style
+
+### Inline style (`element.style`)
+
+```javascript id="a1b2c3"
+box.style.color = "red";
+```
+
+- Only reflects inline styles
+- Does NOT include CSS rules
+
+---
+
+### Computed style (`getComputedStyle`)
+
+```javascript id="d4e5f6"
+window.getComputedStyle(box).color;
+```
+
+- Includes everything applied to the element
+- Read-only
+
+---
+
+# 7. Pseudo-elements
+
+You can also get styles of `::before` and `::after`.
+
+```css id="pseud1"
+#box::before {
+  content: "";
+  color: blue;
+}
+```
+
+```javascript id="ps2e3l"
+const styles = window.getComputedStyle(box, "::before");
+
+console.log(styles.content);
+```
+
+---
+
+# 8. Important notes (Interview points)
+
+## 1. Values are always resolved
+
+```text id="r9v3kq"
+2em → 32px
+auto → actual computed value
+inherit → resolved inherited value
+```
+
+So you never see relative units like `em`, `%`, or `vh` in computed styles (they are resolved).
+
+---
+
+## 2. Read-only
+
+You cannot modify computed styles:
+
+```javascript id="n2q8zz"
+styles.color = "blue"; // ❌ ignored
+```
+
+To change styles:
+
+```javascript id="m1x9pp"
+box.style.color = "blue";
+```
+
+---
+
+## 3. Performance consideration
+
+Avoid calling repeatedly inside loops:
+
+```javascript id="bad1"
+for (...) {
+  window.getComputedStyle(el); // expensive if overused
+}
+```
+
+Better to cache:
+
+```javascript id="good1"
+const styles = window.getComputedStyle(el);
+```
+
+---
+
+# 9. Common interview pitfalls
+
+## ❌ Using `element.style` expecting full styles
+
+```javascript id="pit1"
+console.log(box.style.fontSize);
+```
+
+This only works if font-size is inline.
+
+---
+
+## ❌ Thinking computed style returns CSS text
+
+It returns a **CSSStyleDeclaration object**, not raw CSS.
+
+---
+
+## ❌ Forgetting unit conversion
+
+```javascript id="pit2"
+styles.width; // "200px", not number 200
+```
+
+You must parse:
+
+```javascript id="fix1"
+parseFloat(styles.width);
+```
+
+---
+
+# 10. Practical use cases
+
+### 1. Dynamic layout calculations
+
+```javascript id="u1x2y3"
+const height = parseFloat(getComputedStyle(box).height);
+```
+
+---
+
+### 2. Checking visibility
+
+```javascript id="u4x5y6"
+const display = getComputedStyle(box).display;
+
+if (display === "none") {
+  console.log("Hidden");
+}
+```
+
+---
+
+### 3. Animation logic
+
+```javascript id="u7x8y9"
+const transform = getComputedStyle(box).transform;
+```
+
+---
+
+# 11. Interview summary
+
+A strong answer:
+
+> The `window.getComputedStyle()` method returns the final computed CSS values of an element after all stylesheets, inline styles, and inheritance are applied. Unlike `element.style`, which only reflects inline styles, computed style gives the resolved, read-only values used by the browser for rendering. It is commonly used for layout calculations, debugging styles, and reading runtime CSS values.
+
+---
+
+If you want next-level prep, I can also explain:
+
+- Difference between **computed vs resolved vs used styles**
+- How browsers calculate styles internally (CSSOM + rendering pipeline)
+- Or tricky FAANG questions like “why getComputedStyle forces reflow”
+
 ## Question 9. How to dynamically load a script in JavaScript
 
 ## Question 10. How to implement tab navigation with keyboard accessibility
