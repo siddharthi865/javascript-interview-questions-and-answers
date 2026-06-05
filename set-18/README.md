@@ -2744,6 +2744,298 @@ The most important interview distinction is that **Fetch only rejects on network
 
 ## Question 8. How to cancel a fetch request using AbortController
 
+## ✅ Direct Answer
+
+You can cancel a `fetch` request using **AbortController** by passing its `signal` to `fetch()` and calling `controller.abort()` when you want to cancel the request.
+
+```javascript id="ab9xk1"
+const controller = new AbortController();
+
+fetch("/api/data", {
+  signal: controller.signal,
+});
+
+// cancel request
+controller.abort();
+```
+
+---
+
+# 🧠 Interview Explanation
+
+The Fetch API is designed to be asynchronous and non-blocking, so it doesn’t have a built-in `.cancel()` method. Instead, cancellation is handled through the **AbortController + AbortSignal** pattern.
+
+This is a standardized DOM API that allows you to:
+
+- cancel fetch requests
+- abort streaming operations
+- cancel event listeners (in some APIs)
+- implement timeout logic
+
+---
+
+# ⚙️ How It Works Internally
+
+1. You create an `AbortController`
+2. It exposes a `signal`
+3. That signal is passed into `fetch`
+4. If `abort()` is called:
+   - the signal becomes “aborted”
+   - fetch rejects with an `AbortError`
+
+---
+
+# 📌 Basic Example
+
+```javascript id="g7qk2m"
+const controller = new AbortController();
+
+fetch("https://api.example.com/users", {
+  signal: controller.signal,
+})
+  .then((res) => res.json())
+  .then((data) => console.log(data))
+  .catch((err) => {
+    if (err.name === "AbortError") {
+      console.log("Request cancelled");
+    } else {
+      console.error("Other error:", err);
+    }
+  });
+
+// cancel after 2 seconds
+setTimeout(() => {
+  controller.abort();
+}, 2000);
+```
+
+---
+
+# 🧠 Expected Output Behavior
+
+- If request completes before 2s → data is logged
+- If aborted before completion →
+
+```javascript id="xk1p9z"
+Request cancelled
+```
+
+---
+
+# ⏱️ Practical Use Case: Timeout with AbortController
+
+This is a **very common FAANG interview pattern**.
+
+```javascript id="m4n7qs"
+function fetchWithTimeout(url, timeout = 3000) {
+  const controller = new AbortController();
+
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, timeout);
+
+  return fetch(url, { signal: controller.signal }).finally(() =>
+    clearTimeout(timer),
+  );
+}
+```
+
+Usage:
+
+```javascript id="c8p2ld"
+fetchWithTimeout("/api/data", 2000)
+  .then((res) => res.json())
+  .then(console.log)
+  .catch((err) => {
+    if (err.name === "AbortError") {
+      console.log("Timed out");
+    }
+  });
+```
+
+---
+
+# 🔁 Reusing AbortController
+
+You can use one controller to cancel multiple requests:
+
+```javascript id="p9wq2t"
+const controller = new AbortController();
+
+fetch("/api/users", { signal: controller.signal });
+fetch("/api/posts", { signal: controller.signal });
+
+// cancels both requests
+controller.abort();
+```
+
+---
+
+# 🧠 Event Loop / Internal Behavior
+
+When `abort()` is called:
+
+1. `AbortSignal` state changes to `"aborted"`
+2. Any active fetch listeners are notified
+3. Fetch promise is rejected with:
+
+```javascript id="z9lq4d"
+new DOMException("The operation was aborted", "AbortError");
+```
+
+This rejection is delivered via the **microtask queue**, just like other promise rejections.
+
+---
+
+# ⚠️ Common Interview Pitfalls
+
+---
+
+## ❌ 1. Forgetting to pass the signal
+
+```javascript id="q1x9lm"
+const controller = new AbortController();
+
+fetch("/api"); // ❌ not cancellable
+```
+
+Must be:
+
+```javascript id="t7k2pn"
+fetch("/api", { signal: controller.signal });
+```
+
+---
+
+## ❌ 2. Not handling AbortError separately
+
+```javascript id="v3m8qd"
+.catch(err => console.log(err));
+```
+
+Better:
+
+```javascript id="r8p0xw"
+.catch(err => {
+  if (err.name === "AbortError") return;
+  console.error(err);
+});
+```
+
+---
+
+## ❌ 3. Aborting too early
+
+```javascript id="n2w6kc"
+controller.abort();
+fetch("/api", { signal: controller.signal });
+```
+
+This immediately cancels the request.
+
+---
+
+# 🧪 Advanced Pattern: Multiple Abort Signals
+
+```javascript id="h4y8zp"
+function createCancellableFetch() {
+  const controller = new AbortController();
+
+  return {
+    fetch: (url) => fetch(url, { signal: controller.signal }),
+    cancel: () => controller.abort(),
+  };
+}
+```
+
+Usage:
+
+```javascript id="k9x3bd"
+const req = createCancellableFetch();
+
+req.fetch("/api/data");
+req.cancel();
+```
+
+---
+
+# 🔥 Real-World Use Cases
+
+### 1. Search Autocomplete (Debounce + Abort)
+
+```javascript id="y7qk1m"
+let controller;
+
+async function search(query) {
+  if (controller) controller.abort();
+
+  controller = new AbortController();
+
+  try {
+    const res = await fetch(`/api?q=${query}`, {
+      signal: controller.signal,
+    });
+
+    const data = await res.json();
+    console.log(data);
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.error(err);
+    }
+  }
+}
+```
+
+👉 Prevents outdated requests from completing
+
+---
+
+### 2. Route Change Cancellation (SPA apps)
+
+When user navigates away:
+
+```javascript id="p0x8mt"
+controller.abort();
+```
+
+Stops unnecessary API work.
+
+---
+
+# ⚖️ Fetch vs XHR Cancellation
+
+| Feature             | Fetch (AbortController) | XHR (abort()) |
+| ------------------- | ----------------------- | ------------- |
+| Standardized        | ✅ Yes                  | ❌ No         |
+| Promise-based       | ✅ Yes                  | ❌ No         |
+| Modern usage        | ✅ Preferred            | Legacy        |
+| Stream cancellation | ✅ Yes                  | Limited       |
+
+---
+
+# 🚀 Interview-Ready Summary
+
+`AbortController` is the modern way to cancel fetch requests. You create a controller, pass its signal to fetch, and call `abort()` to cancel the request. The fetch promise rejects with an `AbortError`.
+
+```javascript id="v6k9sd"
+const controller = new AbortController();
+
+fetch("/api", { signal: controller.signal });
+
+// cancel
+controller.abort();
+```
+
+Key interview concepts:
+
+- AbortSignal lifecycle
+- Promise rejection with AbortError
+- Cleanup patterns
+- Timeout implementation using abort
+- Preventing race conditions in async requests
+
+---
+
 ## Question 9. How to upload files using JavaScript
 
 ## Question 10. How to track upload progress using JavaScript
