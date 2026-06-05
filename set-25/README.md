@@ -3602,6 +3602,533 @@ A strong interview answer should also discuss:
 
 ## Question 8. How to implement a decorator pattern using higher-order functions
 
+The Decorator Pattern is a structural design pattern that dynamically adds behavior to an object or function without modifying the original implementation.
+
+In JavaScript, decorators are very naturally implemented using Higher-Order Functions (HOFs) because functions are first-class citizens.
+
+A Higher-Order Function:
+
+- takes a function as input
+- returns a new enhanced function
+
+This makes HOFs an elegant way to implement decorators.
+
+---
+
+# Core Idea
+
+Instead of modifying the original function:
+
+```js id="lyjlwm"
+function greet(name) {
+  return `Hello ${name}`;
+}
+```
+
+Wrap it with additional behavior:
+
+```js id="jlwm12"
+const decorated = withLogging(greet);
+```
+
+---
+
+# Basic Decorator Using Higher-Order Functions
+
+---
+
+# Original Function
+
+```js id="jlwm13"
+function add(a, b) {
+  return a + b;
+}
+```
+
+---
+
+# Decorator Function
+
+```js id="jlwm14"
+function withLogging(fn) {
+  return function (...args) {
+    console.log("Arguments:", args);
+
+    const result = fn(...args);
+
+    console.log("Result:", result);
+
+    return result;
+  };
+}
+```
+
+---
+
+# Usage
+
+```js id="jlwm15"
+const loggedAdd = withLogging(add);
+
+loggedAdd(2, 3);
+```
+
+Output:
+
+```txt id="jlwm16"
+Arguments: [2, 3]
+Result: 5
+```
+
+The original `add()` function remains unchanged.
+
+---
+
+# Why This Is Decorator Pattern
+
+The wrapper:
+
+- preserves original behavior
+- adds extra functionality
+- keeps original implementation isolated
+
+This is exactly what decorators do.
+
+---
+
+# Common Real-World Decorators
+
+---
+
+# 1. Logging Decorator
+
+```js id="jlwm17"
+function withLogging(fn) {
+  return (...args) => {
+    console.log(`Calling ${fn.name}`);
+
+    return fn(...args);
+  };
+}
+```
+
+---
+
+# 2. Timing/Performance Decorator
+
+```js id="jlwm18"
+function withTiming(fn) {
+  return (...args) => {
+    const start = performance.now();
+
+    const result = fn(...args);
+
+    const end = performance.now();
+
+    console.log(`Execution time: ${end - start}ms`);
+
+    return result;
+  };
+}
+```
+
+Usage:
+
+```js id="jlwm19"
+const timedFunction = withTiming(add);
+```
+
+---
+
+# 3. Authentication Decorator
+
+Very common in frontend/backend apps.
+
+```js id="jlwm20"
+function withAuth(fn) {
+  return (...args) => {
+    const isAuthenticated = true;
+
+    if (!isAuthenticated) {
+      throw new Error("Unauthorized");
+    }
+
+    return fn(...args);
+  };
+}
+```
+
+---
+
+# 4. Retry Decorator
+
+Useful for APIs/network requests.
+
+```js id="jlwm23"
+function withRetry(fn, retries = 3) {
+  return async (...args) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        return await fn(...args);
+      } catch (error) {
+        if (i === retries - 1) {
+          throw error;
+        }
+      }
+    }
+  };
+}
+```
+
+Usage:
+
+```js id="jlwm24"
+const safeFetch = withRetry(fetchData, 5);
+```
+
+---
+
+# 5. Memoization Decorator
+
+Classic interview example.
+
+```js id="jlwm25"
+function memoize(fn) {
+  const cache = new Map();
+
+  return (...args) => {
+    const key = JSON.stringify(args);
+
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
+
+    const result = fn(...args);
+
+    cache.set(key, result);
+
+    return result;
+  };
+}
+```
+
+Usage:
+
+```js id="jlwm26"
+const fastFib = memoize(fibonacci);
+```
+
+---
+
+# Decorating Async Functions
+
+Very important modern JS topic.
+
+```js id="jlwm27"
+function withErrorHandling(fn) {
+  return async (...args) => {
+    try {
+      return await fn(...args);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+}
+```
+
+Usage:
+
+```js id="jlwm28"
+const safeApiCall = withErrorHandling(fetchUsers);
+```
+
+---
+
+# Composing Multiple Decorators
+
+Decorators can stack together.
+
+```js id="jlwm29"
+const enhanced = withLogging(withTiming(withAuth(fetchData)));
+```
+
+Execution order:
+
+```txt id="jlwm30"
+withLogging
+   ↓
+withTiming
+   ↓
+withAuth
+   ↓
+fetchData
+```
+
+---
+
+# Generic Compose Utility
+
+```js id="jlwm31"
+function compose(...decorators) {
+  return (fn) => decorators.reduceRight((acc, decorator) => decorator(acc), fn);
+}
+```
+
+Usage:
+
+```js id="jlwm32"
+const enhanced = compose(withLogging, withTiming, withAuth)(fetchData);
+```
+
+---
+
+# Decorator Pattern with Objects
+
+Decorators can also enhance object methods.
+
+```js id="jlwm33"
+function readonly(obj, method) {
+  const original = obj[method];
+
+  obj[method] = (...args) => {
+    console.log("Readonly method");
+
+    return original.apply(obj, args);
+  };
+}
+```
+
+---
+
+# Class Method Decorator (Manual)
+
+Before official decorators:
+
+```js id="jlwm34"
+class UserService {
+  getUsers() {
+    return ["John"];
+  }
+}
+
+UserService.prototype.getUsers = withLogging(UserService.prototype.getUsers);
+```
+
+---
+
+# Relation to ES Decorators Proposal
+
+JavaScript now has official decorators support in modern tooling/frameworks.
+
+Example:
+
+```ts id="jlwm35"
+class UserService {
+  @log
+  getUsers() {}
+}
+```
+
+Under the hood, many decorator systems behave similarly to HOF wrappers.
+
+---
+
+# React Example
+
+Higher-Order Components (HOCs) are essentially decorators.
+
+```jsx id="jlwm36"
+function withLoading(Component) {
+  return function WrappedComponent(props) {
+    if (props.loading) {
+      return <p>Loading...</p>;
+    }
+
+    return <Component {...props} />;
+  };
+}
+```
+
+Usage:
+
+```js id="jlwm37"
+const EnhancedComponent = withLoading(UserList);
+```
+
+---
+
+# Express Middleware as Decorators
+
+Middleware behaves similarly:
+
+```js id="jlwm38"
+app.get("/users", authenticate, authorize, controller);
+```
+
+Each middleware decorates request handling.
+
+---
+
+# Advantages
+
+| Benefit                | Explanation                     |
+| ---------------------- | ------------------------------- |
+| Non-invasive           | Original function unchanged     |
+| Reusable               | Apply decorators anywhere       |
+| Composable             | Combine behaviors               |
+| Separation of concerns | Logging/auth isolated           |
+| Flexible               | Add/remove behavior dynamically |
+
+---
+
+# Common Pitfalls
+
+---
+
+# 1. Losing `this` Context
+
+Bad:
+
+```js id="jlwm39"
+fn(...args);
+```
+
+May break methods.
+
+Safer:
+
+```js id="jlwm40"
+fn.apply(this, args);
+```
+
+---
+
+# 2. Too Many Nested Decorators
+
+Can reduce readability.
+
+```js id="jlwm41"
+a(b(c(d(fn))));
+```
+
+Prefer composition utilities.
+
+---
+
+# 3. Hidden Side Effects
+
+Decorators that mutate arguments or global state become hard to debug.
+
+---
+
+# 4. Async Handling Mistakes
+
+Always preserve async behavior:
+
+```js id="jlwm42"
+return await fn(...args);
+```
+
+---
+
+# Decorator vs Proxy Pattern
+
+Interview nuance.
+
+| Decorator             | Proxy                     |
+| --------------------- | ------------------------- |
+| Adds behavior         | Controls access           |
+| Enhancement-focused   | Mediation-focused         |
+| Usually compositional | Often transparent wrapper |
+
+---
+
+# Decorator vs Middleware
+
+| Decorator                 | Middleware            |
+| ------------------------- | --------------------- |
+| Wraps one function/object | Pipeline chain        |
+| Local enhancement         | Sequential processing |
+
+---
+
+# Best Practices
+
+---
+
+# Preserve Function Signature
+
+Use rest/spread:
+
+```js id="jlwm43"
+(...args)
+```
+
+---
+
+# Preserve `this`
+
+Important for class methods:
+
+```js id="jlwm44"
+fn.apply(this, args);
+```
+
+---
+
+# Keep Decorators Small
+
+One responsibility per decorator.
+
+---
+
+# Prefer Composition
+
+Small reusable decorators are powerful.
+
+---
+
+# Interview Summary
+
+The Decorator Pattern dynamically adds behavior to functions or objects without modifying the original implementation.
+
+In JavaScript, decorators are commonly implemented using Higher-Order Functions because functions are first-class citizens.
+
+Key concepts:
+
+- wrapper functions
+- behavior enhancement
+- composition
+- separation of concerns
+- reusable abstractions
+
+Common decorator examples:
+
+- logging
+- memoization
+- authentication
+- retry logic
+- caching
+- timing/performance measurement
+
+Widely used in:
+
+- React HOCs
+- Express middleware
+- async wrappers
+- API clients
+- class method enhancement
+
+A strong interview answer should also discuss:
+
+- HOF implementation
+- function composition
+- preserving `this`
+- async decorators
+- ES decorators proposal
+- decorator vs proxy
+- decorator vs middleware
+
 ## Question 9. How to implement chain of responsibility pattern in JS
 
 ## Question 10. How to handle circular dependencies in modules
