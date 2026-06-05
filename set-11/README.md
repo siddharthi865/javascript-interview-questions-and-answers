@@ -2321,6 +2321,209 @@ The object reference is shared.
 
 ## Question 8. How to check if a string contains another string?
 
+## Short Answer
+
+To check if a string contains another string in JavaScript, the most modern and readable way is:
+
+```js id="k3n8x1"
+str.includes(substring);
+```
+
+It returns `true` or `false`.
+
+---
+
+# 1. Using `includes()` (Recommended)
+
+Introduced in ES6, this is the standard approach today.
+
+```js id="a9v2pl"
+const str = "Hello JavaScript";
+
+console.log(str.includes("JavaScript")); // true
+console.log(str.includes("java")); // false (case-sensitive)
+```
+
+### Key Features
+
+- Returns a boolean
+- Case-sensitive
+- Simple and readable
+
+---
+
+# 2. Using `indexOf()` (Older Approach)
+
+Before `includes()`, developers used `indexOf()`:
+
+```js id="m1c8xq"
+const str = "Hello JavaScript";
+
+console.log(str.indexOf("JavaScript") !== -1); // true
+```
+
+### How it works
+
+- Returns index of match
+- Returns `-1` if not found
+
+```js id="b7t2ka"
+str.indexOf("JS"); // -1 if not found
+```
+
+---
+
+### Comparison
+
+| Method       | Returns | Readability |
+| ------------ | ------- | ----------- |
+| `includes()` | boolean | ⭐ Best     |
+| `indexOf()`  | number  | Older style |
+
+---
+
+# 3. Using Regular Expressions (`RegExp`)
+
+For advanced pattern matching:
+
+```js id="q9r4mn"
+const str = "Hello JavaScript";
+
+console.log(/JavaScript/.test(str)); // true
+```
+
+### Case-insensitive search
+
+```js id="z8p2lw"
+console.log(/javascript/i.test(str)); // true
+```
+
+---
+
+# 4. Using `search()` Method
+
+```js id="u2k7dr"
+const str = "Hello JavaScript";
+
+console.log(str.search("JavaScript") !== -1); // true
+```
+
+Or with regex:
+
+```js id="c5v9xz"
+console.log(str.search(/javascript/i) !== -1);
+```
+
+---
+
+# 5. Case Sensitivity (Important Interview Point)
+
+All string matching methods are **case-sensitive by default**:
+
+```js id="h8t3qp"
+const str = "JavaScript";
+
+console.log(str.includes("javascript")); // false
+```
+
+### Solution: Normalize case
+
+```js id="p3k8ld"
+str.toLowerCase().includes("javascript");
+```
+
+---
+
+# 6. Edge Cases
+
+## Empty string always returns true
+
+```js id="v7n2sa"
+console.log("hello".includes("")); // true
+```
+
+Because an empty string is considered to exist everywhere.
+
+---
+
+## Searching in undefined/null causes error
+
+```js id="d1k9xq"
+let str = null;
+
+// str.includes("a"); ❌ TypeError
+```
+
+Always validate first:
+
+```js id="s8m2qp"
+if (str && str.includes("a")) {
+  console.log("Found");
+}
+```
+
+---
+
+# 7. Real-World Example
+
+```js id="x4t9nb"
+const email = "user@example.com";
+
+if (email.includes("@")) {
+  console.log("Valid email format");
+}
+```
+
+---
+
+# 8. Performance Considerations
+
+| Method       | Performance | Use case             |
+| ------------ | ----------- | -------------------- |
+| `includes()` | Fast        | General usage        |
+| `indexOf()`  | Similar     | Legacy support       |
+| RegExp       | Slower      | Pattern-based search |
+
+---
+
+# 9. When to Use What
+
+## Use `includes()` when:
+
+- Simple substring check
+- Clean and readable code needed
+
+```js id="q1w8zd"
+text.includes("hello");
+```
+
+---
+
+## Use RegExp when:
+
+- Case-insensitive search
+- Complex patterns
+
+```js id="t6m3qk"
+/hello/i.test(text);
+```
+
+---
+
+## Use `indexOf()` when:
+
+- Supporting very old environments
+
+```js id="r8c2nw"
+text.indexOf("hello") !== -1;
+```
+
+---
+
+# Interview-Friendly Summary
+
+> To check if a string contains another string in JavaScript, the modern and preferred approach is `includes()`, which returns a boolean and is easy to read. Older code uses `indexOf() !== -1`. For advanced or pattern-based matching, regular expressions with `.test()` are used. All string matching methods are case-sensitive by default unless explicitly handled using transformations or regex flags.
+
 ## Question 9. How to convert a number to a string in binary, octal, or hexadecimal?
 
 ## Question 10. How to round a number to a fixed number of decimal places?
