@@ -1689,6 +1689,269 @@ console.log(unique);
 
 ## Question 8. What are WeakMap and WeakSet?
 
+### Short Answer
+
+**WeakMap** and **WeakSet** are special versions of `Map` and `Set` in JavaScript where **keys (WeakMap) or values (WeakSet) must be objects and are held weakly**, meaning they do not prevent garbage collection.
+
+---
+
+# 1. Core Idea (Very Important)
+
+| Feature            | Map / Set  | WeakMap / WeakSet           |
+| ------------------ | ---------- | --------------------------- |
+| Holds primitives   | Yes        | ❌ No                       |
+| Holds objects      | Yes        | Yes (only objects)          |
+| Garbage collection | No control | Objects can be auto-removed |
+| Iterable           | Yes        | ❌ No                       |
+| Size property      | Yes        | ❌ No                       |
+
+---
+
+# 2. WeakMap
+
+A **WeakMap** is a collection of **key-value pairs where keys must be objects** and are held weakly.
+
+## Syntax
+
+```javascript id="wm1"
+const wm = new WeakMap();
+```
+
+---
+
+## Example
+
+```javascript id="wm2"
+let user = { name: "Aman" };
+
+const wm = new WeakMap();
+wm.set(user, "userData");
+
+console.log(wm.get(user)); // "userData"
+```
+
+---
+
+## Key concept: Weak reference
+
+If the object key is no longer referenced anywhere else, it is **automatically garbage collected**.
+
+```javascript id="wm3"
+let user = { name: "Aman" };
+
+const wm = new WeakMap();
+wm.set(user, "data");
+
+user = null; // object becomes eligible for garbage collection
+```
+
+👉 After this, entry may be removed automatically.
+
+---
+
+## Real-world use case
+
+### 1. Private data storage
+
+```javascript id="wm4"
+const privateData = new WeakMap();
+
+class User {
+  constructor(name, age) {
+    privateData.set(this, { age });
+    this.name = name;
+  }
+
+  getAge() {
+    return privateData.get(this).age;
+  }
+}
+
+const u = new User("Aman", 25);
+
+console.log(u.getAge()); // 25
+```
+
+✔ Used to simulate private variables
+
+---
+
+### 2. DOM element metadata
+
+```javascript id="wm5"
+const tooltipMap = new WeakMap();
+
+const button = document.querySelector("button");
+
+tooltipMap.set(button, { text: "Click me" });
+```
+
+If the DOM element is removed → memory is automatically cleaned.
+
+---
+
+# 3. WeakSet
+
+A **WeakSet** is a collection of **objects only (no primitives)** and also uses weak references.
+
+## Syntax
+
+```javascript id="ws1"
+const ws = new WeakSet();
+```
+
+---
+
+## Example
+
+```javascript id="ws2"
+let obj = { id: 1 };
+
+const ws = new WeakSet();
+
+ws.add(obj);
+
+console.log(ws.has(obj)); // true
+```
+
+---
+
+## Garbage collection behavior
+
+```javascript id="ws3"
+let obj = { id: 1 };
+
+const ws = new WeakSet();
+ws.add(obj);
+
+obj = null; // object becomes eligible for GC
+```
+
+👉 Object will be removed from WeakSet automatically.
+
+---
+
+# 4. Real-world use cases of WeakSet
+
+## 1. Tracking processed objects
+
+```javascript id="ws4"
+const processed = new WeakSet();
+
+function process(obj) {
+  if (processed.has(obj)) return;
+
+  console.log("Processing:", obj);
+  processed.add(obj);
+}
+
+const data = { id: 1 };
+
+process(data);
+process(data); // ignored
+```
+
+---
+
+## 2. DOM tracking
+
+```javascript id="ws5"
+const visitedNodes = new WeakSet();
+
+const element = document.getElementById("app");
+
+visitedNodes.add(element);
+```
+
+If element is removed → no memory leak.
+
+---
+
+# 5. Why “Weak”?
+
+Because references are **weakly held**, meaning:
+
+- They do NOT prevent garbage collection
+- If object is unreachable elsewhere → GC removes it automatically
+
+---
+
+# 6. Key limitations (very important for interviews)
+
+## ❌ Not iterable
+
+```javascript id="lim1"
+const wm = new WeakMap();
+
+// ❌ Not allowed
+for (let item of wm) {
+}
+```
+
+---
+
+## ❌ No size property
+
+```javascript id="lim2"
+console.log(wm.size); // undefined
+```
+
+---
+
+## ❌ Only objects allowed
+
+```javascript id="lim3"
+const wm = new WeakMap();
+
+wm.set("key", "value"); // ❌ TypeError
+```
+
+---
+
+# 7. WeakMap vs WeakSet
+
+| Feature   | WeakMap                | WeakSet          |
+| --------- | ---------------------- | ---------------- |
+| Structure | key → value            | only values      |
+| Stores    | Object keys            | Object values    |
+| Use case  | metadata, private data | tracking objects |
+| Iterable  | ❌                     | ❌               |
+
+---
+
+# 8. Real-world analogy
+
+## WeakMap
+
+> A locker system where keys are people (objects). If the person leaves the system, their locker disappears automatically.
+
+## WeakSet
+
+> A guest list where only current guests (objects) are tracked. Once they leave, they are automatically removed.
+
+---
+
+# 9. When to use WeakMap / WeakSet?
+
+## Use WeakMap when:
+
+- You need **private data per object**
+- You want **memory-safe metadata storage**
+- Working with DOM elements or class instances
+
+---
+
+## Use WeakSet when:
+
+- You want to track **whether an object has been processed**
+- You want **memory-safe object tracking**
+
+---
+
+# 10. Interview one-liner
+
+> WeakMap and WeakSet are specialized collections in JavaScript that store object references weakly, allowing automatic garbage collection of unused objects, making them ideal for memory-safe metadata storage and object tracking without preventing cleanup.
+
 ## Question 9. Explain currying in JavaScript
 
 ## Question 10. What is memoization? Give example
