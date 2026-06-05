@@ -2874,6 +2874,591 @@ This is how production servers typically serve large media files.
 
 ## Question 8. How to implement rate limiting in Node.js APIs
 
+## ✅ Short Answer
+
+Rate limiting restricts how many requests a client can make within a given time window. It protects Node.js APIs from:
+
+- Abuse and brute-force attacks
+- DDoS-like traffic spikes
+- Excessive resource consumption
+- API quota violations
+
+The most common approaches are:
+
+1. **Fixed Window Counter**
+2. **Sliding Window Log**
+3. **Sliding Window Counter**
+4. **Token Bucket**
+5. **Leaky Bucket**
+
+In production, rate limits are often implemented using **Redis** and middleware such as express-rate-limit.
+
+---
+
+# Why Rate Limiting Matters
+
+Without rate limiting:
+
+```txt
+Client
+  ↓
+100,000 requests/sec
+  ↓
+API Server
+  ↓
+CPU / Memory Exhaustion
+```
+
+With rate limiting:
+
+```txt
+Client
+  ↓
+100 requests/minute
+  ↓
+Allowed
+
+101st request
+  ↓
+429 Too Many Requests
+```
+
+---
+
+# HTTP Response for Rate Limit Exceeded
+
+Standard response:
+
+```http
+HTTP/1.1 429 Too Many Requests
+```
+
+Example:
+
+```json
+{
+  "error": "Rate limit exceeded"
+}
+```
+
+---
+
+# Option 1: Using express-rate-limit (Most Common)
+
+Install:
+
+```bash
+npm install express-rate-limit
+```
+
+Example:
+
+```js
+const express = require("express");
+const rateLimit = require("express-rate-limit");
+
+const app = express();
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Too many requests",
+});
+
+app.use(limiter);
+
+app.get("/", (req, res) => {
+  res.send("Hello");
+});
+
+app.listen(3000);
+```
+
+Meaning:
+
+```txt
+100 requests
+per
+15 minutes
+per IP
+```
+
+---
+
+# How It Works Internally
+
+Each client IP gets a counter:
+
+```txt
+192.168.1.1 → 42 requests
+
+192.168.1.2 → 17 requests
+```
+
+When:
+
+```txt
+count > limit
+```
+
+return:
+
+```txt
+429 Too Many Requests
+```
+
+---
+
+# Fixed Window Algorithm
+
+The simplest algorithm.
+
+Example:
+
+```txt
+Window = 1 minute
+Limit = 100 requests
+```
+
+Requests:
+
+```txt
+10:00 → counter starts
+
+Request #101
+↓
+Blocked
+```
+
+Implementation:
+
+```js
+const requests = new Map();
+
+function rateLimit(req, res, next) {
+  const ip = req.ip;
+
+  const current = requests.get(ip) || 0;
+
+  if (current >= 100) {
+    return res.status(429).send("Too many requests");
+  }
+
+  requests.set(ip, current + 1);
+
+  next();
+}
+```
+
+---
+
+## Problem
+
+Burst issue:
+
+```txt
+10:00:59 → 100 requests
+
+10:01:00 → 100 requests
+```
+
+User effectively sends:
+
+```txt
+200 requests in 2 seconds
+```
+
+---
+
+# Sliding Window Log
+
+Store timestamps:
+
+```txt
+[
+  10:01:01,
+  10:01:05,
+  10:01:12
+]
+```
+
+For each request:
+
+1. Remove expired timestamps
+2. Count remaining requests
+3. Reject if limit exceeded
+
+Example:
+
+```js
+const logs = new Map();
+
+function limiter(req, res, next) {
+  const now = Date.now();
+  const ip = req.ip;
+
+  const timestamps = logs.get(ip) || [];
+
+  const valid = timestamps.filter((ts) => now - ts < 60000);
+
+  if (valid.length >= 100) {
+    return res.status(429).send("Too many requests");
+  }
+
+  valid.push(now);
+
+  logs.set(ip, valid);
+
+  next();
+}
+```
+
+---
+
+## Pros
+
+More accurate.
+
+## Cons
+
+Memory-intensive for large traffic volumes.
+
+---
+
+# Token Bucket Algorithm
+
+A favorite in system-design interviews.
+
+Imagine:
+
+```txt
+Bucket Capacity = 100 tokens
+```
+
+Each request:
+
+```txt
+Consumes 1 token
+```
+
+Tokens regenerate over time:
+
+```txt
++1 token/sec
+```
+
+Example:
+
+```txt
+100 tokens available
+↓
+User sends 50 requests
+↓
+50 tokens remain
+```
+
+Allows bursts while maintaining average rate.
+
+---
+
+# Token Bucket Visualization
+
+```txt
+Bucket = 10 tokens
+
+Request
+ ↓
+Take token
+
+No token?
+ ↓
+Reject
+```
+
+Widely used in:
+
+- API gateways
+- Cloud services
+- Reverse proxies
+
+---
+
+# Leaky Bucket Algorithm
+
+Think:
+
+```txt
+Requests enter bucket
+ ↓
+Processed at constant rate
+```
+
+Example:
+
+```txt
+Incoming:
+100 requests/sec
+
+Outgoing:
+10 requests/sec
+```
+
+Smooths traffic spikes.
+
+---
+
+# Redis-Based Distributed Rate Limiting
+
+A critical production topic.
+
+Problem:
+
+```txt
+Server A
+Server B
+Server C
+```
+
+If counters are stored in memory:
+
+```txt
+IP count differs per server
+```
+
+Rate limits become inaccurate.
+
+---
+
+## Solution
+
+Store counters in Redis.
+
+Architecture:
+
+```txt
+Client
+  ↓
+API Servers
+  ↓
+Redis
+```
+
+All servers share the same counter.
+
+---
+
+# Redis Example
+
+```js
+const count = await redis.incr(`rate:${ip}`);
+```
+
+Set expiration:
+
+```js
+await redis.expire(`rate:${ip}`, 60);
+```
+
+Logic:
+
+```txt
+Count > Limit
+ ↓
+429
+```
+
+---
+
+# Production-Grade Example
+
+```js
+const limiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+```
+
+Headers returned:
+
+```http
+RateLimit-Limit: 100
+RateLimit-Remaining: 75
+RateLimit-Reset: 45
+```
+
+Useful for API consumers.
+
+---
+
+# Different Limits Per Route
+
+Example:
+
+```txt
+/login
+↓
+5 requests/min
+
+/api/products
+↓
+500 requests/min
+```
+
+Implementation:
+
+```js
+app.use("/login", loginLimiter);
+app.use("/api", apiLimiter);
+```
+
+---
+
+# Rate Limiting Authentication Endpoints
+
+Common practice:
+
+```txt
+POST /login
+```
+
+Limit:
+
+```txt
+5 attempts
+per 15 minutes
+```
+
+Protects against brute-force attacks.
+
+---
+
+# Rate Limiting by API Key
+
+Instead of IP:
+
+```txt
+API Key
+↓
+Request Count
+```
+
+Useful for SaaS APIs.
+
+Example:
+
+```js
+const apiKey = req.headers["x-api-key"];
+```
+
+Track usage by key.
+
+---
+
+# Common Pitfalls
+
+## ❌ In-Memory Storage in Production
+
+```js
+const requests = new Map();
+```
+
+Fails across multiple servers.
+
+Use Redis.
+
+---
+
+## ❌ Trusting `req.ip` Behind Proxies
+
+If using:
+
+- NGINX
+- Load balancers
+- Cloudflare
+
+Configure:
+
+```js
+app.set("trust proxy", true);
+```
+
+Otherwise rate limits may not work correctly.
+
+---
+
+## ❌ One Global Limit
+
+Bad:
+
+```txt
+All endpoints:
+100 req/min
+```
+
+Different endpoints need different policies.
+
+---
+
+## ❌ No Retry Information
+
+Return useful headers:
+
+```http
+Retry-After: 60
+```
+
+---
+
+# Rate Limiting vs Throttling
+
+Often confused.
+
+### Rate Limiting
+
+```txt
+100 requests/minute
+```
+
+Reject excess requests.
+
+---
+
+### Throttling
+
+```txt
+Slow down requests
+```
+
+Instead of rejecting them.
+
+---
+
+# Real Production Architecture
+
+```txt
+Client
+   ↓
+Cloudflare
+   ↓
+NGINX
+   ↓
+Node.js API
+   ↓
+Redis Rate Limiter
+   ↓
+Database
+```
+
+Multiple layers provide protection.
+
+---
+
+# 🎯 Interview Summary
+
+> Rate limiting in Node.js APIs is used to control how many requests a client can make within a specific time window. Common algorithms include Fixed Window, Sliding Window, Token Bucket, and Leaky Bucket. For Express applications, middleware such as express-rate-limit provides an easy implementation. In production environments, counters should be stored in Redis so limits remain consistent across multiple server instances. Rate limiting is especially important for authentication endpoints, public APIs, and services that need protection against abuse, brute-force attacks, and resource exhaustion.
+
 ## Question 9. How to prevent event loop blocking for CPU-intensive tasks
 
 ## Question 10. How to implement caching in Node.js with LRU cache
