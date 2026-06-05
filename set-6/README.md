@@ -1403,6 +1403,201 @@ let b = a;
 
 ## Question 8. What is the difference between a function and a method?
 
+**Direct answer:**
+A **function** is a standalone block of reusable code, while a **method** is a function that is defined as a property of an object and is called on that object.
+
+---
+
+# Detailed Explanation (Interview Perspective)
+
+In JavaScript, the distinction between _function_ and _method_ is based on **context and ownership**, not on syntax.
+
+---
+
+# 1. Function
+
+A function is an **independent reusable block of code**.
+
+### Example:
+
+```javascript id="f1"
+function greet(name) {
+  return `Hello, ${name}`;
+}
+
+console.log(greet("John"));
+```
+
+### Key characteristics:
+
+- Not tied to any object
+- Can be called directly
+- Has its own execution context
+- `this` depends on how it is called
+
+---
+
+## Function as expression:
+
+```javascript id="f2"
+const add = function (a, b) {
+  return a + b;
+};
+```
+
+---
+
+## Arrow function example:
+
+```javascript id="f3"
+const multiply = (a, b) => a * b;
+```
+
+---
+
+# 2. Method
+
+A method is a **function that is a property of an object**.
+
+### Example:
+
+```javascript id="m1"
+const user = {
+  name: "John",
+  greet: function () {
+    return `Hello, ${this.name}`;
+  },
+};
+
+console.log(user.greet());
+```
+
+👉 Here, `greet` is a method because it belongs to `user`.
+
+---
+
+## Modern shorthand method syntax:
+
+```javascript id="m2"
+const user = {
+  name: "John",
+  greet() {
+    return `Hello, ${this.name}`;
+  },
+};
+```
+
+---
+
+# 3. Key Difference
+
+| Feature         | Function                | Method                     |
+| --------------- | ----------------------- | -------------------------- |
+| Definition      | Standalone code block   | Function inside an object  |
+| Ownership       | Independent             | Belongs to an object       |
+| Call style      | `fn()`                  | `obj.fn()`                 |
+| `this` behavior | Depends on call context | Refers to object (usually) |
+| Usage           | Utility logic           | Object behavior            |
+
+---
+
+# 4. The `this` keyword difference (very important)
+
+## Function:
+
+```javascript id="t1"
+function show() {
+  console.log(this);
+}
+
+show(); // window (browser) or undefined in strict mode
+```
+
+---
+
+## Method:
+
+```javascript id="t2"
+const obj = {
+  name: "Alice",
+  show() {
+    console.log(this.name);
+  },
+};
+
+obj.show(); // "Alice"
+```
+
+👉 In methods, `this` usually refers to the object.
+
+---
+
+# 5. Important Edge Case (Interview favorite)
+
+### Losing `this` in methods:
+
+```javascript id="e1"
+const obj = {
+  name: "John",
+  greet() {
+    console.log(this.name);
+  },
+};
+
+const fn = obj.greet;
+fn(); // undefined or error
+```
+
+👉 Because it is now a **standalone function**, not a method call.
+
+---
+
+# 6. Fixing `this` loss
+
+### Using bind:
+
+```javascript id="e2"
+const boundFn = obj.greet.bind(obj);
+boundFn(); // John
+```
+
+---
+
+### Using arrow function inside method:
+
+```javascript id="e3"
+const obj = {
+  name: "John",
+  greet() {
+    const inner = () => console.log(this.name);
+    inner();
+  },
+};
+```
+
+Arrow functions inherit `this` from surrounding scope.
+
+---
+
+# 7. Real-world analogy
+
+- **Function** → a tool in a toolbox (independent utility)
+- **Method** → a tool attached to a machine (object behavior)
+
+---
+
+# 8. Advanced Insight
+
+In JavaScript, **everything is technically a function**, but:
+
+- When a function is assigned to an object property → it becomes a method in usage context.
+
+---
+
+# 9. Interview Summary Answer
+
+> A function is a standalone reusable block of code that can be called independently, whereas a method is a function that is associated with an object and is invoked through that object. The key difference lies in ownership and context—methods have access to the object via `this`, while functions do not unless explicitly bound.
+
 ## Question 9. How to check if a variable is an array?
 
 ## Question 10. Difference between isArray() and instanceof Array
