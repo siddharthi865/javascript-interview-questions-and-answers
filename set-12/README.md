@@ -1565,6 +1565,202 @@ Many modern frameworks (React, Vue, Angular) internally create/manipulate DOM no
 
 ## Question 8. How to get attributes of an HTML element using JS?
 
+## Short Answer
+
+You can get HTML element attributes in JavaScript using:
+
+- `getAttribute()` → most explicit and reliable
+- Direct property access (e.g. `element.id`, `element.src`) → for standard attributes
+- `attributes` collection → for all attributes
+
+---
+
+# 1. Using `getAttribute()` (Recommended)
+
+This is the most commonly used method.
+
+```js
+const el = document.querySelector("img");
+
+console.log(el.getAttribute("src"));
+console.log(el.getAttribute("alt"));
+```
+
+### Example HTML
+
+```html
+<img id="profile" src="photo.jpg" alt="User photo" />
+```
+
+### Output
+
+```js
+"photo.jpg";
+"User photo";
+```
+
+---
+
+# 2. Using Direct Property Access
+
+For standard attributes, you can access them directly as properties.
+
+```js
+const el = document.querySelector("img");
+
+console.log(el.src);
+console.log(el.alt);
+console.log(el.id);
+```
+
+### Important difference
+
+```js
+el.getAttribute("src"); // original value in HTML
+el.src; // fully resolved absolute URL
+```
+
+Example:
+
+```js
+<img src="photo.jpg" />
+```
+
+```js
+el.getAttribute("src");
+// "photo.jpg"
+
+el.src;
+// "https://example.com/photo.jpg"
+```
+
+👉 This is a very common interview trick.
+
+---
+
+# 3. Using `attributes` Property
+
+This gives access to all attributes as a NamedNodeMap.
+
+```js
+const el = document.querySelector("img");
+
+console.log(el.attributes);
+```
+
+### Access specific attribute
+
+```js
+console.log(el.attributes.src.value);
+console.log(el.attributes.alt.value);
+```
+
+### Loop through all attributes
+
+```js
+for (let attr of el.attributes) {
+  console.log(attr.name, attr.value);
+}
+```
+
+Output:
+
+```
+id profile
+src photo.jpg
+alt User photo
+```
+
+---
+
+# 4. Checking if an Attribute Exists
+
+```js
+const el = document.querySelector("img");
+
+console.log(el.hasAttribute("src")); // true
+console.log(el.hasAttribute("href")); // false
+```
+
+---
+
+# 5. Getting All Data Attributes (`dataset`)
+
+For `data-*` attributes:
+
+```html
+<div data-user-id="123" data-role="admin"></div>
+```
+
+```js
+const el = document.querySelector("div");
+
+console.log(el.dataset.userId); // "123"
+console.log(el.dataset.role); // "admin"
+```
+
+👉 Converts `data-user-id` → `userId`
+
+---
+
+# Key Differences (Very Important for Interviews)
+
+| Method             | Use Case               | Returns                 |
+| ------------------ | ---------------------- | ----------------------- |
+| `getAttribute()`   | Any attribute          | Exact HTML value        |
+| `element.property` | Standard attributes    | Parsed / computed value |
+| `attributes`       | Inspect all attributes | NamedNodeMap            |
+| `dataset`          | data-\* attributes     | Object                  |
+
+---
+
+# Common Interview Traps
+
+## 1. `getAttribute` vs property mismatch
+
+```html
+<a href="/home"></a>
+```
+
+```js
+el.getAttribute("href"); // "/home"
+el.href; // "https://example.com/home"
+```
+
+---
+
+## 2. Boolean attributes
+
+```html
+<input disabled />
+```
+
+```js
+el.getAttribute("disabled"); // "" (empty string)
+el.disabled; // true
+```
+
+---
+
+## 3. Non-existent attribute
+
+```js
+el.getAttribute("xyz"); // null
+```
+
+---
+
+# Performance Note
+
+- `element.property` is generally faster (direct access)
+- `getAttribute()` is more flexible and consistent
+
+---
+
+# Interview-Ready Answer
+
+> In JavaScript, HTML attributes can be accessed using `getAttribute()`, direct property access, or the `attributes` collection. `getAttribute()` returns the exact value as written in HTML and works for any attribute. Direct property access (like `element.id` or `element.src`) is faster and returns the processed or resolved value, such as absolute URLs for `src`. The `attributes` property provides a collection of all attributes on an element. For `data-*` attributes, the `dataset` API is used. In practice, `getAttribute()` is used for general-purpose access, while property access is preferred for standard attributes.
+
 ## Question 9. Difference between event bubbling and event capturing
 
 ## Question 10. How to get the current timestamp in JavaScript?
