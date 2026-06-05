@@ -2584,6 +2584,297 @@ users.sort((a, b) => {
 
 ## Question 8. How to flatten nested arrays using recursion
 
+### Direct Answer
+
+You can flatten a nested array using **recursion** by iterating through each element and recursively flattening it if it is an array.
+
+```js id="flat1"
+function flattenArray(arr) {
+  let result = [];
+
+  for (const item of arr) {
+    if (Array.isArray(item)) {
+      result = result.concat(flattenArray(item));
+    } else {
+      result.push(item);
+    }
+  }
+
+  return result;
+}
+
+console.log(flattenArray([1, [2, [3, [4]], 5]]));
+```
+
+Output:
+
+```js id="flat2"
+[1, 2, 3, 4, 5];
+```
+
+---
+
+# 1. Understanding the Problem
+
+A nested array can have arbitrary depth:
+
+```js id="flat3"
+[1, [2, [3, [4]]]];
+```
+
+Goal → convert it into:
+
+```js id="flat4"
+[1, 2, 3, 4];
+```
+
+This is a classic **recursion + tree traversal problem**.
+
+---
+
+# 2. Recursive Idea
+
+At each step:
+
+- If element is **not an array** → push it to result
+- If element **is an array** → recursively flatten it
+
+Think of it like traversing a tree:
+
+```
+[1, [2, [3]]]
+     └── deeper arrays
+```
+
+---
+
+# 3. Step-by-Step Execution
+
+Input:
+
+```js id="flat5"
+[1, [2, [3, 4]], 5];
+```
+
+### Breakdown:
+
+- 1 → push
+- [2, [3, 4]] → recurse
+  - 2 → push
+  - [3, 4] → recurse
+    - 3 → push
+    - 4 → push
+
+- 5 → push
+
+Final:
+
+```js id="flat6"
+[1, 2, 3, 4, 5];
+```
+
+---
+
+# 4. Cleaner Version Using Spread Operator
+
+You can also write it more functionally:
+
+```js id="flat7"
+function flattenArray(arr) {
+  return arr.reduce((acc, item) => {
+    return acc.concat(Array.isArray(item) ? flattenArray(item) : item);
+  }, []);
+}
+```
+
+---
+
+# 5. Alternative: Using `for...of` (More Readable for Interviews)
+
+```js id="flat8"
+function flattenArray(arr) {
+  const result = [];
+
+  for (const item of arr) {
+    if (Array.isArray(item)) {
+      result.push(...flattenArray(item));
+    } else {
+      result.push(item);
+    }
+  }
+
+  return result;
+}
+```
+
+---
+
+# 6. Complexity Analysis
+
+### Time Complexity
+
+```text id="flat9"
+O(n)
+```
+
+Every element is visited once.
+
+### Space Complexity
+
+```text id="flat10"
+O(n) + recursion stack
+```
+
+Worst-case recursion depth = array depth.
+
+---
+
+# 7. Edge Cases
+
+## Empty array
+
+```js id="flat11"
+flattenArray([]);
+```
+
+Output:
+
+```js id="flat12"
+[];
+```
+
+---
+
+## Already flat array
+
+```js id="flat13"
+flattenArray([1, 2, 3]);
+```
+
+Output:
+
+```js id="flat14"
+[1, 2, 3];
+```
+
+---
+
+## Deep nesting
+
+```js id="flat15"
+flattenArray([1, [2, [3, [4, [5]]]]]);
+```
+
+Works regardless of depth because recursion handles it dynamically.
+
+---
+
+# 8. Common Interview Pitfalls
+
+## Pitfall 1: Forgetting to return recursive result
+
+```js id="flat16"
+result.concat(flattenArray(item)); // ❌ not stored
+```
+
+Correct:
+
+```js id="flat17"
+result = result.concat(flattenArray(item));
+```
+
+---
+
+## Pitfall 2: Mutating input accidentally
+
+Always create a new array; avoid modifying original input unless asked.
+
+---
+
+## Pitfall 3: Using shallow flatten logic
+
+Wrong approach:
+
+```js id="flat18"
+arr.flat(); // only depth 1
+```
+
+Does not handle deep nesting unless:
+
+```js id="flat19"
+arr.flat(Infinity);
+```
+
+But recursion is often preferred in interviews.
+
+---
+
+# 9. Recursive Pattern Insight (Important Interview Concept)
+
+This problem is a classic example of:
+
+> **Divide and conquer + DFS traversal**
+
+Each array is treated like a subtree.
+
+---
+
+# 10. Bonus: Iterative Stack Version (Advanced Alternative)
+
+Sometimes asked in senior interviews.
+
+```js id="flat20"
+function flattenArray(arr) {
+  const stack = [...arr];
+  const result = [];
+
+  while (stack.length) {
+    const item = stack.pop();
+
+    if (Array.isArray(item)) {
+      stack.push(...item);
+    } else {
+      result.push(item);
+    }
+  }
+
+  return result.reverse();
+}
+```
+
+---
+
+# Interview Summary
+
+### Recursive solution (best conceptual answer)
+
+```js id="flat21"
+function flattenArray(arr) {
+  const result = [];
+
+  for (const item of arr) {
+    if (Array.isArray(item)) {
+      result.push(...flattenArray(item));
+    } else {
+      result.push(item);
+    }
+  }
+
+  return result;
+}
+```
+
+---
+
+### Key Points
+
+- Use recursion when depth is unknown
+- Base case: non-array element
+- Recursive case: flatten nested arrays
+- Time complexity: **O(n)**
+- Space complexity: **O(n)** (plus recursion stack)
+- Alternative: `Array.flat(Infinity)` (built-in but less interview-revealing)
+
 ## Question 9. How to implement a simple stack using arrays
 
 ## Question 10. How to implement a queue using arrays
