@@ -1651,6 +1651,273 @@ Because:
 
 ## Question 8. Difference between document.querySelectorAll() and getElementsByClassName()
 
+## Short Answer
+
+- **`document.querySelectorAll()`** → returns a **static NodeList** of elements matching a **CSS selector**
+- **`document.getElementsByClassName()`** → returns a **live HTMLCollection** of elements matching a **class name**
+
+👉 Key difference:
+
+- `querySelectorAll()` = flexible + static snapshot
+- `getElementsByClassName()` = faster + live collection
+
+---
+
+# 1. `querySelectorAll()`
+
+### What it does:
+
+Selects elements using **CSS selectors** and returns a **NodeList (static)**.
+
+---
+
+### Syntax:
+
+```js id="a1"
+document.querySelectorAll("selector");
+```
+
+---
+
+### Example:
+
+```js id="a2"
+const items = document.querySelectorAll(".box");
+
+console.log(items);
+```
+
+---
+
+### You can use complex selectors:
+
+```js id="a3"
+document.querySelectorAll(".box.active");
+document.querySelectorAll("div > p");
+document.querySelectorAll("#container .item");
+```
+
+---
+
+### Behavior:
+
+- Returns **NodeList**
+- **Static snapshot**
+- Supports `forEach()`
+
+```js id="a4"
+items.forEach((el) => console.log(el));
+```
+
+---
+
+### DOM change example:
+
+```js id="a5"
+const items = document.querySelectorAll(".box");
+
+document.body.innerHTML += `<div class="box"></div>`;
+
+console.log(items.length); // ❌ NOT updated
+```
+
+---
+
+# 2. `getElementsByClassName()`
+
+### What it does:
+
+Selects elements by **class name only** and returns a **live HTMLCollection**.
+
+---
+
+### Syntax:
+
+```js id="b1"
+document.getElementsByClassName("className");
+```
+
+---
+
+### Example:
+
+```js id="b2"
+const items = document.getElementsByClassName("box");
+
+console.log(items);
+```
+
+---
+
+### Behavior:
+
+- Returns **HTMLCollection**
+- **Live (auto-updates with DOM)**
+- No direct `forEach()`
+
+---
+
+### DOM change example:
+
+```js id="b3"
+const items = document.getElementsByClassName("box");
+
+document.body.innerHTML += `<div class="box"></div>`;
+
+console.log(items.length); // ✅ UPDATED automatically
+```
+
+---
+
+# 3. Key Differences (Interview Table)
+
+| Feature          | querySelectorAll() | getElementsByClassName() |
+| ---------------- | ------------------ | ------------------------ |
+| Return type      | NodeList           | HTMLCollection           |
+| Live updates     | ❌ No              | ✅ Yes                   |
+| Selector type    | CSS selectors      | Class name only          |
+| Performance      | Slightly slower    | Faster                   |
+| Supports forEach | ✅ Yes             | ❌ No                    |
+| Flexibility      | Very high          | Low                      |
+
+---
+
+# 4. Selector Power (VERY IMPORTANT)
+
+## querySelectorAll = FULL CSS POWER
+
+```js id="c1"
+document.querySelectorAll("#app .box.active:first-child");
+```
+
+👉 Can select:
+
+- IDs
+- classes
+- attributes
+- pseudo-classes
+
+---
+
+## getElementsByClassName = LIMITED
+
+```js id="c2"
+document.getElementsByClassName("box");
+```
+
+👉 Only one class name (no complex logic)
+
+---
+
+# 5. Live vs Static Behavior (Critical Interview Concept)
+
+## HTMLCollection (LIVE)
+
+```js id="d1"
+const items = document.getElementsByClassName("box");
+
+const newDiv = document.createElement("div");
+newDiv.className = "box";
+document.body.appendChild(newDiv);
+
+console.log(items.length); // updated
+```
+
+---
+
+## NodeList (STATIC)
+
+```js id="d2"
+const items = document.querySelectorAll(".box");
+
+const newDiv = document.createElement("div");
+newDiv.className = "box";
+document.body.appendChild(newDiv);
+
+console.log(items.length); // NOT updated
+```
+
+---
+
+# 6. Iteration Differences
+
+## querySelectorAll (supports forEach)
+
+```js id="e1"
+document.querySelectorAll(".box").forEach((el) => {
+  console.log(el);
+});
+```
+
+---
+
+## getElementsByClassName (no forEach)
+
+```js id="e2"
+const items = document.getElementsByClassName("box");
+
+Array.from(items).forEach((el) => {
+  console.log(el);
+});
+```
+
+---
+
+# 7. Performance Insight (Interview Bonus)
+
+### getElementsByClassName()
+
+- Faster lookup
+- Live binding to DOM
+
+### querySelectorAll()
+
+- Slightly slower
+- But more powerful and safer
+
+👉 In modern apps:
+
+> Flexibility > micro-performance
+> So `querySelectorAll()` is preferred
+
+---
+
+# 8. Common Interview Traps
+
+---
+
+## ❓ 1. Does querySelectorAll update automatically?
+
+❌ No → it is a **static snapshot**
+
+---
+
+## ❓ 2. Does getElementsByClassName support complex selectors?
+
+❌ No → only class name
+
+---
+
+## ❓ 3. Which is array?
+
+❌ Neither is a real array
+
+- NodeList ≠ Array
+- HTMLCollection ≠ Array
+
+---
+
+## ❓ 4. Which supports forEach?
+
+- NodeList → YES
+- HTMLCollection → NO
+
+---
+
+# 💡 Final Interview Summary
+
+> `querySelectorAll()` returns a static NodeList using CSS selectors and provides high flexibility, while `getElementsByClassName()` returns a live HTMLCollection that updates automatically with DOM changes but supports only class-based selection. In modern JavaScript, `querySelectorAll()` is preferred due to its flexibility and consistent behavior.
+
 ## Question 9. How to prevent default behavior of events?
 
 ## Question 10. What is event delegation?
