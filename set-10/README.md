@@ -3251,6 +3251,454 @@ visited.add(obj);
 
 ## Question 8. What are ES6 modules vs CommonJS modules?
 
+# ES6 Modules vs CommonJS Modules in JavaScript
+
+## Short Answer
+
+- **CommonJS (CJS)** is the older module system used in **Node.js**, based on `require()` and `module.exports`.
+- **ES Modules (ESM)** are the modern JavaScript standard using `import` and `export`, supported in both **browsers and Node.js**.
+
+ES Modules are **static, asynchronous, and standardized**, while CommonJS is **dynamic, synchronous, and Node-specific**.
+
+---
+
+# 1. CommonJS Modules (CJS)
+
+## Syntax
+
+```js id="cjs1"
+const fs = require("fs");
+
+function add(a, b) {
+  return a + b;
+}
+
+module.exports = add;
+```
+
+Importing:
+
+```js id="cjs2"
+const add = require("./add");
+
+console.log(add(2, 3));
+```
+
+---
+
+## Key Characteristics
+
+### 1. Synchronous Loading
+
+Modules are loaded **at runtime synchronously**.
+
+```js id="cjs3"
+const data = require("./data"); // blocking
+```
+
+This is fine for Node.js (server-side), but not ideal for browsers.
+
+---
+
+### 2. Dynamic Imports
+
+You can conditionally load modules:
+
+```js id="cjs4"
+if (condition) {
+  const mod = require("./module");
+}
+```
+
+This is NOT possible with ES modules in the same way.
+
+---
+
+### 3. Single Export Object
+
+```js id="cjs5"
+module.exports = {
+  name: "John",
+  age: 25,
+};
+```
+
+Or:
+
+```js id="cjs6"
+exports.name = "John";
+```
+
+Internally:
+
+```txt id="cjs7"
+module.exports === exports (initially)
+```
+
+---
+
+## Example Usage
+
+```js id="cjs8"
+const math = require("./math");
+
+console.log(math.add(2, 3));
+```
+
+---
+
+# 2. ES Modules (ESM)
+
+## Syntax
+
+```js id="esm1"
+export function add(a, b) {
+  return a + b;
+}
+```
+
+Import:
+
+```js id="esm2"
+import { add } from "./math.js";
+
+console.log(add(2, 3));
+```
+
+---
+
+## Default Export
+
+```js id="esm3"
+export default function multiply(a, b) {
+  return a * b;
+}
+```
+
+Import:
+
+```js id="esm4"
+import multiply from "./math.js";
+```
+
+---
+
+## Key Characteristics
+
+### 1. Static Structure
+
+Imports are resolved **at compile time**, not runtime.
+
+```js id="esm5"
+// Must be top-level
+import { add } from "./math.js";
+```
+
+❌ Not allowed:
+
+```js id="esm6"
+if (true) {
+  import { add } from "./math.js";
+}
+```
+
+---
+
+### 2. Asynchronous Loading
+
+ES modules behave like they are loaded asynchronously in browsers.
+
+They are **non-blocking and optimized for performance**.
+
+---
+
+### 3. Live Bindings
+
+Imports are **live references**, not copies.
+
+```js id="esm7"
+export let count = 1;
+
+export function increment() {
+  count++;
+}
+```
+
+Import:
+
+```js id="esm8"
+import { count, increment } from "./counter.js";
+
+increment();
+console.log(count); // 2
+```
+
+Even though `count` was imported earlier, it updates live.
+
+---
+
+# 3. Key Differences (Interview Table)
+
+| Feature         | CommonJS                 | ES Modules              |
+| --------------- | ------------------------ | ----------------------- |
+| Syntax          | require / module.exports | import / export         |
+| Loading         | Synchronous              | Asynchronous (static)   |
+| Execution       | Runtime                  | Compile-time            |
+| Environment     | Node.js                  | Browser + Node.js       |
+| Imports         | Dynamic                  | Static                  |
+| Exports         | Single object            | Named + default exports |
+| Tree shaking    | ❌ No                    | ✅ Yes                  |
+| Top-level await | ❌ No                    | ✅ Yes                  |
+| Live bindings   | ❌ No (copies)           | ✅ Yes                  |
+
+---
+
+# 4. Execution Behavior
+
+## CommonJS
+
+```js id="cjs9"
+const a = require("./a");
+const b = require("./b");
+```
+
+Executed in order at runtime.
+
+---
+
+## ES Modules
+
+```js id="esm9"
+import a from "./a.js";
+import b from "./b.js";
+```
+
+Phases:
+
+1. Parse all imports
+2. Load dependencies
+3. Execute modules
+
+This allows better optimization.
+
+---
+
+# 5. Tree Shaking (Big Interview Point)
+
+## ES Modules support tree shaking
+
+```js id="tree1"
+export function used() {}
+export function unused() {}
+```
+
+If only `used` is imported:
+
+```js id="tree2"
+import { used } from "./lib.js";
+```
+
+Bundlers remove `unused` during build.
+
+---
+
+## CommonJS does NOT support tree shaking
+
+```js id="tree3"
+module.exports = {
+  used() {},
+  unused() {},
+};
+```
+
+Bundlers cannot safely remove unused code.
+
+---
+
+# 6. Default vs Named Exports
+
+## ES Modules
+
+### Named export
+
+```js id="esm10"
+export const a = 1;
+export const b = 2;
+```
+
+Import:
+
+```js id="esm11"
+import { a, b } from "./mod.js";
+```
+
+---
+
+### Default export
+
+```js id="esm12"
+export default function () {}
+```
+
+Import:
+
+```js id="esm13"
+import fn from "./mod.js";
+```
+
+---
+
+## CommonJS Equivalent
+
+```js id="cjs10"
+module.exports = {
+  a: 1,
+  b: 2,
+};
+```
+
+---
+
+# 7. Dynamic Import in ES Modules
+
+ESM supports runtime dynamic loading:
+
+```js id="dyn1"
+const module = await import("./math.js");
+
+console.log(module.add(2, 3));
+```
+
+This is async and returns a Promise.
+
+---
+
+# 8. Node.js Compatibility
+
+## CommonJS (default in Node.js historically)
+
+```js id="node1"
+const fs = require("fs");
+```
+
+---
+
+## ES Modules in Node.js
+
+Requires:
+
+- `"type": "module"` in package.json OR
+- `.mjs` extension
+
+```json id="node2"
+{
+  "type": "module"
+}
+```
+
+Then:
+
+```js id="node3"
+import fs from "fs";
+```
+
+---
+
+# 9. Interoperability Issues
+
+## Importing CJS in ESM
+
+```js id="mix1"
+import pkg from "cjs-module";
+```
+
+Works, but:
+
+- default import contains `module.exports`
+
+---
+
+## Importing ESM in CJS
+
+```js id="mix2"
+const mod = require("./esm.js");
+```
+
+❌ Not allowed directly.
+
+Must use dynamic import:
+
+```js id="mix3"
+const mod = await import("./esm.js");
+```
+
+---
+
+# 10. Performance Differences
+
+## ES Modules
+
+- Better static analysis
+- Enables tree shaking
+- Faster startup in browsers
+- Optimized dependency graphs
+
+---
+
+## CommonJS
+
+- Flexible but slower for bundlers
+- Harder to optimize
+- Runtime resolution
+
+---
+
+# 11. Real-World Usage
+
+| Environment                  | Preferred  |
+| ---------------------------- | ---------- |
+| Modern frontend (React, Vue) | ES Modules |
+| Node.js modern apps          | ES Modules |
+| Legacy Node.js projects      | CommonJS   |
+| npm packages (modern)        | ES Modules |
+
+---
+
+# 12. Common Interview Questions
+
+## Q1: Why can't you use `import` inside if statements?
+
+Because ES Modules are **static**, so imports must be top-level for compile-time analysis.
+
+---
+
+## Q2: Why is CommonJS synchronous?
+
+Because Node.js originally loads modules from disk, and sync loading simplifies server-side execution.
+
+---
+
+## Q3: What is tree shaking?
+
+It is dead-code elimination enabled by ES module static structure.
+
+---
+
+## Q4: Can you mix CJS and ESM?
+
+Yes, but with constraints and interop rules.
+
+---
+
+# 13. Interview Summary
+
+> CommonJS is a Node.js-based module system using `require` and `module.exports`, which loads modules synchronously at runtime. ES Modules are the modern JavaScript standard using `import` and `export`, designed to be static, asynchronous, and optimized for tree shaking and better performance in both browsers and Node.js.
+
+### One-liner:
+
+- **CommonJS = dynamic, runtime, Node.js**
+- **ES Modules = static, compile-time, modern standard**
+
 ## Question 9. Explain code splitting and lazy loading in JS
 
 ## Question 10. Difference between mutable and immutable operations on arrays and objects
