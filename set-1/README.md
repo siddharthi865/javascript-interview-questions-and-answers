@@ -1562,6 +1562,279 @@ if (userAge === 18) {
 
 ## Question 8. What are JavaScript functions? How to declare them?
 
+**Short answer:**
+JavaScript functions are reusable blocks of code designed to perform a specific task. They can be declared in multiple ways such as function declarations, function expressions, arrow functions, and constructor functions.
+
+---
+
+# 🔍 Detailed Interview Explanation
+
+A **function in JavaScript** is a first-class object that:
+
+- Encapsulates logic
+- Can take inputs (parameters)
+- Can return outputs
+- Can be passed around like variables
+
+Functions are a core building block of JavaScript and heavily used in both functional and object-oriented programming styles.
+
+---
+
+# 1. 🧱 Function Declaration (Named Function)
+
+## 📌 Syntax:
+
+```js id="fd1"
+function greet(name) {
+  return `Hello, ${name}`;
+}
+```
+
+## 📌 Usage:
+
+```js id="fd2"
+console.log(greet("John")); // Hello, John
+```
+
+---
+
+## 🧠 Key features:
+
+- Hoisted (can be used before declaration)
+- Has its own `this`
+- Most common and readable form
+
+---
+
+## Example of hoisting:
+
+```js id="fd3"
+console.log(add(2, 3)); // 5
+
+function add(a, b) {
+  return a + b;
+}
+```
+
+👉 Works because function declarations are fully hoisted
+
+---
+
+# 2. 🧩 Function Expression
+
+## 📌 Syntax:
+
+```js id="fe1"
+const greet = function (name) {
+  return `Hello, ${name}`;
+};
+```
+
+## 📌 Usage:
+
+```js id="fe2"
+console.log(greet("Alice"));
+```
+
+---
+
+## 🧠 Key features:
+
+- Not hoisted (only variable is hoisted, not function body)
+- Can be anonymous or named
+- More flexible (can be reassigned if using `let`)
+
+---
+
+## Example:
+
+```js id="fe3"
+console.log(test); // undefined
+
+var test = function () {
+  return "Hi";
+};
+```
+
+---
+
+# 3. 🚀 Arrow Functions (ES6)
+
+## 📌 Syntax:
+
+```js id="af1"
+const greet = (name) => {
+  return `Hello, ${name}`;
+};
+```
+
+## Short form:
+
+```js id="af2"
+const greet = (name) => `Hello, ${name}`;
+```
+
+---
+
+## 🧠 Key features:
+
+- Shorter syntax
+- Does NOT have its own `this`
+- Cannot be used as constructors
+- No `arguments` object
+
+---
+
+## Example:
+
+```js id="af3"
+const obj = {
+  name: "John",
+  greet: () => {
+    console.log(this.name);
+  },
+};
+
+obj.greet(); // undefined (because arrow function uses lexical this)
+```
+
+---
+
+# 4. 🏗️ Function Constructor
+
+## 📌 Syntax:
+
+```js id="fc1"
+const add = new Function("a", "b", "return a + b");
+console.log(add(2, 3)); // 5
+```
+
+---
+
+## 🧠 Key features:
+
+- Rarely used
+- Executes code from string (like eval)
+- Not recommended due to security and performance issues
+
+---
+
+# 5. ⚙️ Immediately Invoked Function Expression (IIFE)
+
+## 📌 Syntax:
+
+```js id="iife1"
+(function () {
+  console.log("Executed immediately");
+})();
+```
+
+---
+
+## 🧠 Key features:
+
+- Runs immediately after definition
+- Used for encapsulation and avoiding global scope pollution
+
+---
+
+# 📊 Comparison Table
+
+| Type                 | Syntax Style             | Hoisting | this binding | Usage              |
+| -------------------- | ------------------------ | -------- | ------------ | ------------------ |
+| Function Declaration | function fn() {}         | Yes      | Dynamic      | Most common        |
+| Function Expression  | const fn = function() {} | No       | Dynamic      | Flexible           |
+| Arrow Function       | const fn = () => {}      | No       | Lexical      | Modern preferred   |
+| Constructor Function | new Function()           | No       | Dynamic      | Rare               |
+| IIFE                 | (function(){})()         | No       | Dynamic      | One-time execution |
+
+---
+
+# ⚠️ Common Interview Pitfalls
+
+---
+
+## 1. Hoisting confusion
+
+```js id="pit1"
+sayHi();
+
+function sayHi() {
+  console.log("Hi");
+}
+```
+
+✔ Works (function declaration)
+
+---
+
+```js id="pit2"
+sayHi();
+
+const sayHi = function () {
+  console.log("Hi");
+};
+```
+
+❌ Error (temporal dead zone / not hoisted fully)
+
+---
+
+## 2. Arrow function `this`
+
+```js id="pit3"
+const obj = {
+  name: "JS",
+  getName: () => {
+    return this.name;
+  },
+};
+
+console.log(obj.getName()); // undefined
+```
+
+---
+
+## 3. Missing return in arrow function
+
+```js id="pit4"
+const add = (a, b) => {
+  a + b;
+};
+
+console.log(add(2, 3)); // undefined
+```
+
+✔ Fix:
+
+```js id="pit5"
+const add = (a, b) => a + b;
+```
+
+---
+
+# 🚀 Best Practices
+
+- Use **function declarations** for reusable utilities
+- Use **arrow functions** for callbacks and short logic
+- Avoid `Function constructor`
+- Prefer arrow functions in modern code unless `this` is needed
+- Use IIFE only when isolation is required (legacy patterns)
+
+---
+
+# 🎯 Final Summary
+
+- Functions are reusable blocks of code and first-class citizens in JavaScript
+- They can be declared as:
+  - Function declaration
+  - Function expression
+  - Arrow function (modern standard)
+  - Constructor function (rare)
+  - IIFE (immediate execution)
+
+- Key differences involve **hoisting, syntax, and `this` behavior**
+
 ## Question 9. Difference between function declaration and function expression
 
 ## Question 10. What are arrow functions? Give examples
