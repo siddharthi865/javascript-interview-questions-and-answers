@@ -2907,6 +2907,328 @@ A common misconception is that because `readFile()` is async, it is memory-effic
 
 ## Question 8. How to prevent callback hell in Node.js
 
+## Short Answer
+
+To prevent **callback hell in Node.js**, you should avoid deeply nested callbacks by using:
+
+- **Promises**
+- **async/await (best modern solution)**
+- **modular code (splitting functions)**
+- **named functions instead of inline callbacks**
+
+These approaches make asynchronous code **flat, readable, and maintainable**.
+
+---
+
+# 1. What is Callback Hell?
+
+Callback hell happens when multiple asynchronous operations are nested inside each other, creating deeply indented and hard-to-read code.
+
+### Example (Bad Code)
+
+```js id="k9v3p2"
+fs.readFile("a.txt", (err, dataA) => {
+  fs.readFile("b.txt", (err, dataB) => {
+    fs.readFile("c.txt", (err, dataC) => {
+      console.log(dataA, dataB, dataC);
+    });
+  });
+});
+```
+
+### Problems:
+
+- Hard to read
+- Difficult to maintain
+- Poor error handling
+- Hard to debug
+- Tight coupling of logic
+
+---
+
+# 2. Solution 1: Use Promises
+
+Promises flatten asynchronous flow.
+
+## Convert callback-style APIs → Promise-based
+
+```js id="1z4q7c"
+const fs = require("fs/promises");
+
+Promise.all([
+  fs.readFile("a.txt", "utf8"),
+  fs.readFile("b.txt", "utf8"),
+  fs.readFile("c.txt", "utf8"),
+]).then(([a, b, c]) => {
+  console.log(a, b, c);
+});
+```
+
+---
+
+## Sequential Promises (still readable)
+
+```js id="v8xk2p"
+fs.readFile("a.txt", "utf8")
+  .then((a) => {
+    return fs.readFile("b.txt", "utf8").then((b) => [a, b]);
+  })
+  .then(([a, b]) => {
+    return fs.readFile("c.txt", "utf8").then((c) => [a, b, c]);
+  })
+  .then(([a, b, c]) => {
+    console.log(a, b, c);
+  });
+```
+
+Better than callbacks, but still can get messy.
+
+---
+
+# 3. Solution 2: async/await (Best Approach)
+
+Async/await makes async code look synchronous.
+
+```js id="h2r8qk"
+const fs = require("fs/promises");
+
+async function readFiles() {
+  const a = await fs.readFile("a.txt", "utf8");
+  const b = await fs.readFile("b.txt", "utf8");
+  const c = await fs.readFile("c.txt", "utf8");
+
+  console.log(a, b, c);
+}
+
+readFiles();
+```
+
+---
+
+## Why this is better:
+
+- No nesting
+- Easier debugging
+- Clear flow
+- Try/catch for error handling
+
+---
+
+## Parallel execution with async/await
+
+```js id="m9t2kq"
+async function readFiles() {
+  const [a, b, c] = await Promise.all([
+    fs.readFile("a.txt", "utf8"),
+    fs.readFile("b.txt", "utf8"),
+    fs.readFile("c.txt", "utf8"),
+  ]);
+
+  console.log(a, b, c);
+}
+```
+
+---
+
+# 4. Solution 3: Modularize Code
+
+Break logic into smaller functions.
+
+### Bad:
+
+```js id="g7p1xq"
+fs.readFile("a.txt", (err, a) => {
+  fs.readFile("b.txt", (err, b) => {
+    fs.readFile("c.txt", (err, c) => {
+      // huge logic here
+    });
+  });
+});
+```
+
+---
+
+### Good:
+
+```js id="d3v8pm"
+async function readA() {
+  return fs.readFile("a.txt", "utf8");
+}
+
+async function readB() {
+  return fs.readFile("b.txt", "utf8");
+}
+
+async function readC() {
+  return fs.readFile("c.txt", "utf8");
+}
+
+async function main() {
+  const [a, b, c] = await Promise.all([readA(), readB(), readC()]);
+  console.log(a, b, c);
+}
+```
+
+---
+
+# 5. Solution 4: Named Functions Instead of Anonymous Callbacks
+
+Instead of nesting:
+
+```js id="k2v9mx"
+fs.readFile("a.txt", function handleA(err, a) {
+  fs.readFile("b.txt", function handleB(err, b) {
+    console.log(a, b);
+  });
+});
+```
+
+You can flatten:
+
+```js id="p1n6rz"
+function handleB(err, b, a) {
+  console.log(a, b);
+}
+
+function handleA(err, a) {
+  fs.readFile("b.txt", (err, b) => handleB(err, b, a));
+}
+
+fs.readFile("a.txt", handleA);
+```
+
+Still not ideal, but improves readability in older codebases.
+
+---
+
+# 6. Solution 5: Use Control Flow Libraries (Legacy)
+
+Before Promises were standard:
+
+- async.js
+- Q
+- Bluebird
+
+Example:
+
+```js id="r5m3tx"
+async.series(
+  [(cb) => fs.readFile("a.txt", cb), (cb) => fs.readFile("b.txt", cb)],
+  (err, results) => {
+    console.log(results);
+  },
+);
+```
+
+⚠️ Rare in modern codebases.
+
+---
+
+# 7. Error Handling Improvement
+
+## Callback Hell Problem
+
+```js id="x2n9qp"
+fs.readFile("a.txt", (err, a) => {
+  if (err) throw err;
+
+  fs.readFile("b.txt", (err, b) => {
+    if (err) throw err;
+
+    fs.readFile("c.txt", (err, c) => {
+      if (err) throw err;
+    });
+  });
+});
+```
+
+---
+
+## With async/await
+
+```js id="w4k9zd"
+async function read() {
+  try {
+    const a = await fs.readFile("a.txt", "utf8");
+    const b = await fs.readFile("b.txt", "utf8");
+    const c = await fs.readFile("c.txt", "utf8");
+
+    console.log(a, b, c);
+  } catch (err) {
+    console.error("Error:", err);
+  }
+}
+```
+
+Much cleaner centralized error handling.
+
+---
+
+# 8. Key Concept: Why Callback Hell Happens
+
+It happens due to:
+
+- Inversion of control (callbacks passed into APIs)
+- Sequential async dependencies
+- Lack of composability in older Node.js APIs
+
+Modern solutions solve this by:
+
+```txt id="y7m3qp"
+Callbacks → Promises → async/await
+```
+
+---
+
+# 9. Best Practices (Interview Ready)
+
+### 1. Prefer async/await
+
+```js id="a9k2qp"
+await doTask();
+```
+
+---
+
+### 2. Use Promise.all for parallel tasks
+
+```js id="p8x3mn"
+await Promise.all([task1(), task2()]);
+```
+
+---
+
+### 3. Avoid deep nesting
+
+```txt id="z3n8qp"
+❌ callback inside callback inside callback
+```
+
+---
+
+### 4. Break logic into functions
+
+```js id="c7m2qz"
+function fetchUser() {}
+function fetchOrders() {}
+```
+
+---
+
+### 5. Always handle errors centrally
+
+```js id="t5n8xp"
+try {
+  await run();
+} catch (err) {}
+```
+
+---
+
+# 10. Final Interview Answer
+
+> Callback hell in Node.js occurs when multiple asynchronous callbacks are deeply nested, making code hard to read and maintain. It can be prevented using Promises, which flatten asynchronous chains, and more effectively using async/await, which allows asynchronous code to be written in a synchronous style. Additionally, breaking logic into smaller functions, using Promise.all for parallel execution, and centralizing error handling with try/catch further improves code readability and maintainability. Modern Node.js development strongly favors async/await over callback-based designs to avoid callback hell entirely.
+
 ## Question 9. How to handle unhandled promise rejections in Node.js
 
 ## Question 10. How to implement rate limiting in Node.js API
