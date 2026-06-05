@@ -1828,6 +1828,291 @@ A strong interview answer should mention:
 
 ## Question 8. What is the difference between slice() and splice()?
 
+### **Short Answer**
+
+- **`slice()`** → Returns a **new array** containing a portion of the original array. It **does not modify** the original array.
+- **`splice()`** → Adds, removes, or replaces elements in an array. It **modifies** the original array.
+
+This is one of the most frequently asked JavaScript interview questions.
+
+---
+
+# **`slice()`**
+
+### **Purpose**
+
+Extracts a portion of an array and returns it as a new array.
+
+### **Syntax**
+
+```javascript
+array.slice(start, end);
+```
+
+- `start` → inclusive
+- `end` → exclusive
+
+### **Example**
+
+```javascript
+const fruits = ["apple", "banana", "mango", "orange"];
+
+const result = fruits.slice(1, 3);
+
+console.log(result);
+console.log(fruits);
+```
+
+### **Output**
+
+```javascript
+["banana", "mango"][("apple", "banana", "mango", "orange")];
+```
+
+Notice that the original array remains unchanged.
+
+---
+
+## Common Uses of `slice()`
+
+### Clone an Array
+
+```javascript
+const arr = [1, 2, 3];
+
+const copy = arr.slice();
+
+console.log(copy);
+```
+
+Output:
+
+```javascript
+[1, 2, 3];
+```
+
+---
+
+### Negative Indexes
+
+```javascript
+const arr = [1, 2, 3, 4, 5];
+
+console.log(arr.slice(-2));
+```
+
+Output:
+
+```javascript
+[4, 5];
+```
+
+---
+
+# **`splice()`**
+
+### **Purpose**
+
+Changes the contents of the original array by:
+
+- Removing elements
+- Adding elements
+- Replacing elements
+
+### **Syntax**
+
+```javascript
+array.splice(start, deleteCount, item1, item2, ...);
+```
+
+---
+
+## Remove Elements
+
+```javascript
+const fruits = ["apple", "banana", "mango", "orange"];
+
+const removed = fruits.splice(1, 2);
+
+console.log(removed);
+console.log(fruits);
+```
+
+### Output
+
+```javascript
+["banana", "mango"][("apple", "orange")];
+```
+
+---
+
+## Add Elements
+
+```javascript
+const fruits = ["apple", "orange"];
+
+fruits.splice(1, 0, "banana", "mango");
+
+console.log(fruits);
+```
+
+### Output
+
+```javascript
+["apple", "banana", "mango", "orange"];
+```
+
+---
+
+## Replace Elements
+
+```javascript
+const fruits = ["apple", "banana", "mango"];
+
+fruits.splice(1, 1, "grapes");
+
+console.log(fruits);
+```
+
+### Output
+
+```javascript
+["apple", "grapes", "mango"];
+```
+
+---
+
+# **Visual Example**
+
+### Original Array
+
+```javascript
+[10, 20, 30, 40, 50];
+```
+
+### `slice(1, 4)`
+
+```javascript
+[20, 30, 40];
+```
+
+Original remains:
+
+```javascript
+[10, 20, 30, 40, 50];
+```
+
+---
+
+### `splice(1, 2)`
+
+Removes:
+
+```javascript
+[20, 30];
+```
+
+Original becomes:
+
+```javascript
+[10, 40, 50];
+```
+
+---
+
+# **Key Differences**
+
+| Feature                 | `slice()`    | `splice()`         |
+| ----------------------- | ------------ | ------------------ |
+| Modifies original array | ❌ No        | ✅ Yes             |
+| Returns                 | New array    | Removed elements   |
+| Purpose                 | Copy/extract | Add/remove/replace |
+| Immutable               | ✅ Yes       | ❌ No              |
+| Common in React/FP      | ✅ Yes       | ❌ Usually avoided |
+
+---
+
+# **Common Interview Pitfalls**
+
+## Pitfall 1: Thinking `slice()` modifies the array
+
+```javascript
+const arr = [1, 2, 3];
+
+arr.slice(1);
+
+console.log(arr);
+```
+
+Output:
+
+```javascript
+[1, 2, 3];
+```
+
+No change.
+
+---
+
+## Pitfall 2: Forgetting `splice()` mutates
+
+```javascript
+const arr = [1, 2, 3];
+
+arr.splice(1, 1);
+
+console.log(arr);
+```
+
+Output:
+
+```javascript
+[1, 3];
+```
+
+Original array changed.
+
+---
+
+## Pitfall 3: Mixing Up Their Names
+
+A common memory trick:
+
+- **slice = copy a piece**
+- **splice = splice/cut into the original array**
+
+---
+
+# **Modern Alternatives for Immutable Updates**
+
+Instead of:
+
+```javascript
+arr.splice(1, 1);
+```
+
+You can use:
+
+```javascript
+const newArr = [...arr.slice(0, 1), ...arr.slice(2)];
+```
+
+Or newer methods like:
+
+```javascript
+const newArr = arr.toSpliced(1, 1);
+```
+
+`toSpliced()` (ES2023) works like `splice()` but returns a new array without mutating the original.
+
+---
+
+# **Interview Tip**
+
+A concise senior-level answer:
+
+> "`slice()` creates and returns a new array without modifying the original array, while `splice()` modifies the original array by adding, removing, or replacing elements. `slice()` is typically used for copying or extracting data, whereas `splice()` is used when you need to change the array in place."
+
 ## Question 9. What is the difference between map, filter, and forEach?
 
 ## Question 10. How to copy an array without affecting the original?
