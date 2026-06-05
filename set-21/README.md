@@ -2370,6 +2370,338 @@ MutationObserver and IntersectionObserver solve completely different problems in
 
 ## Question 8. How to lazy-load images/videos using IntersectionObserver
 
+## Short Answer
+
+You lazy-load images or videos using **IntersectionObserver** by observing media elements and only setting their `src` (or triggering playback) when they enter the viewport. This avoids loading heavy resources until they’re actually needed, improving performance and initial page load time.
+
+---
+
+# 1. Core Idea
+
+Instead of loading everything upfront:
+
+❌ Load all images/videos immediately
+✔ Load only when visible on screen
+
+IntersectionObserver tells you:
+
+> “This element is now entering the viewport — load it.”
+
+---
+
+# 2. Lazy Loading Images (Basic Pattern)
+
+## HTML (use `data-src` instead of `src`)
+
+```html id="img1"
+<img class="lazy" data-src="image1.jpg" alt="image" />
+<img class="lazy" data-src="image2.jpg" alt="image" />
+```
+
+---
+
+## JavaScript (IntersectionObserver)
+
+```javascript id="io-img1"
+const images = document.querySelectorAll("img.lazy");
+
+const imageObserver = new IntersectionObserver(
+  (entries, observer) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const img = entry.target;
+
+        // load actual image
+        img.src = img.dataset.src;
+
+        // optional: remove lazy class
+        img.classList.remove("lazy");
+
+        // stop observing once loaded
+        observer.unobserve(img);
+      }
+    });
+  },
+  {
+    root: null,
+    rootMargin: "100px", // preload slightly before visible
+    threshold: 0.1,
+  },
+);
+
+images.forEach((img) => imageObserver.observe(img));
+```
+
+---
+
+## Why this works
+
+- Browser doesn’t download image until `src` is set
+- `IntersectionObserver` triggers only when needed
+- `rootMargin` improves perceived performance (preloading)
+
+---
+
+# 3. Lazy Loading Videos
+
+Videos are heavier, so lazy-loading is even more important.
+
+---
+
+## HTML
+
+```html id="vid1"
+<video class="lazy-video" controls data-src="video.mp4"></video>
+```
+
+---
+
+## JavaScript
+
+```javascript id="io-video1"
+const videos = document.querySelectorAll("video.lazy-video");
+
+const videoObserver = new IntersectionObserver(
+  (entries, observer) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const video = entry.target;
+
+        // set video source
+        const source = document.createElement("source");
+        source.src = video.dataset.src;
+        source.type = "video/mp4";
+
+        video.appendChild(source);
+
+        // load and optionally autoplay
+        video.load();
+
+        // optional autoplay when visible
+        video.play().catch(() => {
+          // autoplay may be blocked by browser
+        });
+
+        observer.unobserve(video);
+      }
+    });
+  },
+  {
+    root: null,
+    rootMargin: "200px",
+    threshold: 0.25,
+  },
+);
+
+videos.forEach((video) => videoObserver.observe(video));
+```
+
+---
+
+# 4. Advanced Pattern: Placeholder + Fade-in
+
+## HTML
+
+```html id="img2"
+<img class="lazy" src="placeholder.jpg" data-src="real-image.jpg" />
+```
+
+---
+
+## CSS
+
+```css id="css1"
+img {
+  transition: opacity 0.3s ease;
+}
+
+img.loaded {
+  opacity: 1;
+}
+```
+
+---
+
+## JS
+
+```javascript id="io-img2"
+const observer = new IntersectionObserver((entries, obs) => {
+  entries.forEach((entry) => {
+    if (entry.isIntersecting) {
+      const img = entry.target;
+
+      img.src = img.dataset.src;
+
+      img.onload = () => {
+        img.classList.add("loaded");
+      };
+
+      obs.unobserve(img);
+    }
+  });
+});
+
+document.querySelectorAll("img.lazy").forEach((img) => {
+  observer.observe(img);
+});
+```
+
+---
+
+# 5. Key Optimization Techniques
+
+## 1. Use `rootMargin` for preloading
+
+```javascript id="opt1"
+rootMargin: "150px";
+```
+
+👉 Starts loading before user sees it → smoother UX
+
+---
+
+## 2. Unobserve after loading
+
+```javascript id="opt2"
+observer.unobserve(img);
+```
+
+👉 Prevents unnecessary callbacks
+
+---
+
+## 3. Use low-quality placeholder images (LQIP)
+
+```html id="lqip1"
+<img src="tiny-blur.jpg" data-src="high-res.jpg" />
+```
+
+---
+
+## 4. Avoid layout shifts (important)
+
+Set width/height:
+
+```html id="layout1"
+<img width="600" height="400" />
+```
+
+👉 Prevents CLS (Cumulative Layout Shift)
+
+---
+
+# 6. Common Mistakes (Interview Traps)
+
+---
+
+## ❌ Setting `src` directly in HTML
+
+```html id="bad1"
+<img src="heavy.jpg" />
+```
+
+👉 defeats lazy loading
+
+---
+
+## ❌ Forgetting unobserve
+
+```javascript id="bad2"
+observer.observe(img); // never unobserved
+```
+
+👉 memory + performance overhead
+
+---
+
+## ❌ Using scroll event instead of IntersectionObserver
+
+```javascript id="bad3"
+window.addEventListener("scroll", checkImages);
+```
+
+👉 causes layout thrashing
+
+---
+
+## ❌ Not using placeholder dimensions
+
+👉 causes layout jumps
+
+---
+
+# 7. Video Autoplay Strategy (Real-world nuance)
+
+Browsers block autoplay unless:
+
+- muted
+- user interaction occurred
+
+Better pattern:
+
+```javascript id="video2"
+video.muted = true;
+video.play();
+```
+
+---
+
+# 8. Infinite Scroll + Lazy Load Combo
+
+You often combine:
+
+- IntersectionObserver (sentinel)
+- Lazy loading (images/videos)
+
+Example:
+
+```text id="combo1"
+[ items load ]
+[ images lazy load ]
+[ sentinel triggers next page ]
+```
+
+---
+
+# 9. Performance Benefits
+
+Using IntersectionObserver for lazy loading:
+
+- Reduces initial page weight
+- Speeds up First Contentful Paint (FCP)
+- Saves bandwidth
+- Reduces main-thread work
+- Eliminates scroll-based polling
+
+---
+
+# 10. Mental Model (Interview Gold)
+
+Think:
+
+> “IntersectionObserver acts as a trigger system that tells me exactly when to hydrate a media element just before it becomes visible.”
+
+---
+
+# 11. Best Practices Summary
+
+To properly lazy-load images/videos:
+
+- Use `data-src` instead of `src`
+- Use IntersectionObserver to detect visibility
+- Load media only when `isIntersecting === true`
+- Use `rootMargin` for preloading UX
+- Always `unobserve` after loading
+- Set fixed dimensions to avoid layout shifts
+- Use placeholders for smooth UX
+- Prefer video `.load()` + controlled autoplay
+
+---
+
+# Final Interview Summary
+
+Lazy-loading images and videos using IntersectionObserver involves deferring the loading of media resources until they enter the viewport. This is achieved by observing elements with a placeholder `data-src` attribute and assigning the actual `src` only when the element becomes visible (`isIntersecting` is true). For videos, sources are dynamically appended and loaded using the `.load()` method. Optimizations such as `rootMargin` for preloading, unobserving elements after load, and using placeholders to prevent layout shifts significantly improve performance and user experience while reducing bandwidth usage and initial page load time.
+
 ## Question 9. How to implement infinite scroll efficiently
 
 ## Question 10. Difference between `requestAnimationFrame` and `setInterval` for animations
