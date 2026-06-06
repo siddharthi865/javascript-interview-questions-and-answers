@@ -1357,6 +1357,209 @@ Boolean("hello"); // true
 
 ## Question 7. What is the difference between == and ===?
 
+**Short answer:**
+`==` checks equality with **type coercion**, while `===` checks equality without type coercion (strict equality).
+
+---
+
+# 🔍 Detailed Interview Explanation
+
+In JavaScript, `==` and `===` are comparison operators, but they behave very differently because of **type coercion rules**.
+
+---
+
+# 1. ⚖️ Loose Equality (==)
+
+## 📌 What it does:
+
+- Compares values **after converting them to a common type**
+- Performs **implicit type coercion**
+
+---
+
+## Example:
+
+```js id="eq1"
+console.log(5 == "5"); // true
+```
+
+👉 JavaScript converts `"5"` → `5` before comparison
+
+---
+
+## More examples:
+
+```js id="eq2"
+console.log(0 == false); // true
+console.log("" == false); // true
+console.log(null == undefined); // true
+```
+
+---
+
+## ⚠️ Key behavior:
+
+- Can produce **unexpected results**
+- Follows complex coercion rules internally
+
+---
+
+# 2. 🔒 Strict Equality (===)
+
+## 📌 What it does:
+
+- Compares **both value and type**
+- No type conversion happens
+
+---
+
+## Example:
+
+```js id="eq3"
+console.log(5 === "5"); // false
+```
+
+👉 Different types: number vs string
+
+---
+
+## More examples:
+
+```js id="eq4"
+console.log(0 === false); // false
+console.log("" === false); // false
+console.log(null === undefined); // false
+```
+
+---
+
+## Exception:
+
+```js id="eq5"
+console.log(NaN === NaN); // false ❗
+```
+
+👉 In JavaScript, NaN is not equal to itself
+
+Correct way:
+
+```js id="eq6"
+console.log(Number.isNaN(NaN)); // true
+```
+
+---
+
+# 🧠 Core Difference
+
+| Feature        | == (Loose Equality) | === (Strict Equality) |
+| -------------- | ------------------- | --------------------- |
+| Type check     | No                  | Yes                   |
+| Type coercion  | Yes                 | No                    |
+| Safety         | Less safe           | Recommended           |
+| Performance    | Slightly slower     | Slightly faster       |
+| Predictability | Low                 | High                  |
+
+---
+
+# 🔄 Internal Behavior (Important Interview Insight)
+
+### When using `==`, JS performs:
+
+1. Type conversion
+2. Then comparison
+
+Example:
+
+```js id="int1"
+"5" == 5;
+```
+
+Steps:
+
+- "5" → 5 (string → number)
+- 5 == 5 → true
+
+---
+
+# ⚠️ Common Interview Tricky Cases
+
+## 1. null and undefined
+
+```js id="t1"
+console.log(null == undefined); // true
+console.log(null === undefined); // false
+```
+
+---
+
+## 2. Boolean coercion
+
+```js id="t2"
+console.log(true == 1); // true
+console.log(true === 1); // false
+```
+
+---
+
+## 3. Empty string
+
+```js id="t3"
+console.log("" == 0); // true
+console.log("" === 0); // false
+```
+
+---
+
+## 4. Arrays and objects
+
+```js id="t4"
+console.log([] == false); // true
+console.log([] === false); // false
+```
+
+---
+
+# 🧪 Real-world Example
+
+## Bad practice (==)
+
+```js id="r1"
+if (userAge == "18") {
+  console.log("Allowed");
+}
+```
+
+👉 Can cause hidden bugs due to coercion
+
+---
+
+## Good practice (===)
+
+```js id="r2"
+if (userAge === 18) {
+  console.log("Allowed");
+}
+```
+
+👉 Predictable and safe
+
+---
+
+# 🚀 Best Practices (Interview Answer Key Point)
+
+- Always prefer `===` in production code
+- Avoid `==` unless you **intentionally want coercion behavior**
+- Use strict equality to prevent hidden bugs
+
+---
+
+# 🎯 Final Summary
+
+- `==` → loose equality, compares after type conversion
+- `===` → strict equality, compares value + type
+- `===` is safer, more predictable, and recommended
+- Most JavaScript bugs related to comparisons come from `==`
+
 ## Question 8. What are JavaScript functions? How to declare them?
 
 ## Question 9. Difference between function declaration and function expression
