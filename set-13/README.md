@@ -2185,6 +2185,403 @@ every() → ALL?
 
 ## Question 7. How to sort an array of objects by a key
 
+### Direct Answer
+
+You can sort an array of objects by a specific key using `Array.prototype.sort()` and a comparison function.
+
+```js
+const users = [
+  { name: "John", age: 30 },
+  { name: "Alice", age: 25 },
+  { name: "Bob", age: 35 },
+];
+
+users.sort((a, b) => a.age - b.age);
+
+console.log(users);
+```
+
+Output:
+
+```js
+[
+  { name: "Alice", age: 25 },
+  { name: "John", age: 30 },
+  { name: "Bob", age: 35 },
+];
+```
+
+---
+
+# How `sort()` Works
+
+The `sort()` method expects a comparator function:
+
+```js
+array.sort((a, b) => {
+  // negative => a before b
+  // positive => b before a
+  // 0 => keep order
+});
+```
+
+For numbers:
+
+```js
+a.age - b.age;
+```
+
+- Negative → `a` comes first
+- Positive → `b` comes first
+- Zero → order unchanged
+
+---
+
+# 1. Sort by Numeric Property
+
+### Ascending Order
+
+```js
+const products = [
+  { name: "Laptop", price: 1000 },
+  { name: "Phone", price: 500 },
+  { name: "Tablet", price: 750 },
+];
+
+products.sort((a, b) => a.price - b.price);
+```
+
+Output:
+
+```js
+[
+  { name: "Phone", price: 500 },
+  { name: "Tablet", price: 750 },
+  { name: "Laptop", price: 1000 },
+];
+```
+
+---
+
+### Descending Order
+
+```js
+products.sort((a, b) => b.price - a.price);
+```
+
+Output:
+
+```js
+[
+  { name: "Laptop", price: 1000 },
+  { name: "Tablet", price: 750 },
+  { name: "Phone", price: 500 },
+];
+```
+
+---
+
+# 2. Sort by String Property
+
+For strings, use `localeCompare()`.
+
+```js
+const users = [{ name: "John" }, { name: "Alice" }, { name: "Bob" }];
+
+users.sort((a, b) => a.name.localeCompare(b.name));
+```
+
+Output:
+
+```js
+[{ name: "Alice" }, { name: "Bob" }, { name: "John" }];
+```
+
+---
+
+### Descending String Sort
+
+```js
+users.sort((a, b) => b.name.localeCompare(a.name));
+```
+
+---
+
+# Why Not Use `>` and `<` for Strings?
+
+Instead of:
+
+```js
+users.sort((a, b) => {
+  if (a.name > b.name) return 1;
+  if (a.name < b.name) return -1;
+  return 0;
+});
+```
+
+Prefer:
+
+```js
+a.name.localeCompare(b.name);
+```
+
+Benefits:
+
+- Cleaner
+- Handles international characters
+- Better Unicode support
+
+---
+
+# 3. Sort by Date Property
+
+```js
+const events = [
+  { title: "Event A", date: "2025-03-01" },
+  { title: "Event B", date: "2025-01-15" },
+  { title: "Event C", date: "2025-02-10" },
+];
+
+events.sort((a, b) => new Date(a.date) - new Date(b.date));
+```
+
+Output:
+
+```js
+[
+  { title: "Event B", date: "2025-01-15" },
+  { title: "Event C", date: "2025-02-10" },
+  { title: "Event A", date: "2025-03-01" },
+];
+```
+
+---
+
+# 4. Sort by Multiple Keys
+
+A common interview question.
+
+### Example: Age then Name
+
+```js
+const users = [
+  { name: "John", age: 25 },
+  { name: "Alice", age: 25 },
+  { name: "Bob", age: 30 },
+];
+
+users.sort((a, b) => {
+  if (a.age !== b.age) {
+    return a.age - b.age;
+  }
+
+  return a.name.localeCompare(b.name);
+});
+```
+
+Output:
+
+```js
+[
+  { name: "Alice", age: 25 },
+  { name: "John", age: 25 },
+  { name: "Bob", age: 30 },
+];
+```
+
+---
+
+# 5. Sorting Nested Object Properties
+
+```js
+const users = [
+  { profile: { age: 30 } },
+  { profile: { age: 20 } },
+  { profile: { age: 25 } },
+];
+
+users.sort((a, b) => a.profile.age - b.profile.age);
+```
+
+Output:
+
+```js
+[{ profile: { age: 20 } }, { profile: { age: 25 } }, { profile: { age: 30 } }];
+```
+
+---
+
+# 6. Handling Missing Values
+
+Suppose some objects don't have the key.
+
+```js
+const users = [
+  { name: "John", age: 30 },
+  { name: "Alice" },
+  { name: "Bob", age: 25 },
+];
+```
+
+Safe sorting:
+
+```js
+users.sort((a, b) => {
+  return (a.age ?? Infinity) - (b.age ?? Infinity);
+});
+```
+
+Output:
+
+```js
+[{ name: "Bob", age: 25 }, { name: "John", age: 30 }, { name: "Alice" }];
+```
+
+---
+
+# 7. Avoid Mutating the Original Array
+
+### Important Interview Point
+
+`sort()` mutates the original array.
+
+```js
+const arr = [3, 1, 2];
+
+arr.sort();
+
+console.log(arr);
+```
+
+Output:
+
+```js
+[1, 2, 3];
+```
+
+Original array changed.
+
+---
+
+### Immutable Sorting
+
+```js
+const sortedUsers = [...users].sort((a, b) => a.age - b.age);
+```
+
+or (ES2023):
+
+```js
+const sortedUsers = users.toSorted((a, b) => a.age - b.age);
+```
+
+`toSorted()` returns a new sorted array without mutation.
+
+---
+
+# Common Interview Pitfalls
+
+## Pitfall 1: Sorting Numbers Without Comparator
+
+```js
+[10, 2, 5].sort();
+```
+
+Output:
+
+```js
+[10, 2, 5];
+```
+
+Because values are converted to strings and sorted lexicographically.
+
+Correct:
+
+```js
+[10, 2, 5].sort((a, b) => a - b);
+```
+
+Output:
+
+```js
+[2, 5, 10];
+```
+
+---
+
+## Pitfall 2: Forgetting That `sort()` Mutates
+
+```js
+const original = users;
+
+users.sort(...);
+```
+
+Now both references point to the sorted array.
+
+---
+
+# Reusable Utility Function
+
+```js
+function sortBy(arr, key) {
+  return [...arr].sort((a, b) => {
+    if (typeof a[key] === "string") {
+      return a[key].localeCompare(b[key]);
+    }
+
+    return a[key] - b[key];
+  });
+}
+```
+
+Usage:
+
+```js
+const sorted = sortBy(users, "age");
+```
+
+---
+
+# Interview Summary
+
+### Numeric Sort
+
+```js
+users.sort((a, b) => a.age - b.age);
+```
+
+### Descending Numeric Sort
+
+```js
+users.sort((a, b) => b.age - a.age);
+```
+
+### String Sort
+
+```js
+users.sort((a, b) => a.name.localeCompare(b.name));
+```
+
+### Multiple Keys
+
+```js
+users.sort((a, b) => {
+  if (a.age !== b.age) {
+    return a.age - b.age;
+  }
+  return a.name.localeCompare(b.name);
+});
+```
+
+### Key Points
+
+- `sort()` mutates the original array.
+- Use `localeCompare()` for strings.
+- Use subtraction for numeric keys.
+- Use `toSorted()` or `[...arr].sort()` for immutable sorting.
+- Multi-key sorting is a common senior-level interview topic.
+
 ## Question 8. How to flatten nested arrays using recursion
 
 ## Question 9. How to implement a simple stack using arrays
