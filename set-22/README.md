@@ -1598,6 +1598,293 @@ JavaScript event propagation has three phases: capturing (event moves from root 
 
 ## Question 7. How to prevent memory leaks in long-lived event listeners
 
+# ✅ Direct Answer
+
+To prevent memory leaks in long-lived event listeners, you must **properly remove event listeners when they are no longer needed**, avoid capturing unnecessary references in closures, and ensure DOM nodes and handlers are garbage-collectable.
+
+The core idea is:
+
+> Always clean up listeners + avoid retaining unintended references.
+
+---
+
+# 🧠 Interview-Level Explanation
+
+In JavaScript, memory leaks commonly occur when:
+
+- Event listeners stay attached to DOM nodes that are no longer used
+- Closures retain references to large objects or DOM elements
+- Components (SPA frameworks) mount/unmount but listeners are not cleaned up
+- Global listeners accumulate over time
+
+Because JavaScript uses **garbage collection (GC)**, memory is freed only when objects are **unreachable**. Event listeners often keep objects reachable unintentionally.
+
+---
+
+# 📌 1. Always Remove Event Listeners
+
+### ❌ Problem
+
+```js id="a1k9xq"
+function handleClick() {
+  console.log("clicked");
+}
+
+button.addEventListener("click", handleClick);
+
+// later DOM removed but listener still exists ❌
+```
+
+If `button` is removed but listener remains referenced, memory is retained.
+
+---
+
+### ✅ Solution
+
+```js id="c3m8vn"
+button.removeEventListener("click", handleClick);
+```
+
+⚠️ Important rule:
+
+> The function reference must be the same.
+
+---
+
+# 🧠 2. Avoid Anonymous Handlers (Big Interview Trap)
+
+### ❌ Bad
+
+```js id="x9p2lm"
+button.addEventListener("click", () => {
+  console.log("clicked");
+});
+```
+
+You cannot remove this later because it has no reference.
+
+---
+
+### ✅ Good
+
+```js id="k2n8qp"
+const handleClick = () => {
+  console.log("clicked");
+};
+
+button.addEventListener("click", handleClick);
+
+// cleanup
+button.removeEventListener("click", handleClick);
+```
+
+---
+
+# 📌 3. Clean Up in SPA Framework Lifecycle
+
+In React/Vue/Angular-like apps:
+
+### React example
+
+```js id="r4p9xn"
+useEffect(() => {
+  const handler = () => console.log("resize");
+
+  window.addEventListener("resize", handler);
+
+  return () => {
+    window.removeEventListener("resize", handler);
+  };
+}, []);
+```
+
+### Why this matters:
+
+- Components unmount
+- If listener stays → memory leak
+
+---
+
+# 📌 4. Be Careful with Closures
+
+Closures can accidentally retain large objects.
+
+### ❌ Bad
+
+```js id="z8m2qp"
+function setup() {
+  const bigData = new Array(1000000).fill("data");
+
+  window.addEventListener("click", () => {
+    console.log(bigData.length);
+  });
+}
+```
+
+Even after `setup()` ends:
+
+- `bigData` is retained in memory ❌
+
+---
+
+### ✅ Fix
+
+Detach or avoid capturing unnecessary data:
+
+```js id="v2n9lm"
+function setup() {
+  const bigData = new Array(1000000).fill("data");
+
+  const handler = () => {
+    console.log("clicked");
+  };
+
+  window.addEventListener("click", handler);
+}
+```
+
+Or explicitly nullify references when done.
+
+---
+
+# 📌 5. Use AbortController (Modern Best Practice)
+
+A clean modern way to manage multiple listeners:
+
+```js id="a9k3lm"
+const controller = new AbortController();
+
+window.addEventListener("scroll", () => console.log("scrolling"), {
+  signal: controller.signal,
+});
+
+// later cleanup
+controller.abort();
+```
+
+### Why this is powerful:
+
+- removes all listeners at once
+- avoids manual tracking
+- reduces boilerplate
+
+---
+
+# 📌 6. Avoid Global Listeners When Possible
+
+### ❌ Problem
+
+```js id="g1k8pq"
+window.addEventListener("mousemove", handler);
+```
+
+If not removed → runs forever.
+
+---
+
+### ✅ Better
+
+- attach only when needed
+- remove on exit conditions
+- throttle heavy events
+
+---
+
+# 📌 7. Debounce/Throttle Long-lived Events
+
+Frequent events like:
+
+- scroll
+- resize
+- mousemove
+
+can cause performance + memory pressure.
+
+```js id="d9m2qp"
+window.addEventListener("scroll", debounce(handler, 200));
+```
+
+---
+
+# 📌 8. Nullify References When Done
+
+Especially in modules or services:
+
+```js id="n8p3lm"
+let handler = null;
+
+function init() {
+  handler = () => console.log("event");
+  window.addEventListener("click", handler);
+}
+
+function cleanup() {
+  window.removeEventListener("click", handler);
+  handler = null;
+}
+```
+
+---
+
+# 📊 Common Memory Leak Sources
+
+| Cause                | Example                            |
+| -------------------- | ---------------------------------- |
+| Unremoved listeners  | `addEventListener` without cleanup |
+| Closures             | retaining DOM/data unintentionally |
+| Global subscriptions | window/document events             |
+| Timers               | `setInterval` not cleared          |
+| Detached DOM refs    | nodes still referenced in JS       |
+
+---
+
+# ⚠️ Advanced Pitfalls (Senior Interview Level)
+
+## 1. DOM removed ≠ GC freed
+
+If JS still references element → not collected.
+
+```js id="x2p9lm"
+let el = document.getElementById("box");
+
+document.body.removeChild(el);
+
+// still referenced → memory leak risk
+```
+
+---
+
+## 2. Event listener retains entire object graph
+
+A listener keeps closure scope alive.
+
+---
+
+## 3. Multiple bindings accidentally stacking
+
+```js id="p4m8qp"
+window.addEventListener("resize", handler);
+window.addEventListener("resize", handler); // duplicate ❌
+```
+
+---
+
+# 🧠 Best Practices Summary
+
+✔ Always remove event listeners when no longer needed
+✔ Avoid anonymous functions for listeners
+✔ Use lifecycle cleanup in frameworks
+✔ Be careful with closures capturing large objects
+✔ Prefer `AbortController` for modern cleanup
+✔ Throttle/debounce frequent events
+✔ Avoid unnecessary global listeners
+
+---
+
+# 🧾 Interview Summary
+
+Memory leaks in event listeners occur when handlers or their closures keep references alive after they are no longer needed. To prevent this, always remove event listeners, avoid anonymous handlers, clean up in component lifecycles, and be mindful of closures capturing large objects. Modern approaches like `AbortController` simplify cleanup by allowing bulk cancellation of listeners. Proper event management ensures efficient memory usage and prevents performance degradation in long-running applications.
+
 ## Question 8. How to optimize scrolling performance for large tables/grids
 
 ## Question 9. How to implement a virtual DOM from scratch
