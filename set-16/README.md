@@ -1901,6 +1901,447 @@ obj.hasOwnProperty("prop");
 
 ## Question 7. Difference between `Object.create()` and `{}` object literal
 
+## Direct Answer
+
+Both `Object.create()` and `{}` create objects, but they differ in **how the prototype is assigned** and **how the object is initialized**.
+
+```javascript
+const obj1 = {};
+const obj2 = Object.create(Object.prototype);
+```
+
+These two are effectively equivalent because both create an object whose prototype is `Object.prototype`.
+
+However, `Object.create()` provides explicit control over the prototype chain, while `{}` always uses `Object.prototype`.
+
+---
+
+# 1. Object Literal `{}`
+
+The most common way to create objects:
+
+```javascript
+const user = {
+  name: "John",
+  age: 30,
+};
+```
+
+Internally:
+
+```javascript
+Object.getPrototypeOf(user) === Object.prototype;
+```
+
+Output:
+
+```text
+true
+```
+
+Prototype chain:
+
+```text
+user
+  ↓
+Object.prototype
+  ↓
+null
+```
+
+---
+
+# 2. Object.create()
+
+`Object.create(proto)` creates a new object whose prototype is `proto`.
+
+```javascript
+const user = Object.create(Object.prototype);
+
+user.name = "John";
+```
+
+Equivalent to:
+
+```javascript
+const user = {};
+user.name = "John";
+```
+
+---
+
+# 3. Main Difference: Prototype Control
+
+With `{}`:
+
+```javascript
+const obj = {};
+```
+
+Prototype is always:
+
+```javascript
+Object.prototype;
+```
+
+With `Object.create()`:
+
+```javascript
+const obj = Object.create(customProto);
+```
+
+You choose the prototype.
+
+Example:
+
+```javascript
+const animal = {
+  speak() {
+    console.log("Animal sound");
+  },
+};
+
+const dog = Object.create(animal);
+
+dog.speak();
+```
+
+Output:
+
+```text
+Animal sound
+```
+
+Prototype chain:
+
+```text
+dog
+  ↓
+animal
+  ↓
+Object.prototype
+  ↓
+null
+```
+
+---
+
+# 4. Creating Objects Without a Prototype
+
+One of the biggest interview points:
+
+```javascript
+const obj = Object.create(null);
+```
+
+Prototype chain:
+
+```text
+obj
+ ↓
+null
+```
+
+No inherited methods:
+
+```javascript
+console.log(obj.toString);
+```
+
+Output:
+
+```text
+undefined
+```
+
+---
+
+## Compare with `{}`
+
+```javascript
+const obj = {};
+```
+
+Output:
+
+```javascript
+console.log(obj.toString);
+```
+
+```text
+[Function: toString]
+```
+
+Because it inherits from `Object.prototype`.
+
+---
+
+# 5. Dictionary/Map-Like Objects
+
+Using `Object.create(null)` avoids prototype pollution:
+
+```javascript
+const dictionary = Object.create(null);
+
+dictionary.name = "John";
+```
+
+No inherited keys:
+
+```javascript
+console.log("toString" in dictionary);
+```
+
+Output:
+
+```text
+false
+```
+
+Whereas:
+
+```javascript
+const dictionary = {};
+
+console.log("toString" in dictionary);
+```
+
+Output:
+
+```text
+true
+```
+
+---
+
+# 6. Property Descriptors During Creation
+
+`Object.create()` supports defining properties immediately:
+
+```javascript
+const person = Object.create(Object.prototype, {
+  name: {
+    value: "John",
+    writable: false,
+  },
+});
+```
+
+Now:
+
+```javascript
+person.name = "Mike";
+
+console.log(person.name);
+```
+
+Output:
+
+```text
+John
+```
+
+---
+
+`{}` cannot do this directly.
+
+---
+
+# 7. Classical Prototypal Inheritance
+
+Before ES6 classes:
+
+```javascript
+const Person = {
+  greet() {
+    console.log("Hello");
+  },
+};
+
+const user = Object.create(Person);
+
+user.greet();
+```
+
+Output:
+
+```text
+Hello
+```
+
+This is pure prototypal inheritance.
+
+---
+
+# 8. Performance Considerations
+
+### Object Literal
+
+```javascript
+const obj = {};
+```
+
+- Simpler syntax
+- Faster to read
+- Most common
+- Optimized heavily by JS engines
+
+---
+
+### Object.create()
+
+```javascript
+const obj = Object.create(proto);
+```
+
+- More explicit
+- Useful for custom inheritance
+- Slightly more verbose
+
+Performance differences are usually negligible in modern engines.
+
+---
+
+# 9. Interview Trap #1
+
+```javascript
+const a = {};
+const b = Object.create(Object.prototype);
+
+console.log(Object.getPrototypeOf(a) === Object.getPrototypeOf(b));
+```
+
+Output:
+
+```text
+true
+```
+
+Many candidates incorrectly think they're different.
+
+---
+
+# 10. Interview Trap #2
+
+```javascript
+const obj = Object.create(null);
+
+console.log(obj.hasOwnProperty("x"));
+```
+
+Output:
+
+```text
+TypeError
+```
+
+Why?
+
+Because:
+
+```text
+hasOwnProperty
+```
+
+comes from `Object.prototype`, which doesn't exist here.
+
+Safe check:
+
+```javascript
+Object.hasOwn(obj, "x");
+```
+
+---
+
+# 11. Interview Trap #3
+
+```javascript
+const parent = {
+  x: 10,
+};
+
+const child = Object.create(parent);
+
+console.log(child.x);
+```
+
+Output:
+
+```text
+10
+```
+
+Because `x` is inherited through the prototype chain.
+
+---
+
+# ES6 Class Equivalent
+
+```javascript
+class Animal {
+  speak() {
+    console.log("sound");
+  }
+}
+```
+
+Under the hood, JavaScript still uses prototypes similar to:
+
+```javascript
+const animalProto = {
+  speak() {
+    console.log("sound");
+  },
+};
+
+const animal = Object.create(animalProto);
+```
+
+---
+
+# When to Use Which?
+
+### Use `{}` when:
+
+```javascript
+const config = {};
+```
+
+- Regular objects
+- Most application code
+- Simple data structures
+
+---
+
+### Use `Object.create()` when:
+
+```javascript
+const obj = Object.create(proto);
+```
+
+- Custom prototype chains
+- Prototypal inheritance
+- Null-prototype dictionaries
+- Fine-grained property descriptors
+
+---
+
+# Interview Summary
+
+| Feature                               | `{}` | `Object.create()` |
+| ------------------------------------- | ---- | ----------------- |
+| Creates object                        | ✅   | ✅                |
+| Prototype fixed to `Object.prototype` | ✅   | ❌                |
+| Custom prototype                      | ❌   | ✅                |
+| Null prototype object                 | ❌   | ✅                |
+| Define descriptors at creation        | ❌   | ✅                |
+| Simpler syntax                        | ✅   | ❌                |
+| Common usage                          | ✅   | Less common       |
+
+### One-Line Interview Answer
+
+**`{}` creates a normal object whose prototype is `Object.prototype`, while `Object.create()` creates an object with a prototype you explicitly specify, including the ability to create objects with no prototype (`Object.create(null)`) or custom inheritance chains.**
+
 ## Question 8. How to use `instanceof` operator in JavaScript
 
 ## Question 9. Difference between `hasOwnProperty()` and `in` operator
