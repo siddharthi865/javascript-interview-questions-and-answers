@@ -1634,6 +1634,360 @@ A strong interview answer:
 
 ## Question 7. Difference between document.body and document.documentElement
 
+## Short answer
+
+Both represent elements in the HTML document, but they refer to different parts of the DOM:
+
+- **`document.documentElement`** → The root `<html>` element.
+- **`document.body`** → The `<body>` element inside `<html>`.
+
+Example:
+
+```html
+<html>
+  <head></head>
+  <body>
+    Content
+  </body>
+</html>
+```
+
+```javascript
+console.log(document.documentElement); // <html>
+console.log(document.body); // <body>
+```
+
+---
+
+# DOM Hierarchy
+
+Consider this HTML:
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Demo</title>
+  </head>
+  <body>
+    <h1>Hello</h1>
+  </body>
+</html>
+```
+
+DOM structure:
+
+```text
+Document
+│
+└── html  ← document.documentElement
+    │
+    ├── head
+    │
+    └── body  ← document.body
+         │
+         └── h1
+```
+
+So:
+
+```javascript
+document.documentElement.tagName; // "HTML"
+document.body.tagName; // "BODY"
+```
+
+---
+
+# 1. `document.documentElement`
+
+Returns the root HTML element.
+
+```javascript
+const root = document.documentElement;
+
+console.log(root);
+```
+
+Output:
+
+```html
+<html>
+  ...
+</html>
+```
+
+### Common Uses
+
+#### Get page dimensions
+
+```javascript
+console.log(document.documentElement.clientWidth);
+console.log(document.documentElement.clientHeight);
+```
+
+#### Change global CSS variables
+
+```javascript
+document.documentElement.style.setProperty("--theme-color", "blue");
+```
+
+#### Access root attributes
+
+```javascript
+console.log(document.documentElement.lang);
+```
+
+---
+
+# 2. `document.body`
+
+Returns the body element.
+
+```javascript
+const body = document.body;
+
+console.log(body);
+```
+
+Output:
+
+```html
+<body>
+  ...
+</body>
+```
+
+### Common Uses
+
+#### Change page background
+
+```javascript
+document.body.style.backgroundColor = "lightblue";
+```
+
+#### Append content
+
+```javascript
+const div = document.createElement("div");
+div.textContent = "Hello";
+
+document.body.appendChild(div);
+```
+
+#### Add event listeners
+
+```javascript
+document.body.addEventListener("click", () => {
+  console.log("Body clicked");
+});
+```
+
+---
+
+# Scroll-Related Differences
+
+This is a common interview topic.
+
+Historically browsers handled scrolling differently:
+
+```javascript
+document.body.scrollTop;
+document.documentElement.scrollTop;
+```
+
+Older browsers sometimes used:
+
+```javascript
+document.body.scrollTop;
+```
+
+Modern browsers generally use:
+
+```javascript
+document.documentElement.scrollTop;
+```
+
+### Modern Recommendation
+
+Use:
+
+```javascript
+window.scrollY;
+```
+
+or
+
+```javascript
+document.documentElement.scrollTop;
+```
+
+---
+
+# Viewport Measurements
+
+### Using `document.documentElement`
+
+```javascript
+console.log(document.documentElement.clientWidth);
+console.log(document.documentElement.clientHeight);
+```
+
+These represent viewport dimensions.
+
+Example:
+
+```text
+1920
+1080
+```
+
+---
+
+### Using `document.body`
+
+```javascript
+console.log(document.body.clientWidth);
+```
+
+Measures the body element itself, which may differ from the viewport.
+
+---
+
+# Example Comparison
+
+```javascript
+console.log(document.documentElement.tagName);
+console.log(document.body.tagName);
+```
+
+Output:
+
+```text
+HTML
+BODY
+```
+
+---
+
+# When Is `document.body` Null?
+
+A classic interview question.
+
+If JavaScript executes before the browser parses the `<body>`:
+
+```html
+<head>
+  <script>
+    console.log(document.body);
+  </script>
+</head>
+```
+
+Output:
+
+```text
+null
+```
+
+Because the body hasn't been created yet.
+
+However:
+
+```javascript
+console.log(document.documentElement);
+```
+
+already exists.
+
+### Solution
+
+Use:
+
+```javascript
+window.onload = () => {
+  console.log(document.body);
+};
+```
+
+or:
+
+```javascript
+document.addEventListener("DOMContentLoaded", () => {
+  console.log(document.body);
+});
+```
+
+---
+
+# Common Pitfalls
+
+## Pitfall 1: Confusing Root Element with Body
+
+```javascript
+document.documentElement.style.background = "red";
+```
+
+This affects the `<html>` element, not necessarily the `<body>`.
+
+---
+
+## Pitfall 2: Using Body for Scroll Position
+
+```javascript
+document.body.scrollTop;
+```
+
+May not work consistently across browsers.
+
+Prefer:
+
+```javascript
+window.scrollY;
+```
+
+or:
+
+```javascript
+document.documentElement.scrollTop;
+```
+
+---
+
+## Pitfall 3: Accessing Body Too Early
+
+```javascript
+console.log(document.body);
+```
+
+Can return:
+
+```text
+null
+```
+
+if the DOM hasn't finished parsing.
+
+---
+
+# Interview Comparison Table
+
+| Feature              | `document.documentElement`         | `document.body`           |
+| -------------------- | ---------------------------------- | ------------------------- |
+| Represents           | `<html>`                           | `<body>`                  |
+| DOM Position         | Root element                       | Child of `<html>`         |
+| Always present first | ✅ Yes                             | ❌ Not until parsed       |
+| Common use           | Viewport, scrolling, CSS variables | Page content manipulation |
+| Tag name             | `"HTML"`                           | `"BODY"`                  |
+| Scroll APIs          | Often used                         | Legacy browser behavior   |
+
+---
+
+# Interview Tip
+
+A strong interview answer is:
+
+> `document.documentElement` refers to the root `<html>` element of the document, while `document.body` refers to the `<body>` element that contains the page content. `document.documentElement` is commonly used for viewport measurements, root-level styles, and scroll information, whereas `document.body` is used for manipulating visible page content. In modern browsers, scroll-related operations typically use `document.documentElement` or `window.scrollY` rather than `document.body`.
+
 ## Question 8. How to get computed style of an element
 
 ## Question 9. How to dynamically load a script in JavaScript
