@@ -1991,6 +1991,334 @@ Only reassignment is blocked.
 
 ## Question 7. How to concatenate arrays in JavaScript?
 
+## Short Answer
+
+There are several ways to concatenate arrays in JavaScript:
+
+### Using `concat()` (classic approach)
+
+```js
+const arr1 = [1, 2];
+const arr2 = [3, 4];
+
+const result = arr1.concat(arr2);
+
+console.log(result); // [1, 2, 3, 4]
+```
+
+### Using the Spread Operator (modern approach)
+
+```js
+const result = [...arr1, ...arr2];
+```
+
+The spread operator is generally the preferred modern solution because it is concise and flexible.
+
+---
+
+# 1. Using `Array.prototype.concat()`
+
+`concat()` returns a **new array** containing the elements of the original arrays.
+
+```js
+const arr1 = [1, 2];
+const arr2 = [3, 4];
+
+const result = arr1.concat(arr2);
+
+console.log(result);
+```
+
+Output:
+
+```js
+[1, 2, 3, 4];
+```
+
+### Important
+
+`concat()` does **not** modify the original arrays.
+
+```js
+const arr1 = [1, 2];
+const arr2 = [3, 4];
+
+const result = arr1.concat(arr2);
+
+console.log(arr1); // [1, 2]
+console.log(arr2); // [3, 4]
+```
+
+---
+
+# 2. Using the Spread Operator (`...`)
+
+Modern ES6+ approach:
+
+```js
+const arr1 = [1, 2];
+const arr2 = [3, 4];
+
+const result = [...arr1, ...arr2];
+
+console.log(result);
+```
+
+Output:
+
+```js
+[1, 2, 3, 4];
+```
+
+### Why it's popular
+
+It allows combining arrays with additional values:
+
+```js
+const result = [0, ...arr1, ...arr2, 5];
+```
+
+Output:
+
+```js
+[0, 1, 2, 3, 4, 5];
+```
+
+---
+
+# 3. Concatenating Multiple Arrays
+
+### Using `concat()`
+
+```js
+const result = arr1.concat(arr2, arr3, arr4);
+```
+
+### Using Spread
+
+```js
+const result = [...arr1, ...arr2, ...arr3, ...arr4];
+```
+
+Example:
+
+```js
+const a = [1];
+const b = [2];
+const c = [3];
+
+console.log([...a, ...b, ...c]);
+```
+
+Output:
+
+```js
+[1, 2, 3];
+```
+
+---
+
+# 4. Using `push()` with Spread (Mutates Original Array)
+
+If you want to append one array into another:
+
+```js
+const arr1 = [1, 2];
+const arr2 = [3, 4];
+
+arr1.push(...arr2);
+
+console.log(arr1);
+```
+
+Output:
+
+```js
+[1, 2, 3, 4];
+```
+
+### Important
+
+This modifies `arr1`.
+
+```js
+arr1 === originalArr1; // true
+```
+
+---
+
+# 5. Using `Array.prototype.push.apply()`
+
+Older ES5 technique:
+
+```js
+const arr1 = [1, 2];
+const arr2 = [3, 4];
+
+Array.prototype.push.apply(arr1, arr2);
+
+console.log(arr1);
+```
+
+Output:
+
+```js
+[1, 2, 3, 4];
+```
+
+Today, spread syntax is preferred.
+
+---
+
+# 6. Concatenating Nested Arrays
+
+```js
+const arr1 = [1, 2];
+const arr2 = [[3, 4]];
+
+const result = arr1.concat(arr2);
+
+console.log(result);
+```
+
+Output:
+
+```js
+[1, 2, [3, 4]];
+```
+
+Notice that `concat()` performs a **shallow merge**, not a deep merge.
+
+---
+
+# Flattening While Concatenating
+
+If you want a flat result:
+
+```js
+const result = [...arr1, ...arr2].flat();
+```
+
+Example:
+
+```js
+const arr1 = [1, 2];
+const arr2 = [[3, 4]];
+
+console.log([...arr1, ...arr2].flat());
+```
+
+Output:
+
+```js
+[1, 2, 3, 4];
+```
+
+---
+
+# Performance Considerations
+
+## Immutable Approach
+
+```js
+const result = [...arr1, ...arr2];
+```
+
+or
+
+```js
+const result = arr1.concat(arr2);
+```
+
+Creates a new array.
+
+### Pros
+
+- Safer
+- Functional programming style
+- Works well with React/Redux
+
+### Cons
+
+- Allocates new memory
+
+---
+
+## Mutable Approach
+
+```js
+arr1.push(...arr2);
+```
+
+### Pros
+
+- Less memory allocation
+- Faster for some large-array scenarios
+
+### Cons
+
+- Changes the original array
+
+---
+
+# Common Interview Questions
+
+## Does `concat()` mutate the original array?
+
+No.
+
+```js
+const a = [1];
+const b = [2];
+
+const c = a.concat(b);
+
+console.log(a); // [1]
+```
+
+---
+
+## Which is preferred: `concat()` or spread?
+
+Modern JavaScript typically favors spread syntax:
+
+```js
+const merged = [...a, ...b];
+```
+
+because it is more readable and flexible.
+
+---
+
+## Is concatenation a deep copy?
+
+No.
+
+```js
+const obj = { x: 1 };
+
+const arr1 = [obj];
+const arr2 = arr1.concat();
+
+obj.x = 100;
+
+console.log(arr2[0].x);
+```
+
+Output:
+
+```js
+100;
+```
+
+The object reference is shared.
+
+---
+
+# Interview-Friendly Summary
+
+> Arrays can be concatenated using `concat()`, the spread operator (`...`), or by mutating an existing array with `push(...arr)`. `concat()` and spread syntax create a new array and do not modify the originals, making them the preferred approaches in modern JavaScript. The spread operator is especially popular because it is concise, readable, and works naturally when combining multiple arrays or inserting additional elements. Both methods perform shallow copies, meaning nested objects and arrays remain shared by reference.
+
 ## Question 8. How to check if a string contains another string?
 
 ## Question 9. How to convert a number to a string in binary, octal, or hexadecimal?
