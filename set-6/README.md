@@ -1161,6 +1161,246 @@ In engines like V8:
 
 ## Question 7. Difference between mutable and immutable objects
 
+**Direct answer:**
+Mutable objects are those whose **state or values can be changed after creation**, while immutable objects are those whose **state cannot be changed once created**—any modification creates a new value instead of altering the original.
+
+---
+
+# Detailed Explanation (Interview Perspective)
+
+This concept is important in JavaScript for understanding **memory behavior, side effects, and functional programming patterns**.
+
+---
+
+# 1. Immutable Objects
+
+An object is **immutable** if its value cannot be changed once created.
+
+In JavaScript, most **primitive types are immutable**.
+
+### Examples of immutable types:
+
+- `string`
+- `number`
+- `boolean`
+- `null`
+- `undefined`
+- `bigint`
+- `symbol`
+
+---
+
+## Example (String immutability)
+
+```javascript id="imm1"
+let str = "hello";
+str[0] = "H";
+
+console.log(str); // "hello"
+```
+
+👉 The string does NOT change.
+
+If you modify it, a **new string is created**:
+
+```javascript id="imm2"
+let str = "hello";
+str = "H" + str.slice(1);
+
+console.log(str); // "Hello"
+```
+
+---
+
+## Key properties of immutable values:
+
+- Cannot be changed in place
+- Any “modification” creates a new value
+- Safe to share between variables
+
+---
+
+# 2. Mutable Objects
+
+Mutable objects are those whose **internal state can be changed without creating a new object**.
+
+In JavaScript, most **reference types are mutable**:
+
+- Objects `{ }`
+- Arrays `[ ]`
+- Functions
+- Maps, Sets, etc.
+
+---
+
+## Example (Object mutation)
+
+```javascript id="mut1"
+let obj = { name: "John" };
+
+obj.name = "Alice";
+
+console.log(obj.name); // "Alice"
+```
+
+👉 The same object is modified in memory.
+
+---
+
+## Example (Array mutation)
+
+```javascript id="mut2"
+let arr = [1, 2, 3];
+
+arr.push(4);
+
+console.log(arr); // [1, 2, 3, 4]
+```
+
+---
+
+## Key properties of mutable objects:
+
+- Can be changed in place
+- Multiple references point to same object
+- Changes are visible everywhere
+
+---
+
+# 3. Memory Behavior (Important Interview Concept)
+
+## Immutable (Primitive)
+
+```text
+Stack:
+a → "hello"
+b → "hello" (new copy)
+```
+
+Each variable holds its own value.
+
+---
+
+## Mutable (Reference type)
+
+```text
+Stack:
+obj1 → 0x001
+obj2 → 0x001
+
+Heap:
+0x001 → { name: "Alice" }
+```
+
+Both variables point to same memory.
+
+---
+
+# 4. Example of shared mutation problem
+
+```javascript id="mut3"
+let user1 = { name: "John" };
+let user2 = user1;
+
+user2.name = "Alice";
+
+console.log(user1.name); // "Alice"
+```
+
+👉 Because objects are mutable and shared by reference.
+
+---
+
+# 5. How to achieve immutability in objects
+
+## 1. Spread operator (shallow copy)
+
+```javascript id="imm3"
+const obj1 = { a: 1 };
+const obj2 = { ...obj1 };
+
+obj2.a = 10;
+
+console.log(obj1.a); // 1
+```
+
+---
+
+## 2. Object.freeze()
+
+```javascript id="imm4"
+const obj = Object.freeze({ a: 1 });
+
+obj.a = 10;
+
+console.log(obj.a); // 1 (no change)
+```
+
+👉 Prevents modification (shallow freeze only)
+
+---
+
+## 3. Deep immutability (modern approach)
+
+```javascript id="imm5"
+const obj1 = { a: { b: 1 } };
+
+const obj2 = structuredClone(obj1);
+
+obj2.a.b = 99;
+
+console.log(obj1.a.b); // 1
+```
+
+---
+
+# 6. Important Differences Table
+
+| Feature         | Immutable         | Mutable                    |
+| --------------- | ----------------- | -------------------------- |
+| Can be changed  | ❌ No             | ✅ Yes                     |
+| Memory behavior | New copy created  | Same object modified       |
+| Data types      | Primitives        | Objects                    |
+| Safety          | High              | Risk of side effects       |
+| Performance     | More memory usage | More efficient for updates |
+
+---
+
+# 7. Real-world usage
+
+## Immutable usage:
+
+- Functional programming
+- Redux state management
+- Avoiding side effects
+
+## Mutable usage:
+
+- DOM manipulation
+- Performance-heavy operations
+- Data structures like arrays, maps
+
+---
+
+# 8. Common Interview Pitfall
+
+### ❌ Misconception:
+
+“Objects are copied when assigned”
+
+```javascript id="pit1"
+let a = { x: 1 };
+let b = a;
+```
+
+👉 This does NOT create a copy — it copies reference.
+
+---
+
+# 9. Key Interview Summary
+
+> Immutable objects cannot be changed after creation; any modification creates a new value. In JavaScript, primitives are immutable. Mutable objects, such as arrays and objects, can be modified directly in memory, and multiple variables may reference the same object. Understanding this distinction is crucial for avoiding unintended side effects and managing state correctly in applications.
+
 ## Question 8. What is the difference between a function and a method?
 
 ## Question 9. How to check if a variable is an array?
