@@ -1999,6 +1999,496 @@ It can prevent other code (including third-party libraries) from running.
 
 ## Question 7. How to use `JSON.stringify` and `JSON.parse` with reviver/replacer functions
 
+## Concise Answer
+
+`JSON.stringify()` accepts a **replacer** function (or array) that lets you customize how values are serialized to JSON.
+
+`JSON.parse()` accepts a **reviver** function that lets you transform values while converting JSON back into JavaScript objects.
+
+These are commonly used for:
+
+- Filtering properties
+- Transforming values
+- Handling Dates
+- Masking sensitive data
+- Custom serialization/deserialization
+
+---
+
+# 1. Syntax
+
+## `JSON.stringify()`
+
+```js
+JSON.stringify(value, replacer, space);
+```
+
+### Parameters
+
+```js
+JSON.stringify(object, replacerFunction, 2);
+```
+
+---
+
+## `JSON.parse()`
+
+```js
+JSON.parse(jsonString, reviver);
+```
+
+---
+
+# 2. Replacer Function
+
+The replacer function is called for every property.
+
+```js
+function replacer(key, value) {
+  return value;
+}
+```
+
+Parameters:
+
+| Parameter | Meaning                |
+| --------- | ---------------------- |
+| key       | Current property name  |
+| value     | Current property value |
+
+---
+
+# 3. Basic Replacer Example
+
+```js
+const user = {
+  name: "John",
+  age: 30,
+};
+
+const json = JSON.stringify(user, (key, value) => {
+  console.log(key, value);
+  return value;
+});
+
+console.log(json);
+```
+
+### Output
+
+```js
+"" {name: "John", age: 30}
+"name" John
+"age" 30
+
+{"name":"John","age":30}
+```
+
+Notice the first call represents the root object.
+
+---
+
+# 4. Filtering Properties
+
+Remove sensitive data.
+
+```js
+const user = {
+  username: "john",
+  password: "secret123",
+};
+
+const json = JSON.stringify(user, (key, value) => {
+  if (key === "password") {
+    return undefined;
+  }
+
+  return value;
+});
+
+console.log(json);
+```
+
+### Output
+
+```json
+{ "username": "john" }
+```
+
+### Important
+
+Returning `undefined` removes the property.
+
+---
+
+# 5. Transforming Values
+
+```js
+const product = {
+  name: "Laptop",
+  price: 1000,
+};
+
+const json = JSON.stringify(product, (key, value) => {
+  if (key === "price") {
+    return value * 1.18;
+  }
+
+  return value;
+});
+
+console.log(json);
+```
+
+### Output
+
+```json
+{ "name": "Laptop", "price": 1180 }
+```
+
+---
+
+# 6. Replacer Array
+
+Instead of a function, you can provide an array of keys.
+
+```js
+const user = {
+  name: "John",
+  age: 30,
+  city: "Delhi",
+};
+
+console.log(JSON.stringify(user, ["name", "city"]));
+```
+
+### Output
+
+```json
+{ "name": "John", "city": "Delhi" }
+```
+
+Only specified properties are included.
+
+---
+
+# 7. Pretty Printing
+
+Third argument controls indentation.
+
+```js
+JSON.stringify(user, null, 2);
+```
+
+Output:
+
+```json
+{
+  "name": "John",
+  "age": 30
+}
+```
+
+---
+
+# 8. Reviver Function
+
+A reviver is executed during parsing.
+
+```js
+function reviver(key, value) {
+  return value;
+}
+```
+
+It can transform values before the final object is returned.
+
+---
+
+# 9. Basic Reviver Example
+
+```js
+const json = '{"name":"John","age":30}';
+
+const user = JSON.parse(json, (key, value) => {
+  console.log(key, value);
+  return value;
+});
+```
+
+### Execution Order
+
+```js
+name John
+age 30
+"" {name:"John", age:30}
+```
+
+Unlike replacer, reviver processes from child properties upward.
+
+---
+
+# 10. Converting Strings to Dates
+
+Very common interview example.
+
+### Problem
+
+```js
+const user = {
+  createdAt: new Date(),
+};
+```
+
+After stringify:
+
+```json
+{
+  "createdAt": "2026-06-11T10:00:00.000Z"
+}
+```
+
+Date becomes a string.
+
+---
+
+### Solution
+
+```js
+const json = '{"createdAt":"2026-06-11T10:00:00.000Z"}';
+
+const user = JSON.parse(json, (key, value) => {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
+    return new Date(value);
+  }
+
+  return value;
+});
+
+console.log(user.createdAt instanceof Date);
+```
+
+### Output
+
+```js
+true;
+```
+
+---
+
+# 11. Custom Serialization + Deserialization
+
+### Stringify
+
+```js
+const user = {
+  name: "John",
+  age: 30,
+};
+
+const json = JSON.stringify(user, (key, value) => {
+  if (key === "age") {
+    return {
+      __type: "Age",
+      value,
+    };
+  }
+
+  return value;
+});
+```
+
+Output:
+
+```json
+{
+  "name": "John",
+  "age": {
+    "__type": "Age",
+    "value": 30
+  }
+}
+```
+
+---
+
+### Parse
+
+```js
+const obj = JSON.parse(json, (key, value) => {
+  if (value && value.__type === "Age") {
+    return value.value;
+  }
+
+  return value;
+});
+```
+
+Output:
+
+```js
+{
+  name: "John",
+  age: 30
+}
+```
+
+---
+
+# 12. Handling BigInt (Common Pitfall)
+
+JSON does not support BigInt.
+
+```js
+JSON.stringify({
+  id: 123n,
+});
+```
+
+### Error
+
+```js
+TypeError: Do not know how to serialize a BigInt
+```
+
+---
+
+### Solution
+
+```js
+JSON.stringify({ id: 123n }, (key, value) =>
+  typeof value === "bigint" ? value.toString() : value,
+);
+```
+
+Output:
+
+```json
+{ "id": "123" }
+```
+
+---
+
+# 13. Circular Reference Pitfall
+
+```js
+const obj = {};
+
+obj.self = obj;
+
+JSON.stringify(obj);
+```
+
+### Error
+
+```js
+TypeError: Converting circular structure to JSON
+```
+
+---
+
+### Replacer Workaround
+
+```js
+const seen = new WeakSet();
+
+const json = JSON.stringify(obj, (key, value) => {
+  if (typeof value === "object" && value !== null) {
+    if (seen.has(value)) {
+      return "[Circular]";
+    }
+
+    seen.add(value);
+  }
+
+  return value;
+});
+```
+
+---
+
+# 14. Execution Order (Interview Favorite)
+
+## Replacer
+
+Top → Down
+
+```text
+Root
+ ├─ name
+ └─ age
+```
+
+Execution:
+
+```text
+root
+name
+age
+```
+
+---
+
+## Reviver
+
+Bottom → Up
+
+```text
+name
+age
+root
+```
+
+---
+
+# 15. Real-World Example: Hide Sensitive Data
+
+```js
+const user = {
+  username: "john",
+  password: "secret",
+  token: "abc123",
+};
+
+const safeJson = JSON.stringify(user, (key, value) => {
+  if (key === "password" || key === "token") {
+    return "***";
+  }
+
+  return value;
+});
+
+console.log(safeJson);
+```
+
+Output:
+
+```json
+{
+  "username": "john",
+  "password": "***",
+  "token": "***"
+}
+```
+
+---
+
+# Replacer vs Reviver
+
+| Feature               | Replacer                | Reviver                          |
+| --------------------- | ----------------------- | -------------------------------- |
+| Used With             | `JSON.stringify()`      | `JSON.parse()`                   |
+| Purpose               | Customize serialization | Customize deserialization        |
+| Execution             | Top → Down              | Bottom → Up                      |
+| Can remove properties | Yes (`undefined`)       | Yes (`undefined`)                |
+| Common use            | Filtering, masking      | Date restoration, transformation |
+
+---
+
+# Interview Summary
+
+> `JSON.stringify()` accepts a replacer function that can filter, transform, or customize how values are converted into JSON. `JSON.parse()` accepts a reviver function that can transform values while reconstructing JavaScript objects. A common use case is serializing Dates as strings and restoring them back to `Date` objects during parsing. Replacers run from the root downward, while revivers run from child properties upward.
+
 ## Question 8. How to detect if a browser supports a certain feature (feature detection)
 
 ## Question 9. Difference between `document.readyState` and `DOMContentLoaded`
