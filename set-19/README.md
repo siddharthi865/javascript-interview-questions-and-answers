@@ -2439,6 +2439,507 @@ The **Observer Pattern** defines a one-to-many dependency between objects so tha
 
 ## Question 7. How to use `WeakRef` to prevent memory leaks
 
+## Direct Answer
+
+`WeakRef` allows you to hold a **weak reference** to an object without preventing it from being garbage collected. It is useful when you want to reference an object (e.g., cache entries, listeners, large DOM-related objects) but don't want that reference alone to keep the object alive and cause memory leaks.
+
+```js
+const obj = { data: "large object" };
+
+const weakRef = new WeakRef(obj);
+
+// Later
+const value = weakRef.deref();
+
+if (value) {
+  console.log(value.data);
+} else {
+  console.log("Object was garbage collected");
+}
+```
+
+---
+
+# What Problem Does WeakRef Solve?
+
+Normally, references are **strong references**:
+
+```js
+let user = {
+  name: "John",
+};
+
+const cache = {
+  user,
+};
+```
+
+Memory graph:
+
+```text
+cache
+  ↓
+ user object
+```
+
+As long as `cache.user` exists, the object cannot be garbage collected.
+
+This can cause memory leaks in:
+
+- Caches
+- Observer systems
+- Event listeners
+- Large object registries
+- DOM-related data structures
+
+---
+
+# Strong Reference vs Weak Reference
+
+## Strong Reference
+
+```js
+const cache = new Map();
+
+cache.set("user", {
+  name: "John",
+});
+```
+
+The object stays alive because the Map references it.
+
+---
+
+## Weak Reference
+
+```js
+const user = {
+  name: "John",
+};
+
+const weakRef = new WeakRef(user);
+```
+
+The JavaScript engine may garbage collect `user` when no strong references remain.
+
+---
+
+# How `WeakRef` Works
+
+Create:
+
+```js
+const ref = new WeakRef(obj);
+```
+
+Read:
+
+```js
+const value = ref.deref();
+```
+
+`deref()` returns:
+
+```js
+Object;
+```
+
+or
+
+```js
+undefined;
+```
+
+if the object was collected.
+
+Example:
+
+```js
+const user = {
+  name: "Alice",
+};
+
+const ref = new WeakRef(user);
+
+console.log(ref.deref());
+```
+
+Output:
+
+```js
+{
+  name: "Alice";
+}
+```
+
+---
+
+# Example: Weak Cache
+
+Without WeakRef:
+
+```js
+const cache = new Map();
+
+function store(id, data) {
+  cache.set(id, data);
+}
+```
+
+Problem:
+
+```text
+Map
+ ↓
+Objects remain forever
+```
+
+Potential memory leak.
+
+---
+
+With WeakRef:
+
+```js
+const cache = new Map();
+
+function store(id, value) {
+  cache.set(id, new WeakRef(value));
+}
+
+function get(id) {
+  const ref = cache.get(id);
+
+  return ref?.deref();
+}
+```
+
+Usage:
+
+```js
+let user = {
+  name: "John",
+};
+
+store("u1", user);
+
+console.log(get("u1"));
+
+user = null;
+```
+
+Now the object becomes eligible for garbage collection.
+
+---
+
+# Example: Observer Pattern Without Leaks
+
+A common issue:
+
+```js
+class Subject {
+  constructor() {
+    this.observers = [];
+  }
+
+  subscribe(observer) {
+    this.observers.push(observer);
+  }
+}
+```
+
+Problem:
+
+```text
+Subject
+ ↓
+Observer
+```
+
+Observers stay alive forever.
+
+---
+
+Using WeakRef:
+
+```js
+class Subject {
+  constructor() {
+    this.observers = [];
+  }
+
+  subscribe(observer) {
+    this.observers.push(new WeakRef(observer));
+  }
+
+  notify(message) {
+    this.observers = this.observers.filter((ref) => {
+      const observer = ref.deref();
+
+      if (!observer) {
+        return false;
+      }
+
+      observer.update(message);
+      return true;
+    });
+  }
+}
+```
+
+Benefits:
+
+- Dead observers disappear naturally
+- Less risk of memory leaks
+
+---
+
+# WeakRef + FinalizationRegistry
+
+`WeakRef` is often paired with `FinalizationRegistry`.
+
+It allows cleanup when an object is garbage collected.
+
+```js
+const registry = new FinalizationRegistry((key) => {
+  console.log(`Cleaning cache entry ${key}`);
+});
+```
+
+Register:
+
+```js
+let user = {
+  name: "John",
+};
+
+registry.register(user, "user-1");
+```
+
+When the object is collected:
+
+```text
+Cleaning cache entry user-1
+```
+
+may eventually run.
+
+---
+
+# Complete Cache Example
+
+```js
+const cache = new Map();
+
+const registry = new FinalizationRegistry((key) => {
+  cache.delete(key);
+});
+
+function add(key, obj) {
+  cache.set(key, new WeakRef(obj));
+
+  registry.register(obj, key);
+}
+```
+
+This prevents stale cache entries from accumulating.
+
+---
+
+# Why Not Just Use WeakMap?
+
+Interviewers often ask this.
+
+## WeakMap
+
+```js
+const map = new WeakMap();
+
+map.set(obj, data);
+```
+
+Characteristics:
+
+- Keys must be objects
+- Values are strong references
+- Automatic cleanup
+
+---
+
+## WeakRef
+
+```js
+const ref = new WeakRef(obj);
+```
+
+Characteristics:
+
+- Weakly references the object itself
+- Can be stored anywhere
+- More flexible
+
+---
+
+### Comparison
+
+| Feature            | WeakMap   | WeakRef                                |
+| ------------------ | --------- | -------------------------------------- |
+| Weak reference     | Key only  | Entire object                          |
+| Manual dereference | No        | Yes                                    |
+| Cache use          | Limited   | Excellent                              |
+| Cleanup support    | Automatic | Often paired with FinalizationRegistry |
+
+---
+
+# Important Caveats
+
+## 1. Never Depend on GC Timing
+
+Bad:
+
+```js
+user = null;
+
+console.log(ref.deref());
+```
+
+You cannot assume:
+
+```js
+undefined;
+```
+
+immediately.
+
+Garbage collection timing is non-deterministic.
+
+---
+
+## 2. Object May Disappear Anytime
+
+```js
+const value = ref.deref();
+```
+
+Always check:
+
+```js
+if (value) {
+  // use safely
+}
+```
+
+Never assume it exists.
+
+---
+
+## 3. Avoid Overusing WeakRef
+
+Most applications do **not** need it.
+
+Use it only when:
+
+- Memory retention is a proven issue
+- Large caches exist
+- Observer/listener systems are long-lived
+- Object lifetimes are difficult to manage manually
+
+---
+
+# Real-World Uses
+
+### Browser Frameworks
+
+Framework internals may use weak references for:
+
+- Component registries
+- Metadata storage
+- Virtual DOM caches
+
+---
+
+### Large Data Caches
+
+```js
+Image cache
+Query cache
+Compiled template cache
+```
+
+---
+
+### Observer Systems
+
+```js
+Subscribers
+Event listeners
+Plugin systems
+```
+
+---
+
+### IDEs and DevTools
+
+Large object graphs that should not remain permanently in memory.
+
+---
+
+# Common Interview Questions
+
+### Is WeakRef guaranteed to release memory?
+
+No.
+
+It only allows garbage collection.
+
+The engine decides when (or if) collection occurs.
+
+---
+
+### Can primitives be used?
+
+No.
+
+```js
+new WeakRef(42);
+```
+
+Throws:
+
+```text
+TypeError
+```
+
+Only objects are allowed.
+
+---
+
+### Does deref() always return the object?
+
+No.
+
+```js
+ref.deref();
+```
+
+returns:
+
+```js
+object;
+```
+
+or
+
+```js
+undefined;
+```
+
+---
+
+# Senior-Level Interview Summary
+
+`WeakRef` provides a weak reference to an object, allowing it to be garbage collected when no strong references remain. It is primarily used in advanced scenarios such as caches, observer registries, metadata stores, and framework internals where retaining objects unnecessarily can cause memory leaks. Because garbage collection is non-deterministic, `WeakRef` should be treated as an optimization tool rather than a core application mechanism. In production systems, it is often combined with `FinalizationRegistry` to clean up associated resources when objects are eventually collected.
+
 ## Question 8. Difference between shallow and deep freezing an object
 
 ## Question 9. How to implement a read-only object using Proxy
