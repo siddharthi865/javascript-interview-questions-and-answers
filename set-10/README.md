@@ -2768,6 +2768,487 @@ This distinction explains object mutation behavior, closures, garbage collection
 
 ## Question 7. How to handle circular references in objects?
 
+# How to Handle Circular References in JavaScript Objects?
+
+## Short Answer
+
+A **circular reference** occurs when an object directly or indirectly references itself.
+
+```js
+const obj = {};
+obj.self = obj;
+```
+
+Circular references can cause problems with:
+
+- `JSON.stringify()`
+- Deep cloning
+- Recursive traversal
+- Serialization
+
+Common solutions include:
+
+- Using a `WeakSet` to track visited objects
+- Custom `JSON.stringify` replacers
+- Using `structuredClone()`
+- Specialized libraries like Lodash
+
+---
+
+# What Is a Circular Reference?
+
+## Direct Circular Reference
+
+```js
+const obj = {
+  name: "John",
+};
+
+obj.self = obj;
+```
+
+Visualization:
+
+```txt
+obj
+ ├─ name: "John"
+ └─ self ─────┐
+              │
+              └──> obj
+```
+
+The object points back to itself.
+
+---
+
+## Indirect Circular Reference
+
+```js
+const user = {};
+const profile = {};
+
+user.profile = profile;
+profile.user = user;
+```
+
+Visualization:
+
+```txt
+user ───► profile
+  ▲         │
+  │         ▼
+  └─────────┘
+```
+
+Neither object references itself directly, but together they form a cycle.
+
+---
+
+# Problem 1: JSON.stringify Fails
+
+```js
+const obj = {};
+obj.self = obj;
+
+JSON.stringify(obj);
+```
+
+Output:
+
+```txt
+TypeError: Converting circular structure to JSON
+```
+
+Why?
+
+Because the serializer enters an infinite loop:
+
+```txt
+obj
+ └─ self
+      └─ self
+           └─ self
+                ...
+```
+
+---
+
+# Solution 1: Custom JSON.stringify Replacer
+
+A common interview solution is tracking visited objects with a `WeakSet`.
+
+```js
+function safeStringify(obj) {
+  const seen = new WeakSet();
+
+  return JSON.stringify(obj, (key, value) => {
+    if (typeof value === "object" && value !== null) {
+      if (seen.has(value)) {
+        return "[Circular]";
+      }
+
+      seen.add(value);
+    }
+
+    return value;
+  });
+}
+```
+
+Usage:
+
+```js
+const obj = {};
+obj.self = obj;
+
+console.log(safeStringify(obj));
+```
+
+Output:
+
+```json
+{
+  "self": "[Circular]"
+}
+```
+
+---
+
+# Why WeakSet?
+
+A `WeakSet`:
+
+- Stores object references
+- Doesn't prevent garbage collection
+- Is ideal for tracking visited objects
+
+```js
+const visited = new WeakSet();
+```
+
+This is a very common senior-level interview answer.
+
+---
+
+# Solution 2: Recursive Traversal with Cycle Detection
+
+Suppose you're writing your own object walker.
+
+Bad:
+
+```js
+function traverse(obj) {
+  for (const key in obj) {
+    traverse(obj[key]);
+  }
+}
+```
+
+Infinite recursion occurs with circular structures.
+
+---
+
+## Safe Version
+
+```js
+function traverse(obj, visited = new WeakSet()) {
+  if (typeof obj !== "object" || obj === null) {
+    return;
+  }
+
+  if (visited.has(obj)) {
+    return;
+  }
+
+  visited.add(obj);
+
+  for (const key in obj) {
+    traverse(obj[key], visited);
+  }
+}
+```
+
+Now cycles are safely skipped.
+
+---
+
+# Solution 3: Deep Clone with Circular References
+
+Naive deep clone:
+
+```js
+function clone(obj) {
+  if (typeof obj !== "object") {
+    return obj;
+  }
+
+  const copy = {};
+
+  for (const key in obj) {
+    copy[key] = clone(obj[key]);
+  }
+
+  return copy;
+}
+```
+
+Fails on circular references.
+
+---
+
+## Circular-Safe Clone
+
+Using a `WeakMap`:
+
+```js
+function deepClone(obj, visited = new WeakMap()) {
+  if (typeof obj !== "object" || obj === null) {
+    return obj;
+  }
+
+  if (visited.has(obj)) {
+    return visited.get(obj);
+  }
+
+  const copy = Array.isArray(obj) ? [] : {};
+
+  visited.set(obj, copy);
+
+  for (const key in obj) {
+    copy[key] = deepClone(obj[key], visited);
+  }
+
+  return copy;
+}
+```
+
+Example:
+
+```js
+const obj = {};
+obj.self = obj;
+
+const cloned = deepClone(obj);
+
+console.log(cloned.self === cloned);
+```
+
+Output:
+
+```txt
+true
+```
+
+The circular relationship is preserved.
+
+---
+
+# Solution 4: Use structuredClone()
+
+Modern JavaScript provides:
+
+```js
+const cloned = structuredClone(obj);
+```
+
+Example:
+
+```js
+const obj = {};
+obj.self = obj;
+
+const copy = structuredClone(obj);
+
+console.log(copy.self === copy);
+```
+
+Output:
+
+```txt
+true
+```
+
+Advantages:
+
+- Handles circular references automatically
+- Supports Maps
+- Supports Sets
+- Supports Dates
+- Supports TypedArrays
+
+Modern browsers and Node.js support it.
+
+---
+
+# WeakMap vs WeakSet
+
+Interviewers often ask which to use.
+
+### WeakSet
+
+Use when you only need to know:
+
+```js
+Have I visited this object?
+```
+
+Example:
+
+```js
+visited.add(obj);
+visited.has(obj);
+```
+
+---
+
+### WeakMap
+
+Use when you need a mapping:
+
+```js
+Original Object -> Cloned Object
+```
+
+Example:
+
+```js
+visited.set(original, clone);
+```
+
+Common in deep cloning algorithms.
+
+---
+
+# Real-World Example: Graph Structures
+
+```js
+const nodeA = {};
+const nodeB = {};
+
+nodeA.next = nodeB;
+nodeB.next = nodeA;
+```
+
+Graphs naturally contain cycles.
+
+Algorithms traversing graphs must maintain a visited collection.
+
+```js
+const visited = new WeakSet();
+```
+
+Otherwise recursion never terminates.
+
+---
+
+# Common Interview Pitfalls
+
+## Pitfall 1
+
+```js
+JSON.stringify(obj);
+```
+
+Assuming it works for every object.
+
+It fails for circular references.
+
+---
+
+## Pitfall 2
+
+```js
+const copy = JSON.parse(JSON.stringify(obj));
+```
+
+This also fails with circular structures.
+
+---
+
+## Pitfall 3
+
+Writing recursive functions without tracking visited nodes.
+
+```js
+walk(obj);
+```
+
+Can cause:
+
+```txt
+RangeError:
+Maximum call stack size exceeded
+```
+
+---
+
+# Modern Best Practice
+
+### Serialization
+
+```js
+safeStringify(obj);
+```
+
+or a library like:
+
+```js
+flatted;
+```
+
+---
+
+### Cloning
+
+```js
+structuredClone(obj);
+```
+
+Preferred in modern JavaScript.
+
+---
+
+### Traversal
+
+```js
+const visited = new WeakSet();
+```
+
+Track processed objects.
+
+---
+
+# Interview Summary
+
+> A circular reference occurs when an object directly or indirectly references itself. Circular structures can break serialization, deep cloning, and recursive traversal. The standard solution is to track visited objects using a `WeakSet` or `WeakMap` to prevent infinite recursion and duplicate processing.
+
+### Example
+
+```js
+const obj = {};
+obj.self = obj;
+```
+
+Safe traversal:
+
+```js
+const visited = new WeakSet();
+
+if (visited.has(obj)) {
+  return;
+}
+
+visited.add(obj);
+```
+
+### Key Interview Takeaways
+
+- `JSON.stringify()` throws on circular references.
+- Use `WeakSet` for cycle detection.
+- Use `WeakMap` for deep cloning.
+- `structuredClone()` handles circular references automatically.
+- Circular references are common in graphs, trees with parent links, DOM-like structures, and complex application state.
+
 ## Question 8. What are ES6 modules vs CommonJS modules?
 
 ## Question 9. Explain code splitting and lazy loading in JS
