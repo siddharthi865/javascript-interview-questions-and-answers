@@ -2363,6 +2363,515 @@ For large uploads.
 
 ## Question 7. Difference between Buffer and Stream in Node.js
 
+## ✅ Short Answer
+
+**Buffer** and **Stream** are both used for handling binary data in Node.js, but they work differently:
+
+- **Buffer** → Holds the **entire data in memory**.
+- **Stream** → Processes data **chunk by chunk** without loading everything into memory.
+
+### Simple Analogy
+
+Imagine a 5 GB movie file:
+
+- **Buffer** = Download the entire movie before watching.
+- **Stream** = Watch the movie while it is downloading.
+
+For large files and network operations, streams are generally more memory-efficient and scalable.
+
+---
+
+# 🧠 What is a Buffer?
+
+A **Buffer** is a fixed-size chunk of memory used to store raw binary data.
+
+JavaScript traditionally handles strings as UTF-16, but files, network packets, images, videos, and compressed data are binary. Node.js provides the `Buffer` class to work with such data efficiently.
+
+Example:
+
+```js
+const buffer = Buffer.from("Hello");
+
+console.log(buffer);
+```
+
+Output:
+
+```txt
+<Buffer 48 65 6c 6c 6f>
+```
+
+Each byte represents part of the string.
+
+---
+
+# Creating Buffers
+
+```js
+const buf1 = Buffer.alloc(10);
+
+const buf2 = Buffer.from("Node.js");
+
+const buf3 = Buffer.from([65, 66, 67]);
+```
+
+Output:
+
+```txt
+ABC
+```
+
+for `buf3.toString()`.
+
+---
+
+# Buffer Characteristics
+
+### Entire Data Lives in Memory
+
+```js
+const fs = require("fs");
+
+fs.readFile("large-video.mp4", (err, data) => {
+  console.log(data instanceof Buffer); // true
+});
+```
+
+Here:
+
+```txt
+File
+ ↓
+Entire File Loaded
+ ↓
+Buffer
+ ↓
+Callback
+```
+
+---
+
+### Advantages
+
+- Fast access
+- Easy manipulation
+- Good for small/medium data
+
+---
+
+### Disadvantages
+
+- High memory consumption
+- Not suitable for very large files
+- Can cause memory pressure
+
+---
+
+# What is a Stream?
+
+A **Stream** is an abstraction for reading or writing data incrementally.
+
+Instead of loading everything into memory:
+
+```txt
+File
+ ↓
+Chunk 1
+Chunk 2
+Chunk 3
+ ↓
+Application
+```
+
+Data flows continuously.
+
+---
+
+# Reading with a Stream
+
+```js
+const fs = require("fs");
+
+const stream = fs.createReadStream("large.log");
+
+stream.on("data", (chunk) => {
+  console.log(chunk.length);
+});
+```
+
+Each `chunk` is actually a Buffer:
+
+```txt
+Stream
+ ├─ Buffer Chunk #1
+ ├─ Buffer Chunk #2
+ ├─ Buffer Chunk #3
+```
+
+This is an important interview point:
+
+> Streams internally emit Buffer chunks by default.
+
+---
+
+# Key Difference
+
+## Buffer
+
+```txt
+Entire File
+     ↓
+  Buffer
+     ↓
+ Process
+```
+
+---
+
+## Stream
+
+```txt
+Chunk
+ ↓
+Process
+ ↓
+Chunk
+ ↓
+Process
+```
+
+---
+
+# Memory Comparison
+
+Suppose:
+
+```txt
+File Size = 2 GB
+```
+
+### Buffer Approach
+
+```js
+fs.readFile("big.zip");
+```
+
+Memory usage:
+
+```txt
+~2 GB RAM
+```
+
+---
+
+### Stream Approach
+
+```js
+fs.createReadStream("big.zip");
+```
+
+Memory usage:
+
+```txt
+64 KB – few MB
+```
+
+(depending on chunk size)
+
+---
+
+# Example: Reading a File
+
+## Buffer-Based
+
+```js
+const fs = require("fs");
+
+fs.readFile("data.txt", (err, data) => {
+  console.log(data.toString());
+});
+```
+
+Waits until entire file is loaded.
+
+---
+
+## Stream-Based
+
+```js
+const fs = require("fs");
+
+const stream = fs.createReadStream("data.txt");
+
+stream.on("data", (chunk) => {
+  console.log(chunk.toString());
+});
+```
+
+Processes data immediately.
+
+---
+
+# Performance Comparison
+
+| Feature       | Buffer             | Stream    |
+| ------------- | ------------------ | --------- |
+| Memory Usage  | High               | Low       |
+| Startup Time  | Wait for full load | Immediate |
+| Large Files   | Poor               | Excellent |
+| Random Access | Easy               | Harder    |
+| Scalability   | Lower              | Higher    |
+
+---
+
+# Buffer and Stream Relationship
+
+A common misconception:
+
+> "Buffer and Stream are competing concepts."
+
+Not exactly.
+
+Streams often use Buffers internally.
+
+Example:
+
+```js
+stream.on("data", (chunk) => {
+  console.log(Buffer.isBuffer(chunk));
+});
+```
+
+Output:
+
+```txt
+true
+```
+
+The stream emits Buffer objects.
+
+---
+
+# Types of Streams
+
+Node.js has four stream types:
+
+### Readable
+
+```js
+fs.createReadStream();
+```
+
+Reads data.
+
+---
+
+### Writable
+
+```js
+fs.createWriteStream();
+```
+
+Writes data.
+
+---
+
+### Duplex
+
+```js
+net.Socket;
+```
+
+Read and write.
+
+---
+
+### Transform
+
+```js
+zlib.createGzip();
+```
+
+Read, modify, write.
+
+---
+
+# Practical Example: File Copy
+
+## Buffer Approach
+
+```js
+fs.readFile("source.zip", (err, data) => {
+  fs.writeFile("dest.zip", data, () => {});
+});
+```
+
+Memory:
+
+```txt
+source.zip → RAM → dest.zip
+```
+
+Not ideal for huge files.
+
+---
+
+## Stream Approach
+
+```js
+fs.createReadStream("source.zip").pipe(fs.createWriteStream("dest.zip"));
+```
+
+Memory remains low.
+
+---
+
+# Backpressure Support
+
+Buffers alone do not provide backpressure.
+
+Streams do.
+
+Example:
+
+```txt
+Disk → 500 MB/s
+Network → 20 MB/s
+```
+
+Streams automatically:
+
+```txt
+Pause
+Resume
+Throttle
+```
+
+to avoid memory overload.
+
+This is one reason streams are preferred for network applications.
+
+---
+
+# When to Use Buffer
+
+Use Buffer when:
+
+✅ Data is relatively small
+✅ Need random access
+✅ Binary manipulation is required
+✅ Working with cryptography or protocols
+
+Example:
+
+```js
+const hash = crypto
+  .createHash("sha256")
+  .update(Buffer.from("secret"))
+  .digest("hex");
+```
+
+---
+
+# When to Use Stream
+
+Use Stream when:
+
+✅ Large files
+✅ Uploads/downloads
+✅ Video/audio processing
+✅ Network communication
+✅ Compression pipelines
+
+Example:
+
+```js
+fs.createReadStream("video.mp4").pipe(res);
+```
+
+---
+
+# Common Interview Pitfalls
+
+### ❌ "Streams don't use memory"
+
+Wrong.
+
+Streams use memory for chunks.
+
+The difference is:
+
+```txt
+Buffer → Entire dataset
+Stream → Small chunks
+```
+
+---
+
+### ❌ "Buffers are slower"
+
+Not necessarily.
+
+For small data:
+
+```txt
+Buffer can be faster and simpler.
+```
+
+---
+
+### ❌ "Stream data is not a Buffer"
+
+Wrong.
+
+By default:
+
+```js
+stream.on("data", (chunk) => {
+  console.log(Buffer.isBuffer(chunk));
+});
+```
+
+returns:
+
+```txt
+true
+```
+
+---
+
+# Real-World Example
+
+Serving a video:
+
+### Buffer
+
+```js
+const data = await fs.promises.readFile("movie.mp4");
+
+res.end(data);
+```
+
+Consumes memory proportional to file size.
+
+---
+
+### Stream
+
+```js
+fs.createReadStream("movie.mp4").pipe(res);
+```
+
+Consumes only chunk-sized memory.
+
+This is how production servers typically serve large media files.
+
+---
+
+# 🎯 Interview Summary
+
+> A Buffer is a memory structure used to store raw binary data in Node.js, while a Stream is an abstraction that processes data incrementally in chunks. Buffers require the entire dataset to be loaded into memory, making them suitable for smaller amounts of data or situations requiring random access. Streams are designed for large files and network operations because they process data piece by piece, support backpressure, and maintain low memory usage. Internally, streams often emit Buffer objects, so streams and buffers complement each other rather than being competing technologies.
+
 ## Question 8. How to implement rate limiting in Node.js APIs
 
 ## Question 9. How to prevent event loop blocking for CPU-intensive tasks
