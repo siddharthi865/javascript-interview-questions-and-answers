@@ -3043,6 +3043,563 @@ A strong interview answer should also discuss:
 
 ## Question 7. How to implement middleware pattern in frontend or backend
 
+The Middleware Pattern is a design pattern where requests, events, or data pass through a chain of processing functions before reaching the final handler.
+
+Each middleware can:
+
+- inspect data
+- modify data
+- stop execution
+- pass control to the next middleware
+- handle errors
+- add cross-cutting concerns
+
+Middleware is heavily used in:
+
+- Express.js
+- Koa
+- Redux
+- Next.js
+- NestJS
+- React state management
+- API clients
+- authentication pipelines
+
+---
+
+# Core Idea
+
+```txt id="9n2g6w"
+Request
+   ↓
+Middleware 1
+   ↓
+Middleware 2
+   ↓
+Middleware 3
+   ↓
+Final Handler
+```
+
+Each middleware decides whether to continue.
+
+---
+
+# Simple Middleware Implementation
+
+---
+
+# Basic Middleware Engine
+
+```js id="w93s7k"
+class MiddlewarePipeline {
+  constructor() {
+    this.middlewares = [];
+  }
+
+  use(fn) {
+    this.middlewares.push(fn);
+  }
+
+  execute(context) {
+    const dispatch = (index) => {
+      if (index === this.middlewares.length) {
+        return;
+      }
+
+      const middleware = this.middlewares[index];
+
+      middleware(context, () => {
+        dispatch(index + 1);
+      });
+    };
+
+    dispatch(0);
+  }
+}
+```
+
+Usage:
+
+```js id="8kjlwm"
+const app = new MiddlewarePipeline();
+
+app.use((ctx, next) => {
+  console.log("Middleware 1");
+
+  next();
+});
+
+app.use((ctx, next) => {
+  console.log("Middleware 2");
+
+  next();
+});
+
+app.execute({});
+```
+
+Output:
+
+```txt id="2jlwm8"
+Middleware 1
+Middleware 2
+```
+
+---
+
+# Understanding `next()`
+
+`next()` passes control to the next middleware.
+
+```txt id="jlwm4r"
+middleware A
+   ↓ next()
+middleware B
+   ↓ next()
+middleware C
+```
+
+Without `next()`, the chain stops.
+
+---
+
+# Express.js Middleware Example
+
+The most common real-world implementation.
+
+```js id="0jlwm2"
+app.use((req, res, next) => {
+  console.log("Request received");
+
+  next();
+});
+```
+
+Authentication middleware:
+
+```js id="9jlwm1"
+app.use((req, res, next) => {
+  if (!req.user) {
+    return res.status(401).send("Unauthorized");
+  }
+
+  next();
+});
+```
+
+Error middleware:
+
+```js id="7jlwm0"
+app.use((err, req, res, next) => {
+  console.error(err);
+
+  res.status(500).send("Server Error");
+});
+```
+
+---
+
+# Koa-Style Async Middleware
+
+Koa introduced async middleware composition.
+
+---
+
+# Async Middleware Engine
+
+```js id="6jlwm9"
+class App {
+  constructor() {
+    this.middlewares = [];
+  }
+
+  use(fn) {
+    this.middlewares.push(fn);
+  }
+
+  compose(context) {
+    const dispatch = (index) => {
+      if (index >= this.middlewares.length) {
+        return Promise.resolve();
+      }
+
+      const middleware = this.middlewares[index];
+
+      return Promise.resolve(middleware(context, () => dispatch(index + 1)));
+    };
+
+    return dispatch(0);
+  }
+}
+```
+
+Usage:
+
+```js id="5jlwm8"
+const app = new App();
+
+app.use(async (ctx, next) => {
+  console.log("Start 1");
+
+  await next();
+
+  console.log("End 1");
+});
+
+app.use(async (ctx, next) => {
+  console.log("Start 2");
+
+  await next();
+
+  console.log("End 2");
+});
+
+app.compose({});
+```
+
+Output:
+
+```txt id="4jlwm7"
+Start 1
+Start 2
+End 2
+End 1
+```
+
+This "onion model" is a key Koa concept.
+
+---
+
+# Frontend Middleware Example (Redux)
+
+Redux middleware intercepts actions.
+
+```js id="3jlwm6"
+const loggerMiddleware = (store) => (next) => (action) => {
+  console.log("Dispatching:", action);
+
+  return next(action);
+};
+```
+
+Usage:
+
+```js id="2jlwm5"
+const store = createStore(reducer, applyMiddleware(loggerMiddleware));
+```
+
+Middleware can:
+
+- log actions
+- modify actions
+- delay actions
+- dispatch async actions
+
+---
+
+# Implementing Redux-Like Middleware
+
+---
+
+# Store
+
+```js id="1jlwm4"
+function createStore(reducer, middlewares = []) {
+  let state;
+
+  const store = {
+    getState: () => state,
+
+    dispatch: (action) => {
+      state = reducer(state, action);
+    },
+  };
+
+  let dispatch = store.dispatch;
+
+  middlewares.reverse().forEach((middleware) => {
+    dispatch = middleware(store)(dispatch);
+  });
+
+  store.dispatch = dispatch;
+
+  return store;
+}
+```
+
+---
+
+# Logger Middleware
+
+```js id="0jlwm3"
+const logger = (store) => (next) => (action) => {
+  console.log("Before:", store.getState());
+
+  next(action);
+
+  console.log("After:", store.getState());
+};
+```
+
+---
+
+# Axios Interceptors (Middleware Concept)
+
+Frontend HTTP clients also use middleware concepts.
+
+```js id="zjlwm2"
+axios.interceptors.request.use((config) => {
+  config.headers.Authorization = "token";
+
+  return config;
+});
+```
+
+Response middleware:
+
+```js id="yjlwm1"
+axios.interceptors.response.use((response) => {
+  return response.data;
+});
+```
+
+---
+
+# Real-World Middleware Use Cases
+
+| Use Case       | Example                   |
+| -------------- | ------------------------- |
+| Authentication | JWT validation            |
+| Logging        | Request logs              |
+| Error handling | Global exception handling |
+| Rate limiting  | API throttling            |
+| Validation     | Input validation          |
+| Caching        | Response cache            |
+| Analytics      | Event tracking            |
+| Compression    | Gzip middleware           |
+| Security       | Helmet/CORS               |
+
+---
+
+# Middleware Composition
+
+Middleware forms a pipeline.
+
+```txt id="xjlwm0"
+Request
+ ↓
+Auth
+ ↓
+Validation
+ ↓
+Logger
+ ↓
+Controller
+```
+
+Each layer has one responsibility.
+
+---
+
+# Short-Circuiting Middleware
+
+Middleware can stop execution.
+
+```js id="wjlwm9"
+app.use((req, res, next) => {
+  if (!req.user) {
+    return res.status(401).send("Unauthorized");
+  }
+
+  next();
+});
+```
+
+This is extremely common.
+
+---
+
+# Error Handling Middleware
+
+---
+
+# Custom Error Middleware
+
+```js id="vjlwm8"
+function errorMiddleware(err, req, res, next) {
+  console.error(err);
+
+  res.status(500).json({
+    error: err.message,
+  });
+}
+```
+
+Centralized error management is a major benefit.
+
+---
+
+# Middleware vs Decorator Pattern
+
+Interview nuance.
+
+| Middleware          | Decorator                  |
+| ------------------- | -------------------------- |
+| Pipeline processing | Enhances object behavior   |
+| Sequential chain    | Object wrapping            |
+| Request lifecycle   | Class/function enhancement |
+
+---
+
+# Middleware vs Chain of Responsibility
+
+Middleware is essentially a specialized form of Chain of Responsibility.
+
+```txt id="ujlwm7"
+Handler → Handler → Handler
+```
+
+Difference:
+
+- middleware usually modifies request/response lifecycle
+- chain-of-responsibility may route requests differently
+
+---
+
+# Common Pitfalls
+
+---
+
+# 1. Forgetting `next()`
+
+Bad:
+
+```js id="tjlwm6"
+app.use((req, res, next) => {
+  console.log("Oops");
+});
+```
+
+Request hangs forever.
+
+---
+
+# 2. Calling `next()` Multiple Times
+
+Can cause:
+
+```txt id="sjlwm5"
+Headers already sent
+```
+
+errors.
+
+---
+
+# 3. Shared Mutable State
+
+Modifying shared objects carelessly can create bugs.
+
+---
+
+# 4. Deep Middleware Stacks
+
+Too many layers can hurt:
+
+- readability
+- debugging
+- performance
+
+---
+
+# 5. Async Error Handling
+
+Forgotten `await` or uncaught promise rejections are common issues.
+
+---
+
+# Best Practices
+
+---
+
+# Keep Middleware Focused
+
+One responsibility per middleware.
+
+Good:
+
+```txt id="rjlwm4"
+authMiddleware
+loggerMiddleware
+cacheMiddleware
+```
+
+---
+
+# Use Async/Await Carefully
+
+Always handle errors properly.
+
+---
+
+# Order Matters
+
+Middleware execution order is critical.
+
+```txt id="qjlwm3"
+Auth before protected routes
+Logger before handlers
+Error middleware last
+```
+
+---
+
+# Avoid Business Logic in Middleware
+
+Middleware should handle cross-cutting concerns.
+
+---
+
+# Interview Summary
+
+The Middleware Pattern processes requests or data through a chain of handlers where each middleware can inspect, modify, terminate, or pass control forward.
+
+Key concepts:
+
+- chain-based processing
+- `next()` delegation
+- request/response lifecycle
+- interception and transformation
+- cross-cutting concerns
+
+Common JavaScript implementations:
+
+- Express middleware
+- Koa async middleware
+- Redux middleware
+- Axios interceptors
+
+Widely used for:
+
+- authentication
+- logging
+- validation
+- caching
+- error handling
+- analytics
+- security
+
+A strong interview answer should also discuss:
+
+- middleware composition
+- async middleware
+- onion model
+- short-circuiting
+- middleware vs chain-of-responsibility
+- common `next()` pitfalls
+- request lifecycle management
+
 ## Question 8. How to implement a decorator pattern using higher-order functions
 
 ## Question 9. How to implement chain of responsibility pattern in JS
