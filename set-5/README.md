@@ -1776,6 +1776,277 @@ Async iterators in JavaScript allow you to work with asynchronous sequences of d
 
 ## Question 7. What is Proxy in JavaScript? Give use case
 
+### Short Answer
+
+A **Proxy in JavaScript** is an object that wraps another object (called the _target_) and lets you **intercept and customize fundamental operations** like property access, assignment, deletion, function calls, etc., using handler functions called **traps**.
+
+---
+
+# Proxy in JavaScript (Interview-Ready Explanation)
+
+## 1. What is a Proxy?
+
+A Proxy acts as a **middleware layer** between your code and an object.
+
+Instead of directly interacting with the object:
+
+```javascript
+obj.name;
+```
+
+you interact with:
+
+```javascript
+proxy.name;
+```
+
+and the Proxy can control what happens internally.
+
+---
+
+## 2. Basic Syntax
+
+```javascript id="p1"
+const proxy = new Proxy(target, handler);
+```
+
+- **target** → original object
+- **handler** → object containing traps (rules for interception)
+
+---
+
+## 3. Simple Example (get trap)
+
+```javascript id="p2"
+const user = {
+  name: "John",
+};
+
+const proxyUser = new Proxy(user, {
+  get(target, prop) {
+    return target[prop] || "Property does not exist";
+  },
+});
+
+console.log(proxyUser.name); // John
+console.log(proxyUser.age); // Property does not exist
+```
+
+### What happened?
+
+- `get()` trap intercepts property access
+- You can modify or control the result
+
+---
+
+## 4. Common Proxy Traps
+
+| Trap             | Purpose                     |
+| ---------------- | --------------------------- |
+| `get`            | Reading property            |
+| `set`            | Writing property            |
+| `has`            | `in` operator               |
+| `deleteProperty` | Deleting property           |
+| `apply`          | Function call interception  |
+| `construct`      | `new` operator interception |
+
+---
+
+## 5. Example: Validation using `set` trap
+
+```javascript id="p3"
+const user = {};
+
+const proxyUser = new Proxy(user, {
+  set(target, prop, value) {
+    if (prop === "age") {
+      if (typeof value !== "number") {
+        throw new Error("Age must be a number");
+      }
+    }
+
+    target[prop] = value;
+    return true;
+  },
+});
+
+proxyUser.age = 25; // OK
+proxyUser.age = "twenty"; // Error
+```
+
+👉 Proxy helps enforce rules centrally
+
+---
+
+## 6. Example: Function interception (`apply` trap)
+
+```javascript id="p4"
+function sum(a, b) {
+  return a + b;
+}
+
+const proxySum = new Proxy(sum, {
+  apply(target, thisArg, args) {
+    console.log("Calling function with:", args);
+    return target(...args);
+  },
+});
+
+console.log(proxySum(2, 3));
+```
+
+Output:
+
+```text
+Calling function with: [2, 3]
+5
+```
+
+---
+
+## 7. Real-World Use Cases
+
+### 1. Data Validation (Forms, APIs)
+
+Ensure correct values before updating objects:
+
+```javascript id="p5"
+const product = new Proxy(
+  {},
+  {
+    set(target, prop, value) {
+      if (prop === "price" && value < 0) {
+        throw new Error("Price cannot be negative");
+      }
+      target[prop] = value;
+      return true;
+    },
+  },
+);
+```
+
+---
+
+### 2. Reactivity System (Vue.js style)
+
+Frameworks use Proxy to track changes:
+
+```javascript id="p6"
+const state = new Proxy(
+  { count: 0 },
+  {
+    set(target, prop, value) {
+      target[prop] = value;
+      console.log(`${prop} changed to ${value}`);
+      return true;
+    },
+  },
+);
+
+state.count = 1;
+```
+
+👉 This is the core idea behind reactive frameworks like Vue 3.
+
+---
+
+### 3. Access Logging / Debugging
+
+```javascript id="p7"
+const user = {
+  name: "Alice",
+};
+
+const proxy = new Proxy(user, {
+  get(target, prop) {
+    console.log(`Accessed: ${prop}`);
+    return target[prop];
+  },
+});
+
+console.log(proxy.name);
+```
+
+---
+
+### 4. Default Values (Safe Objects)
+
+```javascript id="p8"
+const safeObj = new Proxy(
+  {},
+  {
+    get(target, prop) {
+      return prop in target ? target[prop] : 0;
+    },
+  },
+);
+
+console.log(safeObj.missing); // 0
+```
+
+---
+
+### 5. Security / Access Control
+
+Restrict access to sensitive fields:
+
+```javascript id="p9"
+const user = {
+  name: "John",
+  password: "secret",
+};
+
+const proxy = new Proxy(user, {
+  get(target, prop) {
+    if (prop === "password") {
+      throw new Error("Access denied");
+    }
+    return target[prop];
+  },
+});
+```
+
+---
+
+## 8. Proxy vs Object.defineProperty
+
+| Feature                  | Proxy           | Object.defineProperty |
+| ------------------------ | --------------- | --------------------- |
+| Intercept all properties | ✅              | ❌                    |
+| Dynamic properties       | ✅              | ❌                    |
+| Array handling           | Easy            | Complex               |
+| Performance              | Slight overhead | Faster                |
+| Flexibility              | Very high       | Limited               |
+
+👉 Proxy is the modern, more powerful approach
+
+---
+
+## 9. Important Limitations
+
+- Cannot be polyfilled in older browsers
+- Slight performance overhead
+- Must use handler traps carefully (can break object behavior if misused)
+
+---
+
+## 10. Key Interview Insight
+
+Proxy is not just a feature — it's a **meta-programming tool**.
+
+It allows you to:
+
+- Observe
+- Modify
+- Control
+- Replace behavior of objects dynamically
+
+---
+
+## 11. Interview-Ready Summary
+
+A Proxy in JavaScript is a wrapper around an object that allows you to intercept and redefine fundamental operations like property access, assignment, and function calls using handler traps. It is commonly used for validation, logging, reactivity systems (like in Vue.js), access control, and default value handling. Compared to `Object.defineProperty`, Proxy is more powerful because it can intercept all operations on an object dynamically.
+
 ## Question 8. What is Reflect API?
 
 ## Question 9. How to create private fields in JS classes
