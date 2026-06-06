@@ -2262,6 +2262,486 @@ Key concepts interviewers expect:
 
 ## Question 7. Difference between fetch API and XMLHttpRequest
 
+## ✅ Direct Answer
+
+Both **Fetch API** and **XMLHttpRequest (XHR)** are used to make HTTP requests in JavaScript, but **Fetch is the modern, Promise-based API**, while **XMLHttpRequest is the older callback/event-based API**.
+
+For modern applications, **Fetch is generally preferred** because it provides cleaner syntax, better integration with `async/await`, and a more flexible API.
+
+---
+
+# 🧠 Historical Context
+
+Before ES6 Promises existed, AJAX requests were typically made using `XMLHttpRequest`.
+
+```javascript
+const xhr = new XMLHttpRequest();
+```
+
+Later, the Fetch API was introduced to provide a more modern and easier-to-use interface:
+
+```javascript
+fetch("/api/users");
+```
+
+---
+
+# Basic Example Comparison
+
+## XMLHttpRequest
+
+```javascript
+const xhr = new XMLHttpRequest();
+
+xhr.open("GET", "/api/users");
+
+xhr.onload = function () {
+  if (xhr.status === 200) {
+    console.log(xhr.responseText);
+  }
+};
+
+xhr.onerror = function () {
+  console.log("Network Error");
+};
+
+xhr.send();
+```
+
+---
+
+## Fetch API
+
+```javascript
+fetch("/api/users")
+  .then((response) => response.json())
+  .then((data) => console.log(data))
+  .catch((error) => console.error(error));
+```
+
+Or using `async/await`:
+
+```javascript
+async function getUsers() {
+  try {
+    const response = await fetch("/api/users");
+    const data = await response.json();
+
+    console.log(data);
+  } catch (err) {
+    console.error(err);
+  }
+}
+```
+
+---
+
+# Key Differences
+
+| Feature                  | Fetch API                          | XMLHttpRequest       |
+| ------------------------ | ---------------------------------- | -------------------- |
+| Introduced               | Modern                             | Older                |
+| Style                    | Promise-based                      | Event/callback-based |
+| async/await support      | ✅ Native                          | ❌ No                |
+| Cleaner syntax           | ✅ Yes                             | ❌ Verbose           |
+| Request/Response objects | ✅ Rich API                        | ❌ Limited           |
+| Streaming support        | ✅ Yes                             | ❌ Limited           |
+| Progress events          | ⚠️ Download streams, upload harder | ✅ Built-in          |
+| Abort requests           | ✅ AbortController                 | ✅ abort()           |
+| Default JSON handling    | Manual `.json()`                   | Manual parsing       |
+| Browser support          | Modern browsers                    | Very broad           |
+
+---
+
+# Response Handling
+
+## Fetch
+
+Fetch returns a `Response` object.
+
+```javascript
+const response = await fetch("/api/users");
+
+console.log(response.status);
+console.log(response.ok);
+```
+
+Parse JSON:
+
+```javascript
+const data = await response.json();
+```
+
+---
+
+## XHR
+
+Response data comes through properties:
+
+```javascript
+xhr.responseText;
+xhr.status;
+xhr.readyState;
+```
+
+Example:
+
+```javascript
+xhr.onload = () => {
+  console.log(xhr.responseText);
+};
+```
+
+---
+
+# Error Handling Difference (Very Important Interview Question)
+
+## Fetch
+
+Fetch only rejects for **network-level failures**.
+
+```javascript
+fetch("/not-found").then((response) => {
+  console.log(response.status);
+});
+```
+
+404 does **not** trigger `.catch()`.
+
+Example:
+
+```javascript
+try {
+  const response = await fetch("/not-found");
+
+  console.log(response.status); // 404
+} catch (err) {
+  console.log("Won't execute");
+}
+```
+
+---
+
+### Correct Fetch Pattern
+
+```javascript
+const response = await fetch("/api");
+
+if (!response.ok) {
+  throw new Error(`HTTP Error: ${response.status}`);
+}
+```
+
+---
+
+## XHR
+
+You manually inspect status codes:
+
+```javascript
+xhr.onload = () => {
+  if (xhr.status >= 200 && xhr.status < 300) {
+    console.log("Success");
+  } else {
+    console.log("HTTP Error");
+  }
+};
+```
+
+---
+
+# Request Cancellation
+
+## Fetch
+
+Uses `AbortController`.
+
+```javascript
+const controller = new AbortController();
+
+fetch("/api/users", {
+  signal: controller.signal,
+});
+
+controller.abort();
+```
+
+---
+
+## XHR
+
+```javascript
+const xhr = new XMLHttpRequest();
+
+xhr.open("GET", "/api/users");
+
+xhr.send();
+
+xhr.abort();
+```
+
+---
+
+# Sending POST Requests
+
+## Fetch
+
+```javascript
+fetch("/api/users", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    name: "John",
+  }),
+});
+```
+
+---
+
+## XHR
+
+```javascript
+const xhr = new XMLHttpRequest();
+
+xhr.open("POST", "/api/users");
+
+xhr.setRequestHeader("Content-Type", "application/json");
+
+xhr.send(
+  JSON.stringify({
+    name: "John",
+  }),
+);
+```
+
+---
+
+# Progress Tracking
+
+This is one area where XHR still has an advantage.
+
+## XHR Upload Progress
+
+```javascript
+xhr.upload.onprogress = (event) => {
+  console.log(`${event.loaded}/${event.total}`);
+};
+```
+
+Useful for:
+
+- file uploads
+- progress bars
+
+---
+
+## Fetch
+
+Traditional Fetch lacks simple upload progress events.
+
+For advanced cases:
+
+- Streams API
+- ReadableStream
+- custom progress tracking
+
+are required.
+
+This is one reason many upload libraries still use XHR internally.
+
+---
+
+# Streaming Support
+
+Fetch supports streaming responses.
+
+```javascript
+const response = await fetch("/large-file");
+
+const reader = response.body.getReader();
+```
+
+This allows:
+
+- large file processing
+- incremental rendering
+- efficient memory usage
+
+XHR generally waits for larger chunks and is less flexible.
+
+---
+
+# Credentials and Cookies
+
+## Fetch
+
+```javascript
+fetch("/api", {
+  credentials: "include",
+});
+```
+
+Options:
+
+```javascript
+"omit";
+"same-origin";
+"include";
+```
+
+---
+
+## XHR
+
+```javascript
+xhr.withCredentials = true;
+```
+
+---
+
+# Promise Chaining Benefits
+
+With Fetch:
+
+```javascript
+fetch("/api")
+  .then((r) => r.json())
+  .then((data) => process(data))
+  .catch(handleError);
+```
+
+or:
+
+```javascript
+const data = await fetch("/api").then((r) => r.json());
+```
+
+This integrates naturally with:
+
+- Promises
+- async/await
+- Promise.all
+- Promise.race
+
+XHR does not.
+
+---
+
+# Common Interview Pitfalls
+
+## Pitfall 1: Fetch rejects on 404
+
+Wrong:
+
+```javascript
+try {
+  await fetch("/404");
+} catch {
+  console.log("404");
+}
+```
+
+Will not execute.
+
+Correct:
+
+```javascript
+const res = await fetch("/404");
+
+if (!res.ok) {
+  throw new Error("HTTP Error");
+}
+```
+
+---
+
+## Pitfall 2: Forgetting `.json()`
+
+Wrong:
+
+```javascript
+const data = await fetch("/api");
+
+console.log(data);
+```
+
+Output:
+
+```javascript
+Response { ... }
+```
+
+Need:
+
+```javascript
+const data = await response.json();
+```
+
+---
+
+## Pitfall 3: Assuming Fetch supports upload progress easily
+
+For upload progress bars, XHR is often simpler.
+
+---
+
+# Performance Considerations
+
+Neither is inherently faster.
+
+The network request is the same.
+
+Differences are mostly in:
+
+- API design
+- developer experience
+- streaming capabilities
+- browser integration
+
+---
+
+# When to Use Each
+
+## Use Fetch When
+
+- Modern applications
+- React/Vue/Angular projects
+- Async/await codebases
+- Promise-based workflows
+- Streaming responses
+
+---
+
+## Use XHR When
+
+- Legacy browser support
+- Existing codebases
+- Simple upload progress tracking
+- Maintaining older applications
+
+---
+
+# 🚀 Interview-Ready Summary
+
+**Fetch API** is the modern replacement for **XMLHttpRequest**. It provides a Promise-based interface, works naturally with `async/await`, supports streaming, and offers cleaner code.
+
+```javascript
+const response = await fetch("/api");
+const data = await response.json();
+```
+
+**XMLHttpRequest** is older, event-driven, and more verbose:
+
+```javascript
+const xhr = new XMLHttpRequest();
+xhr.open("GET", "/api");
+xhr.send();
+```
+
+The most important interview distinction is that **Fetch only rejects on network failures**, while HTTP errors like **404 or 500 must be handled manually using `response.ok` or `response.status`**.
+
 ## Question 8. How to cancel a fetch request using AbortController
 
 ## Question 9. How to upload files using JavaScript
