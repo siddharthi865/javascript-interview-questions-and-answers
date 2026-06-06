@@ -2098,6 +2098,548 @@ Synchronous iterables block until iteration finishes.
 
 ## Question 7. How to use Symbol.iterator to make an object iterable
 
+## Concise Answer
+
+To make a custom object iterable, implement the **`Symbol.iterator`** method. This method must return an **iterator object** that has a `next()` method returning:
+
+```js
+{
+  value: ...,
+  done: true | false
+}
+```
+
+Once implemented, the object can be used with:
+
+- `for...of`
+- spread operator (`...`)
+- `Array.from()`
+- destructuring
+
+---
+
+# What Is `Symbol.iterator`?
+
+JavaScript's iteration protocol is based on:
+
+```js
+Symbol.iterator;
+```
+
+When you write:
+
+```js
+for (const item of iterable) {
+  console.log(item);
+}
+```
+
+JavaScript internally does:
+
+```js
+const iterator = iterable[Symbol.iterator]();
+```
+
+and repeatedly calls:
+
+```js
+iterator.next();
+```
+
+---
+
+# Example 1: Manual Iterator Implementation
+
+```js
+const range = {
+  start: 1,
+  end: 3,
+
+  [Symbol.iterator]() {
+    let current = this.start;
+    let end = this.end;
+
+    return {
+      next() {
+        if (current <= end) {
+          return {
+            value: current++,
+            done: false,
+          };
+        }
+
+        return {
+          done: true,
+        };
+      },
+    };
+  },
+};
+
+for (const num of range) {
+  console.log(num);
+}
+```
+
+### Output
+
+```js
+1;
+2;
+3;
+```
+
+---
+
+# How It Works Internally
+
+```js
+const iterator = range[Symbol.iterator]();
+
+console.log(iterator.next());
+console.log(iterator.next());
+console.log(iterator.next());
+console.log(iterator.next());
+```
+
+Output:
+
+```js
+{ value: 1, done: false }
+{ value: 2, done: false }
+{ value: 3, done: false }
+{ done: true }
+```
+
+---
+
+# Example 2: Using a Generator (Recommended)
+
+Most modern code uses generators because they automatically create iterators.
+
+```js
+const range = {
+  start: 1,
+  end: 3,
+
+  *[Symbol.iterator]() {
+    for (let i = this.start; i <= this.end; i++) {
+      yield i;
+    }
+  },
+};
+
+for (const num of range) {
+  console.log(num);
+}
+```
+
+Output:
+
+```js
+1;
+2;
+3;
+```
+
+---
+
+# Why Generators Are Better
+
+Without generator:
+
+```js
+return {
+  next() {
+    ...
+  }
+};
+```
+
+With generator:
+
+```js
+yield value;
+```
+
+The JavaScript engine automatically:
+
+- creates the iterator
+- manages state
+- handles `done`
+- remembers execution position
+
+---
+
+# Example 3: Making a Custom Collection Iterable
+
+```js
+const team = {
+  members: ["Alice", "Bob", "Charlie"],
+
+  *[Symbol.iterator]() {
+    for (const member of this.members) {
+      yield member;
+    }
+  },
+};
+
+for (const member of team) {
+  console.log(member);
+}
+```
+
+Output:
+
+```js
+Alice;
+Bob;
+Charlie;
+```
+
+---
+
+# Spread Operator Support
+
+Once iterable:
+
+```js
+const range = {
+  *[Symbol.iterator]() {
+    yield 1;
+    yield 2;
+    yield 3;
+  },
+};
+
+console.log([...range]);
+```
+
+Output:
+
+```js
+[1, 2, 3];
+```
+
+Because spread internally uses:
+
+```js
+Symbol.iterator;
+```
+
+---
+
+# Array.from Support
+
+```js
+const iterable = {
+  *[Symbol.iterator]() {
+    yield "A";
+    yield "B";
+    yield "C";
+  },
+};
+
+console.log(Array.from(iterable));
+```
+
+Output:
+
+```js
+["A", "B", "C"];
+```
+
+---
+
+# Destructuring Support
+
+```js
+const numbers = {
+  *[Symbol.iterator]() {
+    yield 10;
+    yield 20;
+    yield 30;
+  },
+};
+
+const [a, b] = numbers;
+
+console.log(a, b);
+```
+
+Output:
+
+```js
+10 20
+```
+
+Destructuring also relies on the iterable protocol.
+
+---
+
+# Interview Trick Question
+
+## Why Doesn't This Work?
+
+```js
+const obj = {
+  a: 1,
+  b: 2,
+};
+
+for (const item of obj) {
+  console.log(item);
+}
+```
+
+Output:
+
+```js
+TypeError: obj is not iterable
+```
+
+### Why?
+
+Plain objects do **not** implement:
+
+```js
+Symbol.iterator;
+```
+
+Only built-in iterables like:
+
+- Arrays
+- Strings
+- Maps
+- Sets
+
+have it by default.
+
+---
+
+# Making a Plain Object Iterable
+
+```js
+const obj = {
+  a: 1,
+  b: 2,
+
+  *[Symbol.iterator]() {
+    for (const key of Object.keys(this)) {
+      if (key !== Symbol.iterator) {
+        yield [key, this[key]];
+      }
+    }
+  },
+};
+
+for (const [key, value] of obj) {
+  console.log(key, value);
+}
+```
+
+Output:
+
+```js
+a 1
+b 2
+```
+
+A cleaner version:
+
+```js
+const obj = {
+  a: 1,
+  b: 2,
+
+  *[Symbol.iterator]() {
+    yield* Object.entries(this);
+  },
+};
+```
+
+---
+
+# Iterator vs Iterable
+
+A very common interview question.
+
+## Iterable
+
+Has:
+
+```js
+Symbol.iterator;
+```
+
+Example:
+
+```js
+const arr = [1, 2, 3];
+```
+
+---
+
+## Iterator
+
+Has:
+
+```js
+next();
+```
+
+Example:
+
+```js
+const iterator = arr[Symbol.iterator]();
+```
+
+Then:
+
+```js
+iterator.next();
+```
+
+returns:
+
+```js
+{
+  value: 1,
+  done: false
+}
+```
+
+---
+
+# Advanced: Iterable Iterator
+
+Generators return objects that are both:
+
+- iterable
+- iterator
+
+```js
+function* gen() {
+  yield 1;
+}
+```
+
+```js
+const g = gen();
+```
+
+This is valid:
+
+```js
+g[Symbol.iterator]() === g;
+```
+
+Result:
+
+```js
+true;
+```
+
+---
+
+# Common Pitfalls
+
+### ❌ Returning an array instead of an iterator
+
+Wrong:
+
+```js
+[Symbol.iterator]() {
+  return [1,2,3];
+}
+```
+
+Must return an iterator.
+
+---
+
+### ❌ Forgetting `done`
+
+Wrong:
+
+```js
+next() {
+  return { value: 1 };
+}
+```
+
+Can cause infinite iteration.
+
+Correct:
+
+```js
+{
+  value,
+  done: false
+}
+```
+
+and eventually:
+
+```js
+{
+  done: true;
+}
+```
+
+---
+
+### ❌ Using Arrow Functions Incorrectly
+
+```js
+[Symbol.iterator]: () => {
+  console.log(this);
+}
+```
+
+`this` won't refer to the object.
+
+Prefer:
+
+```js
+[Symbol.iterator]() {
+}
+```
+
+or a generator:
+
+```js
+*[Symbol.iterator]() {
+}
+```
+
+---
+
+# Best Practice
+
+For modern JavaScript, use generators:
+
+```js
+const range = {
+  start: 1,
+  end: 5,
+
+  *[Symbol.iterator]() {
+    for (let i = this.start; i <= this.end; i++) {
+      yield i;
+    }
+  },
+};
+```
+
+It's concise, readable, and less error-prone.
+
+---
+
+# Interview Summary
+
+> To make an object iterable, implement the `Symbol.iterator` method. This method must return an iterator with a `next()` method that yields `{ value, done }` objects. Once implemented, the object can be used with `for...of`, spread syntax, destructuring, and `Array.from()`. In modern JavaScript, generators (`*[Symbol.iterator](){}`) are the preferred way to create custom iterables because they automatically manage iterator state and completion.
+
 ## Question 8. How to implement a reactive object (like Vue's reactivity system)
 
 ## Question 9. How to implement a simple pub/sub system in JavaScript
