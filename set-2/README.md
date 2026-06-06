@@ -1476,6 +1476,356 @@ A concise interview answer:
 
 ## Question 7. Explain array methods like push, pop, shift, unshift
 
+### **Short Answer**
+
+These are basic array manipulation methods:
+
+- **`push()`** → Adds element(s) to the **end** of an array.
+- **`pop()`** → Removes and returns the **last** element.
+- **`shift()`** → Removes and returns the **first** element.
+- **`unshift()`** → Adds element(s) to the **beginning** of an array.
+
+All four methods **mutate (modify) the original array**.
+
+---
+
+# **Detailed Explanation (Interview Perspective)**
+
+## **1. `push()`**
+
+### **Purpose**
+
+Adds one or more elements to the end of an array.
+
+### **Syntax**
+
+```javascript
+array.push(element1, element2, ...);
+```
+
+### **Example**
+
+```javascript
+const fruits = ["apple", "banana"];
+
+fruits.push("mango");
+
+console.log(fruits);
+```
+
+### **Output**
+
+```javascript
+["apple", "banana", "mango"];
+```
+
+### **Return Value**
+
+Returns the **new length** of the array.
+
+```javascript
+const arr = [1, 2];
+
+const length = arr.push(3);
+
+console.log(length); // 3
+```
+
+---
+
+## **2. `pop()`**
+
+### **Purpose**
+
+Removes the last element from an array.
+
+### **Syntax**
+
+```javascript
+array.pop();
+```
+
+### **Example**
+
+```javascript
+const fruits = ["apple", "banana", "mango"];
+
+const removed = fruits.pop();
+
+console.log(removed);
+console.log(fruits);
+```
+
+### **Output**
+
+```javascript
+mango[("apple", "banana")];
+```
+
+### **Return Value**
+
+Returns the removed element.
+
+---
+
+## **3. `shift()`**
+
+### **Purpose**
+
+Removes the first element from an array.
+
+### **Syntax**
+
+```javascript
+array.shift();
+```
+
+### **Example**
+
+```javascript
+const fruits = ["apple", "banana", "mango"];
+
+const removed = fruits.shift();
+
+console.log(removed);
+console.log(fruits);
+```
+
+### **Output**
+
+```javascript
+apple[("banana", "mango")];
+```
+
+### **Return Value**
+
+Returns the removed element.
+
+---
+
+## **4. `unshift()`**
+
+### **Purpose**
+
+Adds one or more elements to the beginning of an array.
+
+### **Syntax**
+
+```javascript
+array.unshift(element1, element2, ...);
+```
+
+### **Example**
+
+```javascript
+const fruits = ["banana", "mango"];
+
+fruits.unshift("apple");
+
+console.log(fruits);
+```
+
+### **Output**
+
+```javascript
+["apple", "banana", "mango"];
+```
+
+### **Return Value**
+
+Returns the new length of the array.
+
+---
+
+# **Visual Representation**
+
+### Initial Array
+
+```javascript
+["apple", "banana"];
+```
+
+### `push("mango")`
+
+```javascript
+["apple", "banana", "mango"]
+                     ↑
+                  added
+```
+
+### `pop()`
+
+```javascript
+["apple", "banana"]
+                     ↑
+                 removed
+```
+
+### `unshift("orange")`
+
+```javascript
+["orange", "apple", "banana"]
+   ↑
+ added
+```
+
+### `shift()`
+
+```javascript
+["apple", "banana"]
+   ↑
+ removed
+```
+
+---
+
+# **Time Complexity (Important Interview Point)**
+
+| Method      | Operation       | Complexity |
+| ----------- | --------------- | ---------- |
+| `push()`    | End insertion   | **O(1)**   |
+| `pop()`     | End removal     | **O(1)**   |
+| `shift()`   | Front removal   | **O(n)**   |
+| `unshift()` | Front insertion | **O(n)**   |
+
+### Why?
+
+For `shift()` and `unshift()`, all remaining elements must be re-indexed.
+
+Example:
+
+```javascript
+["a", "b", "c"];
+```
+
+After:
+
+```javascript
+shift();
+```
+
+Engine must move:
+
+```javascript
+b → index 0
+c → index 1
+```
+
+Hence **O(n)**.
+
+---
+
+# **Common Pitfalls**
+
+## 1. Forgetting These Methods Mutate the Array
+
+```javascript
+const arr = [1, 2, 3];
+
+arr.pop();
+
+console.log(arr);
+```
+
+Output:
+
+```javascript
+[1, 2];
+```
+
+The original array changed.
+
+---
+
+## 2. Calling on Empty Arrays
+
+```javascript
+const arr = [];
+
+console.log(arr.pop());
+console.log(arr.shift());
+```
+
+Output:
+
+```javascript
+undefined;
+undefined;
+```
+
+No error is thrown.
+
+---
+
+## 3. Using `unshift()` Frequently on Large Arrays
+
+```javascript
+for (let i = 0; i < 100000; i++) {
+  arr.unshift(i);
+}
+```
+
+This can become expensive because every insertion shifts existing indexes.
+
+---
+
+# **Real-World Examples**
+
+### Stack (LIFO)
+
+Use `push()` and `pop()`:
+
+```javascript
+const stack = [];
+
+stack.push("A");
+stack.push("B");
+
+console.log(stack.pop()); // B
+```
+
+---
+
+### Queue (FIFO)
+
+Use `push()` and `shift()`:
+
+```javascript
+const queue = [];
+
+queue.push("Task1");
+queue.push("Task2");
+
+console.log(queue.shift()); // Task1
+```
+
+---
+
+# **Best Practices**
+
+- Use **`push()`** and **`pop()`** when possible for better performance.
+- Avoid excessive use of **`shift()`** and **`unshift()`** on very large arrays.
+- Remember these methods mutate the original array.
+- For immutable updates in React or functional programming, prefer:
+
+```javascript
+const newArray = [...arr, newItem];
+```
+
+instead of:
+
+```javascript
+arr.push(newItem);
+```
+
+---
+
+## **Interview Tip**
+
+A strong interview answer should mention:
+
+> "`push()` and `pop()` work at the end of the array and are generally O(1). `shift()` and `unshift()` work at the beginning and are O(n) because elements must be re-indexed. All four methods mutate the original array."
+
 ## Question 8. What is the difference between slice() and splice()?
 
 ## Question 9. What is the difference between map, filter, and forEach?
