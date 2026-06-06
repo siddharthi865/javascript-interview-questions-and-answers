@@ -1518,6 +1518,312 @@ button.onclick = async () => {
 
 ## Question 7. What are JavaScript generators? How do they differ from regular functions?
 
+## Direct Answer
+
+**JavaScript generators** are special functions that can be **paused and resumed** during execution using the `function*` syntax and the `yield` keyword.
+
+Unlike regular functions, which run **to completion once**, generators can **produce multiple values over time**.
+
+---
+
+# 1. What is a Generator Function?
+
+A generator is defined using `function*`:
+
+```js id="gen1"
+function* generator() {
+  yield 1;
+  yield 2;
+  yield 3;
+}
+
+const gen = generator();
+
+console.log(gen.next()); // { value: 1, done: false }
+console.log(gen.next()); // { value: 2, done: false }
+console.log(gen.next()); // { value: 3, done: false }
+console.log(gen.next()); // { value: undefined, done: true }
+```
+
+---
+
+# 2. Key Concept: `yield`
+
+The `yield` keyword:
+
+- Pauses function execution
+- Returns a value
+- Saves the function state
+- Resumes from the same point when called again
+
+---
+
+# 3. Regular Function vs Generator Function
+
+## Regular Function
+
+```js id="gen2"
+function normal() {
+  return 1;
+  return 2; // ❌ unreachable
+}
+```
+
+### Behavior:
+
+- Executes fully in one go
+- Only one return value
+- Cannot pause/resume
+
+---
+
+## Generator Function
+
+```js id="gen3"
+function* gen() {
+  yield 1;
+  yield 2;
+  yield 3;
+}
+```
+
+### Behavior:
+
+- Can pause execution
+- Can return multiple values
+- Maintains internal state
+
+---
+
+# 4. How Iteration Works
+
+Generators are **iterables**:
+
+```js id="gen4"
+function* numbers() {
+  yield 10;
+  yield 20;
+  yield 30;
+}
+
+for (const num of numbers()) {
+  console.log(num);
+}
+```
+
+Output:
+
+```
+10
+20
+30
+```
+
+---
+
+# 5. Difference Between `.next()` Calls
+
+Each call to `.next()` resumes execution from last `yield`.
+
+```js id="gen5"
+function* demo() {
+  console.log("Start");
+  yield 1;
+
+  console.log("Middle");
+  yield 2;
+
+  console.log("End");
+}
+
+const g = demo();
+
+g.next(); // logs "Start"
+g.next(); // logs "Middle"
+g.next(); // logs "End"
+```
+
+---
+
+# 6. Returning Values from Generators
+
+You can also use `return`:
+
+```js id="gen6"
+function* gen() {
+  yield 1;
+  return 99;
+  yield 2;
+}
+
+const g = gen();
+
+console.log(g.next()); // { value: 1, done: false }
+console.log(g.next()); // { value: 99, done: true }
+console.log(g.next()); // { value: undefined, done: true }
+```
+
+👉 After `return`, generator is finished.
+
+---
+
+# 7. Two-Way Communication (Advanced Feature)
+
+Generators can receive input using `next(value)`:
+
+```js id="gen7"
+function* gen() {
+  const x = yield 1;
+  const y = yield x + 2;
+
+  return y + 3;
+}
+
+const g = gen();
+
+console.log(g.next()); // 1
+console.log(g.next(10)); // 12 (10 + 2)
+console.log(g.next(20)); // 23 (20 + 3)
+```
+
+---
+
+# 8. Infinite Sequences
+
+Generators are great for infinite data streams:
+
+```js id="gen8"
+function* infiniteCounter() {
+  let i = 0;
+
+  while (true) {
+    yield i++;
+  }
+}
+
+const counter = infiniteCounter();
+
+console.log(counter.next().value); // 0
+console.log(counter.next().value); // 1
+console.log(counter.next().value); // 2
+```
+
+👉 No memory overflow because values are generated lazily.
+
+---
+
+# 9. Real-World Use Cases
+
+## 1. Custom Iterators
+
+```js id="gen9"
+const obj = {
+  start: 1,
+  end: 3,
+  *[Symbol.iterator]() {
+    for (let i = this.start; i <= this.end; i++) {
+      yield i;
+    }
+  },
+};
+
+console.log([...obj]); // [1, 2, 3]
+```
+
+---
+
+## 2. Lazy Data Processing
+
+```js id="gen10"
+function* processData(arr) {
+  for (const item of arr) {
+    yield item * 2;
+  }
+}
+```
+
+---
+
+## 3. Async Control Flow (before async/await)
+
+```js id="gen11"
+function* task() {
+  const data = yield fetch("/api");
+  console.log(data);
+}
+```
+
+Used in libraries like Redux-Saga.
+
+---
+
+# 10. Generator vs Iterator
+
+| Feature        | Generator             | Iterator               |
+| -------------- | --------------------- | ---------------------- |
+| Syntax         | `function*`           | Manual object          |
+| State handling | Automatic             | Manual                 |
+| Simplicity     | High                  | Low                    |
+| Use case       | Iteration, async flow | Custom iteration logic |
+
+---
+
+# 11. Common Pitfalls
+
+## Pitfall 1: Forgetting to call `.next()`
+
+```js id="gen12"
+function* g() {
+  yield 1;
+}
+
+g(); // nothing happens ❌
+```
+
+Must use:
+
+```js id="gen13"
+const it = g();
+it.next();
+```
+
+---
+
+## Pitfall 2: Confusing with normal functions
+
+```js id="gen14"
+function* g() {
+  return 1;
+}
+
+console.log(g()); // iterator object, not value
+```
+
+---
+
+## Pitfall 3: Not understanding pause behavior
+
+Each `yield` is a pause point, not a return.
+
+---
+
+# 12. Key Differences (Interview Table)
+
+| Feature     | Regular Function | Generator Function   |
+| ----------- | ---------------- | -------------------- |
+| Syntax      | `function`       | `function*`          |
+| Execution   | Runs fully       | Pauses/resumes       |
+| Output      | Single return    | Multiple yields      |
+| State       | Not preserved    | Preserved            |
+| Return type | Value            | Iterator object      |
+| Usage       | Standard logic   | Iteration, lazy eval |
+
+---
+
+# 13. Interview Summary
+
+> JavaScript generators are special functions defined using `function*` that can pause execution using `yield` and resume later. Unlike regular functions, which execute once and return a single value, generators produce a sequence of values over time and maintain their internal state. They are commonly used for iterators, lazy evaluation, and complex asynchronous control flow.
+
 ## Question 8. Difference between for…of and forEach() for arrays
 
 ## Question 9. Explain async/await syntax
