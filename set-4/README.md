@@ -1520,6 +1520,173 @@ const visitedPages = new Set();
 
 ## Question 7. How to remove duplicates from an array using Set
 
+### Short Answer
+
+You can remove duplicates from an array in JavaScript using a **Set** by converting the array into a Set (which automatically removes duplicates) and then converting it back to an array.
+
+```javascript id="setdedup1"
+const uniqueArray = [...new Set(array)];
+```
+
+---
+
+# 1. How it works (conceptually)
+
+A **Set only stores unique values**, so when you pass an array into it:
+
+- duplicates are automatically removed
+- insertion order is preserved
+
+Then you spread it back into an array.
+
+---
+
+# 2. Basic Example
+
+```javascript id="setdedup2"
+const arr = [1, 2, 2, 3, 4, 4, 5];
+
+const unique = [...new Set(arr)];
+
+console.log(unique); // [1, 2, 3, 4, 5]
+```
+
+---
+
+# 3. Step-by-step breakdown
+
+```javascript id="setdedup3"
+const arr = [1, 1, 2, 3];
+
+const set = new Set(arr);
+// Set {1, 2, 3}
+
+const unique = [...set];
+// [1, 2, 3]
+```
+
+---
+
+# 4. Alternative ways (important for interviews)
+
+## 1. Using Array.from()
+
+```javascript id="setdedup4"
+const arr = [1, 2, 2, 3];
+
+const unique = Array.from(new Set(arr));
+
+console.log(unique); // [1, 2, 3]
+```
+
+---
+
+## 2. Using filter() (without Set)
+
+```javascript id="setdedup5"
+const arr = [1, 2, 2, 3];
+
+const unique = arr.filter((item, index) => {
+  return arr.indexOf(item) === index;
+});
+
+console.log(unique); // [1, 2, 3]
+```
+
+⚠️ Less efficient than Set approach.
+
+---
+
+# 5. Real-world example
+
+## Removing duplicate user IDs
+
+```javascript id="setdedup6"
+const userIds = [101, 102, 103, 101, 104, 102];
+
+const uniqueUserIds = [...new Set(userIds)];
+
+console.log(uniqueUserIds);
+// [101, 102, 103, 104]
+```
+
+---
+
+# 6. Handling strings
+
+Works for strings too:
+
+```javascript id="setdedup7"
+const letters = ["a", "b", "a", "c", "b"];
+
+const unique = [...new Set(letters)];
+
+console.log(unique); // ["a", "b", "c"]
+```
+
+---
+
+# 7. Important interview insight
+
+### Why Set is better than filter + indexOf
+
+| Approach         | Time Complexity | Performance           |
+| ---------------- | --------------- | --------------------- |
+| Set              | O(n)            | Fast                  |
+| filter + indexOf | O(n²)           | Slow for large arrays |
+
+👉 Set is preferred in real-world production code.
+
+---
+
+# 8. Object array limitation (important edge case)
+
+```javascript id="setdedup8"
+const arr = [{ a: 1 }, { a: 1 }];
+
+const unique = [...new Set(arr)];
+
+console.log(unique); // both objects remain ❗
+```
+
+### Why?
+
+Because objects are compared by **reference**, not value.
+
+---
+
+## Correct deep dedup approach for objects
+
+```javascript id="setdedup9"
+const arr = [{ id: 1 }, { id: 1 }, { id: 2 }];
+
+const unique = Array.from(new Map(arr.map((item) => [item.id, item])).values());
+
+console.log(unique);
+// [{ id: 1 }, { id: 2 }]
+```
+
+---
+
+# 9. When to use Set for deduplication
+
+✔ Best for:
+
+- numbers
+- strings
+- booleans
+- primitive arrays
+
+❌ Not ideal for:
+
+- complex objects (unless using keys)
+
+---
+
+# 10. Interview one-liner
+
+> The simplest and most efficient way to remove duplicates from an array in JavaScript is by converting it into a Set, which automatically enforces uniqueness, and then converting it back into an array using the spread operator or Array.from().
+
 ## Question 8. What are WeakMap and WeakSet?
 
 ## Question 9. Explain currying in JavaScript
