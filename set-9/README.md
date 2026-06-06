@@ -1698,6 +1698,279 @@ Constructor return overrides `this` ONLY if it's an object.
 
 ## Question 7. Explain super() in classes
 
+## Short Answer (Interview-ready)
+
+`super()` in JavaScript classes is used to **call the parent class constructor**. It must be called in a child class before accessing `this`, and it ensures the parent class is properly initialized.
+
+---
+
+# 🧠 Detailed Explanation (Senior Interview Level)
+
+In JavaScript ES6 classes, inheritance is implemented using prototypes, and `super()` is the mechanism that connects the **child class constructor to the parent class constructor**.
+
+---
+
+# 🏗️ Basic Example
+
+```js id="s1"
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+}
+
+class Dog extends Animal {
+  constructor(name) {
+    super(name); // calls Animal constructor
+  }
+}
+
+const d = new Dog("Tommy");
+console.log(d.name);
+```
+
+### Output:
+
+```
+Tommy
+```
+
+---
+
+# ⚙️ What `super()` actually does
+
+When you write:
+
+```js id="s2"
+super(name);
+```
+
+Internally it behaves like:
+
+```js id="s3"
+Animal.call(this, name);
+```
+
+But with prototype chain properly set up.
+
+---
+
+# 🧠 Why `super()` is required
+
+In child classes, JavaScript does NOT automatically initialize `this`.
+
+### ❌ This will throw error:
+
+```js id="s4"
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+}
+
+class Dog extends Animal {
+  constructor(name) {
+    this.name = name; // ❌ ReferenceError
+  }
+}
+```
+
+### Error:
+
+```
+ReferenceError: Must call super constructor in derived class before accessing 'this'
+```
+
+---
+
+# 🔥 Rule: `this` is uninitialized until `super()` runs
+
+In derived classes:
+
+```txt id="s5"
+super() → initializes this
+then → you can use this
+```
+
+---
+
+# 🧠 Behind the scenes (important for interviews)
+
+When a class extends another:
+
+```js id="s6"
+class Dog extends Animal {}
+```
+
+JS creates prototype chain:
+
+```txt id="s7"
+Dog.prototype → Animal.prototype → Object.prototype
+Dog.__proto__ → Animal
+```
+
+And constructor chain:
+
+```txt id="s8"
+Dog constructor → must call Animal constructor via super()
+```
+
+---
+
+# 🧪 `super()` with methods
+
+`super` is not only for constructors — it can also call parent methods.
+
+---
+
+## Example:
+
+```js id="s9"
+class Animal {
+  speak() {
+    console.log("Animal speaks");
+  }
+}
+
+class Dog extends Animal {
+  speak() {
+    super.speak(); // call parent method
+    console.log("Dog barks");
+  }
+}
+
+new Dog().speak();
+```
+
+### Output:
+
+```
+Animal speaks
+Dog barks
+```
+
+---
+
+# ⚠️ Important Rules (FAANG favorite)
+
+## 1. `super()` must be first in constructor
+
+```js id="s10"
+class Dog extends Animal {
+  constructor() {
+    super(); // MUST come first
+    this.age = 5;
+  }
+}
+```
+
+---
+
+## 2. Cannot use `this` before `super()`
+
+```js id="s11"
+class Dog extends Animal {
+  constructor() {
+    console.log(this); // ❌ error
+    super();
+  }
+}
+```
+
+---
+
+## 3. `super` behaves differently in methods vs constructors
+
+| Context     | Behavior                 |
+| ----------- | ------------------------ |
+| constructor | calls parent constructor |
+| method      | calls parent method      |
+
+---
+
+# 🧠 Advanced Behavior (Prototype linkage)
+
+```js id="s12"
+class A {}
+class B extends A {}
+
+console.log(B.__proto__ === A); // true
+console.log(B.prototype.__proto__ === A.prototype); // true
+```
+
+---
+
+# 🔥 Real-world analogy
+
+Think of:
+
+- `Animal` = base blueprint
+- `Dog` = extended blueprint
+- `super()` = “initialize base system first before adding custom features”
+
+---
+
+# ⚠️ Common Interview Pitfalls
+
+## ❌ Forgetting super()
+
+```js id="s13"
+class Dog extends Animal {
+  constructor() {
+    this.name = "x"; // error
+  }
+}
+```
+
+---
+
+## ❌ Thinking super copies properties
+
+👉 It does NOT copy — it executes parent constructor.
+
+---
+
+## ❌ Confusing super vs this
+
+| Keyword | Meaning                |
+| ------- | ---------------------- |
+| this    | current object         |
+| super   | parent class reference |
+
+---
+
+# 🔥 super in static methods
+
+```js id="s14"
+class A {
+  static hello() {
+    console.log("A");
+  }
+}
+
+class B extends A {
+  static hello() {
+    super.hello();
+    console.log("B");
+  }
+}
+
+B.hello();
+```
+
+### Output:
+
+```
+A
+B
+```
+
+---
+
+# 🧠 Senior-level Interview Answer
+
+> “In JavaScript classes, `super()` is used to invoke the parent class constructor and properly initialize the `this` context in derived classes. It is mandatory before accessing `this` in a subclass constructor. Additionally, `super` can be used inside methods to access parent class methods. Under the hood, it links the prototype chain and ensures proper constructor delegation in JavaScript’s prototypal inheritance model.”
+
 ## Question 8. Difference between private and public fields in classes
 
 ## Question 9. Explain the difference between static and instance properties in classes
