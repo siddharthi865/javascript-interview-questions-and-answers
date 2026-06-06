@@ -2424,6 +2424,487 @@ fs.readFile("20GB.dat");
 
 ## Question 7. Difference between `fs.readFile` and streams
 
+## Short Answer
+
+The main difference is that **`fs.readFile()` loads the entire file into memory before returning it**, whereas **streams (`fs.createReadStream()`) read the file in small chunks and process it incrementally**.
+
+- **`fs.readFile()`** → Simple, good for small files.
+- **Streams** → Memory-efficient, ideal for large files.
+
+---
+
+# Basic Comparison
+
+## `fs.readFile()`
+
+```js
+const fs = require("fs");
+
+fs.readFile("file.txt", "utf8", (err, data) => {
+  console.log(data);
+});
+```
+
+Behavior:
+
+```txt
+Entire File
+     ↓
+Load into Memory
+     ↓
+Callback Executes
+```
+
+The callback runs only after the whole file has been read.
+
+---
+
+## Stream
+
+```js
+const fs = require("fs");
+
+const stream = fs.createReadStream("file.txt", {
+  encoding: "utf8",
+});
+
+stream.on("data", (chunk) => {
+  console.log(chunk);
+});
+```
+
+Behavior:
+
+```txt
+File
+ ↓
+Chunk 1
+ ↓
+Chunk 2
+ ↓
+Chunk 3
+```
+
+Data is available immediately as chunks arrive.
+
+---
+
+# Memory Usage
+
+## `fs.readFile()`
+
+Suppose you read a 5 GB file:
+
+```js
+fs.readFile("5GB.zip", callback);
+```
+
+Memory:
+
+```txt
+5GB File
+ ↓
+5GB RAM
+```
+
+Potential issues:
+
+- High memory consumption
+- Out-of-memory crashes
+- Poor scalability
+
+---
+
+## Streams
+
+```js
+fs.createReadStream("5GB.zip");
+```
+
+Memory:
+
+```txt
+5GB File
+ ↓
+64KB Chunk
+ ↓
+Process
+ ↓
+Next Chunk
+```
+
+Only a small chunk is kept in memory at any time.
+
+---
+
+# Performance
+
+### `fs.readFile()`
+
+```txt
+Read Entire File
+       ↓
+Process Data
+```
+
+No processing can begin until reading finishes.
+
+---
+
+### Streams
+
+```txt
+Read Chunk
+     ↓
+Process Chunk
+     ↓
+Read Next Chunk
+```
+
+Processing can start immediately.
+
+---
+
+# Internal Behavior
+
+## `fs.readFile()`
+
+Internally:
+
+```txt
+fs.readFile
+      ↓
+libuv Thread Pool
+      ↓
+Entire Buffer Created
+      ↓
+Callback Invoked
+```
+
+Returns one large Buffer.
+
+---
+
+## Streams
+
+Internally:
+
+```txt
+createReadStream
+        ↓
+libuv
+        ↓
+Chunk
+        ↓
+Chunk
+        ↓
+Chunk
+```
+
+Emits multiple `data` events.
+
+---
+
+# Example: Reading a Small Config File
+
+Good use case for `readFile()`:
+
+```js
+fs.readFile("config.json", "utf8", (err, data) => {
+  const config = JSON.parse(data);
+});
+```
+
+File size:
+
+```txt
+2 KB
+```
+
+Loading everything into memory is perfectly fine.
+
+---
+
+# Example: Processing a Large Log File
+
+Bad:
+
+```js
+fs.readFile("server.log", (err, data) => {
+  console.log(data.toString());
+});
+```
+
+If:
+
+```txt
+server.log = 20GB
+```
+
+you may exhaust memory.
+
+---
+
+Better:
+
+```js
+const stream = fs.createReadStream("server.log");
+
+stream.on("data", (chunk) => {
+  console.log(chunk.toString());
+});
+```
+
+---
+
+# Copying Files
+
+## Using `readFile()`
+
+```js
+fs.readFile("input.zip", (err, data) => {
+  fs.writeFile("output.zip", data, () => {});
+});
+```
+
+Memory:
+
+```txt
+Input File
+      ↓
+Huge Buffer
+      ↓
+Output File
+```
+
+---
+
+## Using Streams
+
+```js
+fs.createReadStream("input.zip").pipe(fs.createWriteStream("output.zip"));
+```
+
+Memory:
+
+```txt
+Input
+ ↓
+Chunk
+ ↓
+Chunk
+ ↓
+Output
+```
+
+Much more efficient.
+
+---
+
+# Backpressure Support
+
+A critical interview topic.
+
+## `fs.readFile()`
+
+No backpressure.
+
+```txt
+Read Everything
+       ↓
+Store Everything
+```
+
+Memory usage can spike.
+
+---
+
+## Streams
+
+Built-in backpressure.
+
+```txt
+Readable
+    ↓
+Writable Busy
+    ↓
+Pause Reading
+    ↓
+Resume Later
+```
+
+This prevents memory overload.
+
+---
+
+# Event-Based Nature
+
+## `readFile()`
+
+Single callback:
+
+```js
+fs.readFile(file, (err, data) => {
+  console.log(data);
+});
+```
+
+Only one result.
+
+---
+
+## Stream
+
+Multiple events:
+
+```js
+stream.on("data", (chunk) => {});
+stream.on("end", () => {});
+stream.on("error", (err) => {});
+```
+
+Lifecycle:
+
+```txt
+open
+ ↓
+data
+ ↓
+data
+ ↓
+data
+ ↓
+end
+```
+
+---
+
+# When to Use Each
+
+## Use `fs.readFile()` When
+
+✔ Small files
+
+```txt
+config.json
+settings.json
+template.html
+```
+
+✔ Need entire content at once
+
+✔ Simpler code
+
+---
+
+## Use Streams When
+
+✔ Large files
+
+```txt
+video.mp4
+backup.zip
+logs.txt
+database dumps
+```
+
+✔ File uploads/downloads
+
+✔ Real-time processing
+
+✔ Low memory usage required
+
+---
+
+# Async/Await Versions
+
+## readFile
+
+```js
+const fs = require("fs/promises");
+
+const data = await fs.readFile("file.txt", "utf8");
+```
+
+Simple and clean.
+
+---
+
+## Stream
+
+```js
+const fs = require("fs");
+
+const stream = fs.createReadStream("file.txt");
+```
+
+Works incrementally.
+
+---
+
+# Real-World Examples
+
+### `readFile()`
+
+- Load configuration
+- Read small JSON
+- Load templates
+- Read environment files
+
+---
+
+### Streams
+
+- Video streaming
+- File uploads
+- File downloads
+- Log processing
+- ETL pipelines
+- Data migration
+
+---
+
+# Interview Comparison Table
+
+| Feature                      | `fs.readFile()` | Streams |
+| ---------------------------- | --------------- | ------- |
+| Reads whole file             | ✅              | ❌      |
+| Reads in chunks              | ❌              | ✅      |
+| Memory efficient             | ❌              | ✅      |
+| Suitable for large files     | ❌              | ✅      |
+| Simpler API                  | ✅              | ❌      |
+| Supports backpressure        | ❌              | ✅      |
+| Start processing immediately | ❌              | ✅      |
+| Best for small files         | ✅              | ⚠️      |
+
+---
+
+# Common Interview Follow-Up
+
+### Is `fs.readFile()` asynchronous?
+
+Yes.
+
+```js
+fs.readFile(...)
+```
+
+is asynchronous because it uses libuv's thread pool.
+
+However:
+
+```txt
+Asynchronous ≠ Streaming
+```
+
+A common misconception is that because `readFile()` is async, it is memory-efficient. It is not—it still loads the entire file into memory before invoking the callback.
+
+---
+
+# Final Interview Answer
+
+> `fs.readFile()` and streams are both asynchronous ways to read files in Node.js, but they differ significantly in memory usage and scalability. `fs.readFile()` reads the entire file into memory before executing the callback, making it suitable for small files and simple use cases. Streams, created with `fs.createReadStream()`, read files incrementally in chunks, allowing processing to begin immediately and keeping memory usage low. Streams also support backpressure, making them the preferred choice for large files, file transfers, video streaming, and other high-performance applications.
+
 ## Question 8. How to prevent callback hell in Node.js
 
 ## Question 9. How to handle unhandled promise rejections in Node.js
