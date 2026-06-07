@@ -1467,6 +1467,511 @@ The **Reflect API** is a standardized set of methods that expose JavaScript's in
 
 ## Question 5. How to implement a reactive object (like Vue.js reactivity system)
 
+## Direct Answer
+
+A simple Vue-like reactivity system can be implemented using a **Proxy** to intercept property access (`get`) and updates (`set`), along with a dependency-tracking mechanism that records which functions depend on which properties and re-runs them when those properties change.
+
+Modern **Vue 3** uses `Proxy`-based reactivity internally, while Vue 2 relied on `Object.defineProperty()`.
+
+---
+
+# Core Idea
+
+A reactive system has three parts:
+
+1. **Track** dependencies when properties are read
+2. **Trigger** updates when properties change
+3. **Effect** functions that automatically re-run when dependencies change
+
+Example:
+
+```js
+state.count++;
+```
+
+Should automatically update:
+
+```js
+console.log(`Count: ${state.count}`);
+```
+
+without manually calling the logging function again.
+
+---
+
+# Step 1: Basic Reactive Object with Proxy
+
+Intercept reads and writes:
+
+```js
+function reactive(obj) {
+  return new Proxy(obj, {
+    get(target, key, receiver) {
+      console.log(`Getting ${key}`);
+      return Reflect.get(target, key, receiver);
+    },
+
+    set(target, key, value, receiver) {
+      console.log(`Setting ${key} = ${value}`);
+      return Reflect.set(target, key, value, receiver);
+    },
+  });
+}
+
+const state = reactive({
+  count: 0,
+});
+
+state.count;
+state.count = 1;
+```
+
+Output:
+
+```js
+Getting count
+Setting count = 1
+```
+
+This intercepts operations but doesn't yet react to changes.
+
+---
+
+# Step 2: Dependency Tracking
+
+We need to know:
+
+> Which function depends on which property?
+
+We'll maintain:
+
+```js
+target -> property -> effects
+```
+
+Structure:
+
+```js
+WeakMap
+  └── target
+       └── Map
+            └── property
+                 └── Set(effect functions)
+```
+
+---
+
+# Step 3: Implement `track()`
+
+```js
+const targetMap = new WeakMap();
+
+let activeEffect = null;
+
+function track(target, key) {
+  if (!activeEffect) return;
+
+  let depsMap = targetMap.get(target);
+
+  if (!depsMap) {
+    depsMap = new Map();
+    targetMap.set(target, depsMap);
+  }
+
+  let dep = depsMap.get(key);
+
+  if (!dep) {
+    dep = new Set();
+    depsMap.set(key, dep);
+  }
+
+  dep.add(activeEffect);
+}
+```
+
+Whenever a property is read, we'll record the currently running effect.
+
+---
+
+# Step 4: Implement `trigger()`
+
+When a property changes:
+
+```js
+function trigger(target, key) {
+  const depsMap = targetMap.get(target);
+
+  if (!depsMap) return;
+
+  const effects = depsMap.get(key);
+
+  if (effects) {
+    effects.forEach((effect) => effect());
+  }
+}
+```
+
+All dependent functions re-execute.
+
+---
+
+# Step 5: Create Effect Function
+
+```js
+function effect(fn) {
+  activeEffect = fn;
+  fn();
+  activeEffect = null;
+}
+```
+
+This registers the currently running function.
+
+---
+
+# Step 6: Connect Everything
+
+```js
+const targetMap = new WeakMap();
+
+let activeEffect = null;
+
+function track(target, key) {
+  if (!activeEffect) return;
+
+  let depsMap = targetMap.get(target);
+
+  if (!depsMap) {
+    depsMap = new Map();
+    targetMap.set(target, depsMap);
+  }
+
+  let dep = depsMap.get(key);
+
+  if (!dep) {
+    dep = new Set();
+    depsMap.set(key, dep);
+  }
+
+  dep.add(activeEffect);
+}
+
+function trigger(target, key) {
+  const depsMap = targetMap.get(target);
+
+  if (!depsMap) return;
+
+  const dep = depsMap.get(key);
+
+  if (dep) {
+    dep.forEach((effect) => effect());
+  }
+}
+
+function effect(fn) {
+  activeEffect = fn;
+  fn();
+  activeEffect = null;
+}
+
+function reactive(obj) {
+  return new Proxy(obj, {
+    get(target, key, receiver) {
+      track(target, key);
+
+      return Reflect.get(target, key, receiver);
+    },
+
+    set(target, key, value, receiver) {
+      const result = Reflect.set(target, key, value, receiver);
+
+      trigger(target, key);
+
+      return result;
+    },
+  });
+}
+```
+
+---
+
+# Usage Example
+
+```js
+const state = reactive({
+  count: 0,
+});
+
+effect(() => {
+  console.log(`Count is ${state.count}`);
+});
+
+state.count++;
+state.count++;
+```
+
+Output:
+
+```js
+Count is 0
+Count is 1
+Count is 2
+```
+
+No manual update calls needed.
+
+---
+
+# How Vue 3 Works Internally
+
+Very simplified:
+
+```js
+const state = reactive({
+  count: 0,
+});
+
+effect(() => {
+  render(state.count);
+});
+```
+
+Internally:
+
+```text
+effect()
+   ↓
+track(count)
+   ↓
+dependency recorded
+   ↓
+count changes
+   ↓
+trigger(count)
+   ↓
+effect reruns
+   ↓
+UI updates
+```
+
+---
+
+# Supporting Nested Objects
+
+Naive implementation:
+
+```js
+const state = reactive({
+  user: {
+    name: "John",
+  },
+});
+```
+
+Problem:
+
+```js
+state.user.name = "Alice";
+```
+
+won't be reactive because `user` isn't proxied.
+
+### Solution
+
+Recursively wrap objects:
+
+```js
+function reactive(obj) {
+  return new Proxy(obj, {
+    get(target, key, receiver) {
+      track(target, key);
+
+      const value = Reflect.get(target, key, receiver);
+
+      if (value && typeof value === "object") {
+        return reactive(value);
+      }
+
+      return value;
+    },
+
+    set(target, key, value, receiver) {
+      const result = Reflect.set(target, key, value, receiver);
+
+      trigger(target, key);
+
+      return result;
+    },
+  });
+}
+```
+
+---
+
+# Implementing Computed Values
+
+A simplified computed:
+
+```js
+function computed(getter) {
+  let value;
+
+  effect(() => {
+    value = getter();
+  });
+
+  return {
+    get value() {
+      return value;
+    },
+  };
+}
+```
+
+Usage:
+
+```js
+const state = reactive({
+  count: 5,
+});
+
+const doubled = computed(() => state.count * 2);
+
+console.log(doubled.value);
+
+state.count++;
+
+console.log(doubled.value);
+```
+
+Output:
+
+```js
+10;
+12;
+```
+
+---
+
+# Implementing Watchers
+
+```js
+function watch(getter, callback) {
+  let oldValue = getter();
+
+  effect(() => {
+    const newValue = getter();
+
+    if (newValue !== oldValue) {
+      callback(newValue, oldValue);
+      oldValue = newValue;
+    }
+  });
+}
+```
+
+Usage:
+
+```js
+watch(
+  () => state.count,
+  (newVal, oldVal) => {
+    console.log(`${oldVal} -> ${newVal}`);
+  },
+);
+```
+
+---
+
+# Common Pitfalls
+
+## 1. Infinite Loops
+
+```js
+effect(() => {
+  state.count++;
+});
+```
+
+This updates the same dependency it tracks:
+
+```text
+effect
+ ↓
+count++
+ ↓
+trigger
+ ↓
+effect
+ ↓
+count++
+ ...
+```
+
+Infinite recursion.
+
+---
+
+## 2. Duplicate Effects
+
+Using arrays:
+
+```js
+deps.push(effect);
+```
+
+can create duplicates.
+
+Use:
+
+```js
+Set;
+```
+
+instead.
+
+---
+
+## 3. Memory Leaks
+
+Without cleanup:
+
+```js
+effect(() => {
+  console.log(state.count);
+});
+```
+
+Old dependencies may remain forever.
+
+Real frameworks remove stale dependencies during re-execution.
+
+---
+
+## 4. Deep Reactivity Cost
+
+Recursively proxying large objects can be expensive.
+
+Vue uses lazy proxy creation and caching to optimize this.
+
+---
+
+# Vue 2 vs Vue 3 Reactivity
+
+| Feature            | Vue 2                   | Vue 3   |
+| ------------------ | ----------------------- | ------- |
+| Core API           | `Object.defineProperty` | `Proxy` |
+| Detect new props   | ❌                      | ✅      |
+| Array interception | Complex                 | Simple  |
+| Performance        | Good                    | Better  |
+| Nested handling    | Manual limitations      | Natural |
+
+---
+
+# Senior-Level Interview Summary
+
+A Vue-like reactivity system is built around **dependency tracking** and **change notification**. Using a `Proxy`, property reads are intercepted to **track** active effects, while property writes **trigger** those effects to re-run. Internally, dependencies are typically stored in a `WeakMap → Map → Set` structure. Modern frameworks such as **Vue 3** use this pattern to implement reactive state, computed properties, watchers, and automatic UI updates while preserving performance through lazy tracking, batching, and dependency cleanup.
+
 ## Question 6. How to implement observer pattern in JavaScript
 
 ## Question 7. How to use `WeakRef` to prevent memory leaks
