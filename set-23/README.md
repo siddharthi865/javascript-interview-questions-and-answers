@@ -1416,6 +1416,487 @@ But remains inside the same OS process.
 
 ## Question 5. How to handle file uploads in Node.js efficiently
 
+## ✅ Short Answer
+
+To handle file uploads efficiently in Node.js:
+
+1. **Stream files instead of buffering them in memory.**
+2. Use middleware like **Multer**, **Busboy**, or **Formidable**.
+3. Store large files directly in cloud storage (e.g., S3) when possible.
+4. Enforce file size/type limits.
+5. Validate and sanitize uploads.
+6. Process files asynchronously to avoid blocking the event loop.
+
+The key principle is:
+
+> **Never load large files entirely into memory if you can stream them.**
+
+---
+
+# 🧠 Understanding the Challenge
+
+When a user uploads a file:
+
+```txt
+Browser
+   ↓
+Node.js Server
+   ↓
+Storage (Disk/S3/Database)
+```
+
+A naive implementation might read the entire file into memory:
+
+```js
+// Bad idea for large files
+const chunks = [];
+
+req.on("data", (chunk) => {
+  chunks.push(chunk);
+});
+```
+
+Problems:
+
+- High memory usage
+- Potential crashes
+- Poor scalability
+- Event loop pressure
+
+---
+
+# Why Streams Are Important
+
+Node.js streams process data chunk-by-chunk.
+
+```txt
+File
+ ↓
+Chunk 1
+Chunk 2
+Chunk 3
+ ↓
+Destination
+```
+
+Benefits:
+
+- Constant memory usage
+- Better performance
+- Suitable for very large files
+
+---
+
+# Option 1: Using Multer (Most Common)
+
+Multer is the most common middleware for handling multipart/form-data uploads in Express.
+
+Install:
+
+```bash
+npm install multer
+```
+
+---
+
+## Basic Example
+
+```js
+const express = require("express");
+const multer = require("multer");
+
+const app = express();
+
+const upload = multer({
+  dest: "uploads/",
+});
+
+app.post("/upload", upload.single("file"), (req, res) => {
+  res.json({
+    filename: req.file.filename,
+  });
+});
+
+app.listen(3000);
+```
+
+HTML:
+
+```html
+<form action="/upload" method="POST" enctype="multipart/form-data">
+  <input type="file" name="file" />
+  <button>Upload</button>
+</form>
+```
+
+---
+
+# Option 2: Streaming with Busboy (More Efficient)
+
+For very large uploads, Busboy is often preferred because it streams directly.
+
+```js
+const Busboy = require("busboy");
+const fs = require("fs");
+
+app.post("/upload", (req, res) => {
+  const busboy = Busboy({ headers: req.headers });
+
+  busboy.on("file", (name, file, info) => {
+    const writeStream = fs.createWriteStream(`uploads/${info.filename}`);
+
+    file.pipe(writeStream);
+  });
+
+  busboy.on("finish", () => {
+    res.send("Uploaded");
+  });
+
+  req.pipe(busboy);
+});
+```
+
+---
+
+# Streaming Directly to Storage
+
+Instead of:
+
+```txt
+Client
+ ↓
+Server Disk
+ ↓
+Cloud Storage
+```
+
+Use:
+
+```txt
+Client
+ ↓
+Node Stream
+ ↓
+S3
+```
+
+Example:
+
+```js
+fileStream.pipe(uploadStream);
+```
+
+Benefits:
+
+- No temporary files
+- Reduced disk usage
+- Better scalability
+
+---
+
+# File Size Limits
+
+Always enforce limits.
+
+Multer example:
+
+```js
+const upload = multer({
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+  },
+});
+```
+
+10 MB limit.
+
+Without limits:
+
+```txt
+User uploads 5 GB file
+```
+
+Your server may run out of resources.
+
+---
+
+# File Type Validation
+
+Never trust file extensions.
+
+Bad:
+
+```txt
+virus.jpg.exe
+```
+
+Better:
+
+```js
+const upload = multer({
+  fileFilter(req, file, cb) {
+    const allowed = ["image/jpeg", "image/png"];
+
+    cb(null, allowed.includes(file.mimetype));
+  },
+});
+```
+
+For stronger validation, inspect file signatures ("magic bytes").
+
+---
+
+# Efficient Image Processing
+
+Bad:
+
+```txt
+Upload image
+↓
+Process on main thread
+↓
+Event loop blocked
+```
+
+Better:
+
+```txt
+Upload
+↓
+Queue Job
+↓
+Worker Thread
+↓
+Image Processing
+```
+
+Example libraries:
+
+- Sharp
+- Worker Threads
+- Background job queues
+
+---
+
+# Handling Large Files
+
+For multi-GB uploads:
+
+Use streams:
+
+```js
+const fs = require("fs");
+
+req.pipe(fs.createWriteStream("video.mp4"));
+```
+
+Memory remains nearly constant regardless of file size.
+
+---
+
+# Backpressure (Advanced Interview Topic)
+
+Streams automatically handle backpressure.
+
+Without backpressure:
+
+```txt
+Incoming data > Write speed
+```
+
+Memory grows uncontrollably.
+
+With streams:
+
+```txt
+Readable pauses
+↓
+Writable catches up
+↓
+Readable resumes
+```
+
+Node's stream API manages this automatically.
+
+---
+
+# Security Best Practices
+
+### 1. Validate File Types
+
+```js
+file.mimetype;
+```
+
+and ideally inspect actual file content.
+
+---
+
+### 2. Limit File Size
+
+```js
+limits: {
+  fileSize: 5 * 1024 * 1024;
+}
+```
+
+---
+
+### 3. Rename Uploaded Files
+
+Avoid:
+
+```txt
+../../../etc/passwd
+```
+
+Use generated names:
+
+```js
+crypto.randomUUID();
+```
+
+---
+
+### 4. Scan Uploads
+
+For public-facing systems:
+
+```txt
+Upload
+ ↓
+Virus Scan
+ ↓
+Store
+```
+
+---
+
+### 5. Avoid Executable Uploads
+
+Block:
+
+```txt
+.exe
+.bat
+.sh
+.php
+```
+
+unless explicitly required.
+
+---
+
+# Multer Memory Storage vs Disk Storage
+
+### Memory Storage
+
+```js
+multer.memoryStorage();
+```
+
+Pros:
+
+- Fast
+
+Cons:
+
+- Entire file in RAM
+
+Bad for large uploads.
+
+---
+
+### Disk Storage
+
+```js
+multer.diskStorage();
+```
+
+Pros:
+
+- Lower memory usage
+
+Cons:
+
+- Disk I/O
+
+Usually preferred.
+
+---
+
+# Handling Multiple Files
+
+```js
+app.post("/upload", upload.array("photos", 10), (req, res) => {
+  res.send("Uploaded");
+});
+```
+
+Maximum 10 files.
+
+---
+
+# Common Interview Pitfalls
+
+## ❌ Reading Entire File into Memory
+
+```js
+fs.readFile(...)
+```
+
+For large uploads this is inefficient.
+
+Use streams.
+
+---
+
+## ❌ No Upload Limits
+
+Can lead to denial-of-service attacks.
+
+---
+
+## ❌ Trusting File Extensions
+
+Always validate MIME type and file content.
+
+---
+
+## ❌ Processing Images on Main Thread
+
+Use Worker Threads or background jobs.
+
+---
+
+# Real-World Production Flow
+
+```txt
+Client
+   ↓
+Load Balancer
+   ↓
+Node.js API
+   ↓
+Streaming Upload
+   ↓
+S3 Storage
+   ↓
+Queue
+   ↓
+Worker Threads
+   ↓
+Image Processing
+```
+
+This architecture scales well and keeps the event loop responsive.
+
+---
+
+# Interview Summary
+
+> Efficient file uploads in Node.js are typically implemented using streams to avoid loading entire files into memory. Libraries such as Multer, Busboy, and Formidable help parse multipart form data. For large files, streaming directly to disk or cloud storage is preferred. Production systems should enforce file size limits, validate MIME types, sanitize filenames, and offload expensive processing tasks to Worker Threads or background workers. Streams are especially important because they provide backpressure handling and maintain low memory usage regardless of file size.
+
 ## Question 6. How to implement streaming large files without blocking memory
 
 ## Question 7. Difference between Buffer and Stream in Node.js
