@@ -1162,6 +1162,327 @@ Like copying an existing house and modifying it instead of using a blueprint.
 
 ## Question 5. What are JavaScript classes? How are they different from functions?
 
+## Short Answer
+
+**JavaScript classes** are a syntactic sugar over prototype-based inheritance that provide a cleaner, more structured way to create objects and manage inheritance.
+
+A **function** is a general-purpose callable block of code, while a **class** is specifically designed as a blueprint for creating objects using `new`, with built-in support for constructors, methods, and inheritance.
+
+Under the hood, classes in JavaScript are still functions + prototypes.
+
+---
+
+# Detailed Explanation (Interview Level)
+
+## 1. What is a JavaScript Class?
+
+A class is a **template for creating objects** with shared structure and behavior.
+
+### Example
+
+```javascript id="c9gq2q"
+class Person {
+  constructor(name) {
+    this.name = name;
+  }
+
+  greet() {
+    console.log(`Hello, ${this.name}`);
+  }
+}
+
+const p1 = new Person("John");
+p1.greet();
+```
+
+### Key idea:
+
+- `Person` is a blueprint
+- `p1` is an instance
+- Methods are shared via prototype
+
+---
+
+## 2. Internally, Classes Are Functions
+
+Even though it looks different, JavaScript classes are actually functions under the hood.
+
+```javascript id="z5h3vn"
+class Person {}
+```
+
+is essentially:
+
+```javascript id="9bq2xk"
+function Person() {}
+```
+
+But with additional behavior:
+
+```javascript id="v8c1lm"
+console.log(typeof Person); // "function"
+```
+
+---
+
+## 3. Class Methods Are Stored in Prototype
+
+```javascript id="q7m2dp"
+class Person {
+  greet() {
+    console.log("Hello");
+  }
+}
+```
+
+Internally becomes:
+
+```javascript id="p4n8xz"
+function Person() {}
+
+Person.prototype.greet = function () {
+  console.log("Hello");
+};
+```
+
+So all instances share the same method.
+
+---
+
+## 4. Key Features of Classes
+
+### 1. Constructor
+
+Used for initializing object properties.
+
+```javascript id="t2k9rq"
+class Car {
+  constructor(brand) {
+    this.brand = brand;
+  }
+}
+```
+
+---
+
+### 2. Methods
+
+```javascript id="f1m7xz"
+class Car {
+  drive() {
+    console.log("Driving");
+  }
+}
+```
+
+---
+
+### 3. Inheritance
+
+```javascript id="k8d3wp"
+class Animal {
+  speak() {
+    console.log("Animal sound");
+  }
+}
+
+class Dog extends Animal {
+  bark() {
+    console.log("Bark");
+  }
+}
+```
+
+---
+
+### 4. super keyword
+
+```javascript id="x3p9lm"
+class Animal {
+  constructor(name) {
+    this.name = name;
+  }
+}
+
+class Dog extends Animal {
+  constructor(name, breed) {
+    super(name);
+    this.breed = breed;
+  }
+}
+```
+
+---
+
+## 5. Difference Between Class and Function
+
+### A. Purpose
+
+| Feature           | Function            | Class               |
+| ----------------- | ------------------- | ------------------- |
+| Purpose           | General logic       | Object blueprint    |
+| Callable directly | Yes                 | No (must use `new`) |
+| Used for OOP      | No (not inherently) | Yes                 |
+
+---
+
+### B. Instantiation
+
+#### Function (constructor function style)
+
+```javascript id="r2v8qp"
+function Person(name) {
+  this.name = name;
+}
+
+const p1 = new Person("John");
+```
+
+#### Class
+
+```javascript id="s9k3lm"
+class Person {
+  constructor(name) {
+    this.name = name;
+  }
+}
+
+const p1 = new Person("John");
+```
+
+Both behave similarly, but class syntax is stricter.
+
+---
+
+### C. Hoisting Behavior
+
+#### Functions
+
+```javascript id="w8n4qx"
+sayHi();
+
+function sayHi() {
+  console.log("Hi");
+}
+```
+
+✔ Works (function hoisted)
+
+---
+
+#### Classes
+
+```javascript id="d3p9lx"
+const p = new Person(); // ❌ ReferenceError
+
+class Person {}
+```
+
+❌ Classes are not usable before declaration (Temporal Dead Zone).
+
+---
+
+### D. Strict Mode Behavior
+
+Classes are always in **strict mode**.
+
+```javascript id="c6m8qz"
+class Person {
+  constructor() {
+    this.name = name; // ReferenceError if name not defined
+  }
+}
+```
+
+---
+
+### E. Prototype Handling
+
+#### Function-based:
+
+```javascript id="u7k2pw"
+function Person() {}
+Person.prototype.sayHi = function () {};
+```
+
+#### Class-based:
+
+```javascript id="x1m9zd"
+class Person {
+  sayHi() {}
+}
+```
+
+Both use prototype internally, but class syntax is cleaner.
+
+---
+
+## 6. Important Differences Summary
+
+| Feature                     | Function              | Class                |
+| --------------------------- | --------------------- | -------------------- |
+| Can be called without `new` | Yes                   | No                   |
+| Hoisting                    | Yes                   | No (TDZ)             |
+| Strict mode default         | No                    | Yes                  |
+| Syntax complexity           | Flexible but verbose  | Clean and structured |
+| Inheritance support         | Manual via prototypes | Built-in (`extends`) |
+| Intended usage              | General logic         | OOP design           |
+
+---
+
+## 7. Common Interview Trap
+
+### Are classes a new type in JavaScript?
+
+❌ No.
+
+They are just **special functions with prototype-based behavior underneath**.
+
+```javascript id="kq7x2m"
+typeof class A {}; // "function"
+```
+
+---
+
+## 8. Why Use Classes If Functions Already Work?
+
+### Advantages of classes:
+
+- Cleaner syntax for OOP
+- Easier inheritance (`extends`)
+- Better readability
+- Standardized structure
+- Easier to maintain large applications
+
+---
+
+## 9. Real-world Analogy
+
+### Function (constructor function)
+
+Like manually building each object step-by-step.
+
+### Class
+
+Like a blueprint factory:
+
+- You define once
+- Create multiple consistent objects
+
+---
+
+## 10. Interview Summary
+
+**JavaScript classes are syntactic sugar over prototypes that provide a structured way to create objects, define methods, and implement inheritance.**
+
+Key points:
+
+- Classes are still functions internally
+- Methods are stored in prototypes
+- Must use `new`
+- Not hoisted like functions
+- Provide cleaner OOP syntax than constructor functions
+
 ## Question 6. What is the difference between static and instance methods?
 
 ## Question 7. Explain modules in JavaScript. How to export and import?
