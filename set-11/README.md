@@ -1084,6 +1084,440 @@ is generally the most reliable.
 
 ## Question 5. What is the difference between primitive and non-primitive types?
 
+## Short Answer
+
+JavaScript values are divided into two categories:
+
+### Primitive Types
+
+Stored and copied **by value**.
+
+```js
+string;
+number;
+boolean;
+undefined;
+null;
+symbol;
+bigint;
+```
+
+### Non-Primitive Types (Reference Types)
+
+Stored and copied **by reference**.
+
+```js
+Object;
+Array;
+Function;
+Date;
+Map;
+Set;
+RegExp;
+```
+
+The key difference is:
+
+> **Primitives hold the actual value, whereas non-primitives hold a reference to an object in memory.**
+
+---
+
+# 1. Primitive Types
+
+A primitive value is immutable and represents a single value.
+
+```js
+let a = 10;
+let b = a;
+
+b = 20;
+
+console.log(a); // 10
+console.log(b); // 20
+```
+
+### What happened?
+
+```text
+a = 10
+b = copy of 10
+```
+
+Changing `b` does not affect `a`.
+
+---
+
+## Primitive Types in JavaScript
+
+### String
+
+```js
+let name = "John";
+```
+
+### Number
+
+```js
+let age = 30;
+```
+
+### Boolean
+
+```js
+let isAdmin = true;
+```
+
+### Undefined
+
+```js
+let x;
+```
+
+### Null
+
+```js
+let user = null;
+```
+
+### Symbol
+
+```js
+const id = Symbol("id");
+```
+
+### BigInt
+
+```js
+const big = 123456789012345678901234567890n;
+```
+
+---
+
+# 2. Non-Primitive Types
+
+Non-primitives are objects.
+
+Variables store a reference (memory address), not the actual object.
+
+```js
+const obj1 = {
+  name: "John",
+};
+
+const obj2 = obj1;
+```
+
+Memory concept:
+
+```text
+obj1 ──► { name: "John" }
+obj2 ──► same object
+```
+
+Changing one affects the other.
+
+```js
+obj2.name = "Alice";
+
+console.log(obj1.name); // Alice
+console.log(obj2.name); // Alice
+```
+
+---
+
+# Common Non-Primitive Types
+
+### Object
+
+```js
+const user = {
+  name: "John",
+};
+```
+
+### Array
+
+```js
+const nums = [1, 2, 3];
+```
+
+### Function
+
+```js
+function greet() {}
+```
+
+Functions are objects in JavaScript.
+
+```js
+console.log(typeof greet); // function
+```
+
+### Date
+
+```js
+const today = new Date();
+```
+
+### Map
+
+```js
+const map = new Map();
+```
+
+### Set
+
+```js
+const set = new Set();
+```
+
+---
+
+# Copy Behavior
+
+## Primitive Copy
+
+```js
+let a = 5;
+let b = a;
+
+b = 10;
+
+console.log(a); // 5
+```
+
+Each variable has its own value.
+
+---
+
+## Object Copy
+
+```js
+const a = { count: 5 };
+const b = a;
+
+b.count = 10;
+
+console.log(a.count); // 10
+```
+
+Both variables reference the same object.
+
+---
+
+# Equality Comparison
+
+## Primitive Equality
+
+```js
+console.log(10 === 10); // true
+console.log("JS" === "JS"); // true
+```
+
+Values are compared directly.
+
+---
+
+## Object Equality
+
+```js
+console.log({} === {}); // false
+```
+
+Output:
+
+```text
+false
+```
+
+Because these are different objects in memory.
+
+```js
+const obj = {};
+
+console.log(obj === obj); // true
+```
+
+Same reference.
+
+---
+
+# Mutability
+
+## Primitives are Immutable
+
+```js
+let str = "hello";
+
+str[0] = "H";
+
+console.log(str);
+```
+
+Output:
+
+```text
+hello
+```
+
+Strings cannot be modified in place.
+
+Instead:
+
+```js
+str = "Hello";
+```
+
+creates a new string.
+
+---
+
+## Objects are Mutable
+
+```js
+const user = {
+  name: "John",
+};
+
+user.name = "Alice";
+
+console.log(user.name);
+```
+
+Output:
+
+```text
+Alice
+```
+
+Object contents can change.
+
+---
+
+# `const` Behavior
+
+A common interview trick:
+
+```js
+const obj = {
+  name: "John",
+};
+
+obj.name = "Alice";
+```
+
+Works perfectly.
+
+Why?
+
+Because `const` prevents reassignment of the variable, not mutation of the object.
+
+```js
+obj = {}; // ❌ TypeError
+```
+
+---
+
+# Memory Representation
+
+### Primitive
+
+```text
+a = 100
+```
+
+```text
+Variable
+   │
+   ▼
+ 100
+```
+
+---
+
+### Object
+
+```js
+const user = { name: "John" };
+```
+
+```text
+Variable
+   │
+   ▼
+Reference ───► Object in Heap
+```
+
+---
+
+# `typeof` Results
+
+| Value          | Result                      |
+| -------------- | --------------------------- |
+| `"hello"`      | `"string"`                  |
+| `10`           | `"number"`                  |
+| `true`         | `"boolean"`                 |
+| `undefined`    | `"undefined"`               |
+| `Symbol()`     | `"symbol"`                  |
+| `10n`          | `"bigint"`                  |
+| `{}`           | `"object"`                  |
+| `[]`           | `"object"`                  |
+| `function(){}` | `"function"`                |
+| `null`         | `"object"` (historical bug) |
+
+---
+
+# Common Interview Pitfalls
+
+## Pitfall 1: Arrays are Objects
+
+```js
+typeof [];
+```
+
+Output:
+
+```js
+"object";
+```
+
+Use:
+
+```js
+Array.isArray([]);
+```
+
+---
+
+## Pitfall 2: Object Assignment Creates a Reference
+
+```js
+const a = { x: 1 };
+const b = a;
+```
+
+This is not a copy.
+
+Both variables point to the same object.
+
+---
+
+## Pitfall 3: `null` is Primitive
+
+Although:
+
+```js
+typeof null === "object";
+```
+
+`null` is officially considered a **primitive type**.
+
+---
+
+# Interview-Friendly Summary
+
+> Primitive types (`string`, `number`, `boolean`, `undefined`, `null`, `symbol`, `bigint`) store actual values and are copied by value. They are immutable. Non-primitive types (objects, arrays, functions, maps, sets, dates, etc.) store references to memory locations and are copied by reference. Changes made through one reference are visible through all references pointing to the same object. This distinction affects assignment, equality comparisons, memory usage, and mutation behavior, making it one of the most important JavaScript fundamentals.
+
 ## Question 6. Difference between mutable and immutable data types
 
 ## Question 7. How to concatenate arrays in JavaScript?
