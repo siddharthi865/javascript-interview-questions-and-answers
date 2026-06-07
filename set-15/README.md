@@ -1202,6 +1202,440 @@ Use `WeakMap` when:
 
 ## Question 5. How to implement memoization for expensive function calls
 
+## Concise Answer
+
+**Memoization** is an optimization technique where you cache the result of an expensive function call and return the cached result when the same inputs occur again.
+
+In JavaScript, memoization is commonly implemented using a `Map`, `WeakMap`, or a closure-based cache.
+
+```js
+function memoize(fn) {
+  const cache = new Map();
+
+  return function (...args) {
+    const key = JSON.stringify(args);
+
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
+
+    const result = fn.apply(this, args);
+    cache.set(key, result);
+
+    return result;
+  };
+}
+```
+
+---
+
+# What Problem Does Memoization Solve?
+
+Consider an expensive computation:
+
+```js
+function slowSquare(n) {
+  console.log("Computing...");
+  return n * n;
+}
+
+console.log(slowSquare(5));
+console.log(slowSquare(5));
+```
+
+Output:
+
+```js
+Computing...
+25
+
+Computing...
+25
+```
+
+The same work is repeated unnecessarily.
+
+Memoization avoids this.
+
+---
+
+# Basic Memoization Implementation
+
+```js
+function memoize(fn) {
+  const cache = new Map();
+
+  return function (...args) {
+    const key = JSON.stringify(args);
+
+    if (cache.has(key)) {
+      console.log("Cache hit");
+      return cache.get(key);
+    }
+
+    console.log("Computing");
+    const result = fn.apply(this, args);
+
+    cache.set(key, result);
+
+    return result;
+  };
+}
+```
+
+Usage:
+
+```js
+function add(a, b) {
+  return a + b;
+}
+
+const memoizedAdd = memoize(add);
+
+console.log(memoizedAdd(2, 3));
+console.log(memoizedAdd(2, 3));
+```
+
+Output:
+
+```js
+Computing
+5
+
+Cache hit
+5
+```
+
+---
+
+# Memoization and Closures
+
+A common interview point:
+
+```js
+function memoize(fn) {
+  const cache = new Map();
+
+  return function (...args) {
+    // cache survives because of closure
+  };
+}
+```
+
+The returned function closes over `cache`.
+
+Even after `memoize()` finishes execution, the cache remains accessible.
+
+This is a classic practical use of **closures**.
+
+---
+
+# Memoizing Recursive Functions
+
+A famous interview example is Fibonacci.
+
+### Without Memoization
+
+```js
+function fib(n) {
+  if (n <= 1) return n;
+
+  return fib(n - 1) + fib(n - 2);
+}
+```
+
+Time Complexity:
+
+```text
+O(2^n)
+```
+
+Huge amount of repeated work.
+
+---
+
+### With Memoization
+
+```js
+function memoizedFib() {
+  const cache = {};
+
+  function fib(n) {
+    if (n in cache) {
+      return cache[n];
+    }
+
+    if (n <= 1) {
+      return n;
+    }
+
+    cache[n] = fib(n - 1) + fib(n - 2);
+
+    return cache[n];
+  }
+
+  return fib;
+}
+
+const fib = memoizedFib();
+
+console.log(fib(40));
+```
+
+Complexity becomes:
+
+```text
+O(n)
+```
+
+instead of:
+
+```text
+O(2^n)
+```
+
+---
+
+# Memoizing Async Functions
+
+Very common in modern frontend applications.
+
+```js
+function memoizeAsync(fn) {
+  const cache = new Map();
+
+  return async function (...args) {
+    const key = JSON.stringify(args);
+
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
+
+    const promise = fn(...args);
+
+    cache.set(key, promise);
+
+    return promise;
+  };
+}
+```
+
+Example:
+
+```js
+const getUser = memoizeAsync(async (id) => {
+  const response = await fetch(`/users/${id}`);
+  return response.json();
+});
+```
+
+Benefits:
+
+- prevents duplicate API calls
+- reuses in-flight requests
+- reduces server load
+
+---
+
+# Using WeakMap for Object Arguments
+
+If function arguments are objects:
+
+```js
+const cache = new WeakMap();
+```
+
+Example:
+
+```js
+function memoizeObject(fn) {
+  const cache = new WeakMap();
+
+  return function (obj) {
+    if (cache.has(obj)) {
+      return cache.get(obj);
+    }
+
+    const result = fn(obj);
+
+    cache.set(obj, result);
+
+    return result;
+  };
+}
+```
+
+---
+
+## Why WeakMap?
+
+```js
+let user = { id: 1 };
+
+memoizedFn(user);
+
+user = null;
+```
+
+With `WeakMap`:
+
+- object can be garbage collected
+- cache entry disappears automatically
+
+With `Map`:
+
+- cache keeps object alive
+- potential memory leak
+
+---
+
+# Common Pitfalls
+
+## 1. JSON.stringify Limitations
+
+```js
+memoizedFn({ a: 1, b: 2 });
+memoizedFn({ b: 2, a: 1 });
+```
+
+Different strings:
+
+```js
+'{"a":1,"b":2}';
+'{"b":2,"a":1}';
+```
+
+Cache miss occurs.
+
+---
+
+## 2. Functions as Arguments
+
+```js
+JSON.stringify(() => {});
+```
+
+Produces:
+
+```js
+undefined;
+```
+
+Bad cache key.
+
+---
+
+## 3. Unbounded Cache Growth
+
+```js
+const cache = new Map();
+```
+
+Over time:
+
+```text
+1M entries
+2M entries
+5M entries
+```
+
+Memory usage grows continuously.
+
+Solutions:
+
+- LRU cache
+- TTL expiration
+- WeakMap for object keys
+
+---
+
+# Production-Grade Memoization
+
+```js
+function memoize(fn) {
+  const cache = new Map();
+
+  return function (...args) {
+    const key = JSON.stringify(args);
+
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
+
+    const result = fn.apply(this, args);
+
+    cache.set(key, result);
+
+    return result;
+  };
+}
+```
+
+Key features:
+
+- supports multiple arguments
+- preserves `this`
+- uses closure-based cache
+
+---
+
+# Time Complexity
+
+Without memoization:
+
+```text
+Repeated calls:
+O(expensive computation)
+```
+
+With memoization:
+
+```text
+Cache hit:
+O(1)
+```
+
+Map lookup is approximately constant time.
+
+---
+
+# Interview Follow-up: Memoization vs Caching
+
+### Memoization
+
+```text
+Function-level optimization
+Input → Output cache
+Usually automatic
+```
+
+Example:
+
+```js
+memoizedFib(40);
+```
+
+---
+
+### Caching
+
+```text
+Broader concept
+Can cache:
+- API responses
+- Files
+- Database queries
+- Computations
+```
+
+Memoization is a specific type of caching.
+
+---
+
+# Interview Summary
+
+> Memoization is a technique that caches function results based on input arguments. When the same inputs are provided again, the cached result is returned instead of recomputing. In JavaScript, it is typically implemented using closures and a `Map`, while `WeakMap` is preferred when object arguments are involved to avoid memory leaks. Memoization can dramatically improve performance for expensive computations and repeated API requests.
+
 ## Question 6. Difference between synchronous and asynchronous iterables
 
 ## Question 7. How to use Symbol.iterator to make an object iterable
