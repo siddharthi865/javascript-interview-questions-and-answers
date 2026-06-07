@@ -1227,6 +1227,405 @@ catch (err) {
 
 ## Question 5. Difference between event delegation and direct event listener
 
+## Concise Answer
+
+**Direct event listeners** attach an event handler to each individual element.
+
+**Event delegation** attaches a single event listener to a common ancestor and uses **event bubbling** to handle events from its child elements.
+
+Event delegation is generally more memory-efficient and works well for dynamically added elements.
+
+---
+
+# 1. Direct Event Listener
+
+In direct binding, each element gets its own listener.
+
+```js
+const buttons = document.querySelectorAll(".btn");
+
+buttons.forEach((button) => {
+  button.addEventListener("click", () => {
+    console.log("Clicked");
+  });
+});
+```
+
+### How it works
+
+```html
+<button class="btn">A</button>
+<button class="btn">B</button>
+<button class="btn">C</button>
+```
+
+Each button has a separate event listener attached.
+
+---
+
+# 2. Event Delegation
+
+Instead of attaching listeners to every button, attach one listener to their parent.
+
+```js
+document.querySelector("#container").addEventListener("click", (event) => {
+  if (event.target.matches(".btn")) {
+    console.log("Button clicked");
+  }
+});
+```
+
+```html
+<div id="container">
+  <button class="btn">A</button>
+  <button class="btn">B</button>
+  <button class="btn">C</button>
+</div>
+```
+
+### How it works
+
+1. Button receives click.
+2. Event bubbles up.
+3. Parent listener catches it.
+4. `event.target` identifies which child triggered it.
+
+---
+
+# 3. Visual Flow
+
+### Direct Listener
+
+```text
+Button A → Listener A
+Button B → Listener B
+Button C → Listener C
+```
+
+---
+
+### Event Delegation
+
+```text
+Button A
+Button B
+Button C
+    ↓
+Parent Listener
+```
+
+Only one listener exists.
+
+---
+
+# 4. Why Event Delegation Works
+
+Because of **event bubbling**.
+
+When a click occurs:
+
+```text
+Button
+  ↓
+Parent
+  ↓
+Grandparent
+  ↓
+Document
+```
+
+Delegation intercepts the event during bubbling.
+
+---
+
+# 5. Memory Usage Comparison
+
+### Direct Listeners
+
+```js
+1000 buttons
+1000 listeners
+```
+
+Memory cost increases with element count.
+
+---
+
+### Delegation
+
+```js
+1000 buttons
+1 listener
+```
+
+Much more efficient.
+
+---
+
+# 6. Dynamic Elements (Most Common Interview Question)
+
+### Direct Listener Problem
+
+```js
+const button = document.querySelector(".btn");
+
+button.addEventListener("click", handler);
+```
+
+Later:
+
+```js
+container.innerHTML += '<button class="btn">New</button>';
+```
+
+The new button has **no listener**.
+
+---
+
+### Delegation Solution
+
+```js
+container.addEventListener("click", (event) => {
+  if (event.target.matches(".btn")) {
+    console.log("Clicked");
+  }
+});
+```
+
+New buttons automatically work.
+
+---
+
+# 7. Example: Dynamic List
+
+```js
+const list = document.querySelector("#list");
+
+list.addEventListener("click", (event) => {
+  if (event.target.tagName === "LI") {
+    console.log(event.target.textContent);
+  }
+});
+```
+
+```html
+<ul id="list">
+  <li>One</li>
+  <li>Two</li>
+</ul>
+```
+
+Even newly added `<li>` elements are handled.
+
+---
+
+# 8. Using `closest()` (Best Practice)
+
+Interviewers love this pattern.
+
+### Problem
+
+User clicks inside nested content:
+
+```html
+<button class="btn">
+  <span>Click</span>
+</button>
+```
+
+`event.target` may be `span`.
+
+---
+
+### Better Solution
+
+```js
+container.addEventListener("click", (event) => {
+  const button = event.target.closest(".btn");
+
+  if (!button) return;
+
+  console.log("Clicked");
+});
+```
+
+Works regardless of where inside the button the user clicks.
+
+---
+
+# 9. Performance Comparison
+
+## Direct Listener
+
+```js
+for (let i = 0; i < 10000; i++) {
+  element.addEventListener("click", handler);
+}
+```
+
+- More memory
+- More listener registrations
+
+---
+
+## Delegation
+
+```js
+parent.addEventListener("click", handler);
+```
+
+- Single listener
+- Lower memory usage
+- Easier maintenance
+
+---
+
+# 10. When Event Delegation Does NOT Work Well
+
+Some events do not naturally bubble.
+
+Examples:
+
+```js
+focus;
+blur;
+mouseenter;
+mouseleave;
+```
+
+### Problem
+
+```js
+parent.addEventListener("focus", handler);
+```
+
+May not work as expected because `focus` doesn't bubble.
+
+---
+
+### Alternatives
+
+Use:
+
+```js
+focusin;
+focusout;
+```
+
+or capture phase:
+
+```js
+parent.addEventListener("focus", handler, true);
+```
+
+---
+
+# 11. Common Interview Pitfalls
+
+## Pitfall 1: Using `event.currentTarget`
+
+```js
+container.addEventListener("click", (e) => {
+  console.log(e.currentTarget);
+});
+```
+
+`currentTarget` is always:
+
+```js
+container;
+```
+
+Not the clicked child.
+
+Use:
+
+```js
+event.target;
+```
+
+or
+
+```js
+event.target.closest(...)
+```
+
+---
+
+## Pitfall 2: Forgetting Bubbling
+
+If someone calls:
+
+```js
+event.stopPropagation();
+```
+
+before the event reaches the parent, delegated handlers won't run.
+
+---
+
+## Pitfall 3: Delegating Too High
+
+```js
+document.addEventListener("click", ...)
+```
+
+Works, but can cause unnecessary event processing.
+
+Prefer the closest stable ancestor.
+
+---
+
+# 12. Direct Listener vs Event Delegation
+
+| Feature                        | Direct Listener | Event Delegation    |
+| ------------------------------ | --------------- | ------------------- |
+| Number of listeners            | One per element | One on parent       |
+| Memory usage                   | Higher          | Lower               |
+| Dynamic elements               | Must reattach   | Works automatically |
+| Performance with many elements | Worse           | Better              |
+| Simplicity for few elements    | Simpler         | Slightly more logic |
+| Relies on bubbling             | No              | Yes                 |
+| Works with non-bubbling events | Yes             | Usually no          |
+
+---
+
+# 13. When to Use Which?
+
+### Use Direct Listeners
+
+When:
+
+- Few elements exist
+- Elements are static
+- Event doesn't bubble well
+- Simplicity is preferred
+
+```js
+saveButton.addEventListener("click", save);
+```
+
+---
+
+### Use Event Delegation
+
+When:
+
+- Many elements exist
+- Elements are created dynamically
+- Performance matters
+- Handling lists, tables, grids, menus
+
+```js
+table.addEventListener("click", handleCellClick);
+```
+
+---
+
+# FAANG Interview Answer
+
+> Direct event listeners attach handlers to individual elements, while event delegation attaches a single listener to a parent and relies on event bubbling to handle child events. Delegation reduces memory usage, improves performance for large numbers of elements, and automatically supports dynamically added elements. However, it depends on bubbling and is not suitable for some non-bubbling events like `focus` and `blur`.
+
 ## Question 6. How to stop event propagation
 
 ## Question 7. How to use `JSON.stringify` and `JSON.parse` with reviver/replacer functions
