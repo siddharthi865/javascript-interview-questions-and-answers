@@ -1373,6 +1373,399 @@ const unique = arr.filter((item) => {
 
 ## Question 5. Difference between `find()` and `filter()` in arrays
 
+### Direct Answer
+
+Both `find()` and `filter()` search an array based on a condition, but they return different results:
+
+| Method     | Returns                                  |
+| ---------- | ---------------------------------------- |
+| `find()`   | The **first matching element**           |
+| `filter()` | **All matching elements** as a new array |
+
+Example:
+
+```js
+const numbers = [1, 2, 3, 4, 5, 6];
+
+console.log(numbers.find((num) => num > 3));
+console.log(numbers.filter((num) => num > 3));
+```
+
+Output:
+
+```js
+(4)[(4, 5, 6)];
+```
+
+---
+
+# 1. `find()`
+
+`find()` returns the **first element** that satisfies the condition.
+
+### Syntax
+
+```js
+array.find((element, index, array) => {
+  return condition;
+});
+```
+
+### Example
+
+```js
+const users = [
+  { id: 1, name: "John" },
+  { id: 2, name: "Alice" },
+  { id: 3, name: "Bob" },
+];
+
+const user = users.find((u) => u.id === 2);
+
+console.log(user);
+```
+
+Output:
+
+```js
+{
+  id: 2,
+  name: "Alice"
+}
+```
+
+---
+
+## If No Match Exists
+
+```js
+const result = [1, 2, 3].find((x) => x > 10);
+
+console.log(result);
+```
+
+Output:
+
+```js
+undefined;
+```
+
+---
+
+## Important Behavior
+
+`find()` **stops immediately** after finding the first match.
+
+```js
+const arr = [1, 2, 3, 4, 5];
+
+const result = arr.find((num) => {
+  console.log(num);
+  return num > 3;
+});
+```
+
+Output:
+
+```js
+1;
+2;
+3;
+4;
+```
+
+Stops after `4`.
+
+---
+
+# 2. `filter()`
+
+`filter()` returns **all elements** matching the condition.
+
+### Syntax
+
+```js
+array.filter((element, index, array) => {
+  return condition;
+});
+```
+
+### Example
+
+```js
+const numbers = [1, 2, 3, 4, 5, 6];
+
+const result = numbers.filter((num) => num > 3);
+
+console.log(result);
+```
+
+Output:
+
+```js
+[4, 5, 6];
+```
+
+---
+
+## If No Match Exists
+
+```js
+const result = [1, 2, 3].filter((x) => x > 10);
+
+console.log(result);
+```
+
+Output:
+
+```js
+[];
+```
+
+Returns an empty array, never `undefined`.
+
+---
+
+# 3. Key Difference
+
+### `find()`
+
+```js
+const result = [10, 20, 30, 40].find((x) => x > 15);
+
+console.log(result);
+```
+
+Output:
+
+```js
+20;
+```
+
+---
+
+### `filter()`
+
+```js
+const result = [10, 20, 30, 40].filter((x) => x > 15);
+
+console.log(result);
+```
+
+Output:
+
+```js
+[20, 30, 40];
+```
+
+---
+
+# 4. Performance Difference
+
+## `find()`
+
+Stops at the first match.
+
+```text
+Best case: O(1)
+Worst case: O(n)
+```
+
+Example:
+
+```js
+const result = arr.find((x) => x === target);
+```
+
+As soon as target is found, iteration ends.
+
+---
+
+## `filter()`
+
+Always traverses the entire array.
+
+```text
+Always O(n)
+```
+
+Even if the first element matches.
+
+```js
+const result = arr.filter((x) => x === target);
+```
+
+The whole array must be checked.
+
+---
+
+# 5. Practical Example
+
+### Find One User
+
+```js
+const user = users.find((user) => user.id === 5);
+```
+
+Because IDs are unique, use `find()`.
+
+---
+
+### Find All Admins
+
+```js
+const admins = users.filter((user) => user.role === "admin");
+```
+
+Because multiple users may match.
+
+---
+
+# 6. Return Types
+
+```js
+const arr = [1, 2, 3];
+```
+
+### `find()`
+
+```js
+arr.find((x) => x > 1);
+```
+
+Returns:
+
+```js
+2;
+```
+
+Type:
+
+```js
+number | undefined;
+```
+
+---
+
+### `filter()`
+
+```js
+arr.filter((x) => x > 1);
+```
+
+Returns:
+
+```js
+[2, 3];
+```
+
+Type:
+
+```js
+number[]
+```
+
+---
+
+# 7. Common Interview Trap
+
+### Question
+
+```js
+const result = [1, 2, 3].find((x) => x > 10);
+
+console.log(result);
+```
+
+Output:
+
+```js
+undefined;
+```
+
+Many candidates incorrectly answer:
+
+```js
+[];
+```
+
+That's `filter()`, not `find()`.
+
+---
+
+# 8. Related Methods
+
+### `findIndex()`
+
+Returns the index of the first match.
+
+```js
+const index = [10, 20, 30].findIndex((x) => x === 20);
+
+console.log(index);
+```
+
+Output:
+
+```js
+1;
+```
+
+---
+
+### `some()`
+
+Checks whether at least one match exists.
+
+```js
+const exists = [1, 2, 3].some((x) => x > 2);
+
+console.log(exists);
+```
+
+Output:
+
+```js
+true;
+```
+
+---
+
+### `every()`
+
+Checks whether all elements match.
+
+```js
+const result = [2, 4, 6].every((x) => x % 2 === 0);
+
+console.log(result);
+```
+
+Output:
+
+```js
+true;
+```
+
+---
+
+# Interview Summary
+
+| Feature         | `find()`               | `filter()`           |
+| --------------- | ---------------------- | -------------------- |
+| Return value    | First matching element | Array of all matches |
+| No match        | `undefined`            | `[]`                 |
+| Stops early     | ✅ Yes                 | ❌ No                |
+| Use case        | Find one item          | Find many items      |
+| Time Complexity | O(1)–O(n)              | O(n)                 |
+| Return type     | Element or `undefined` | Array                |
+
+### Rule of Thumb
+
+- Use **`find()`** when you need **one matching element**.
+- Use **`filter()`** when you need **all matching elements**.
+- `find()` can be more efficient because it stops as soon as a match is found.
+
 ## Question 6. Difference between `some()` and `every()` in arrays
 
 ## Question 7. How to sort an array of objects by a key
