@@ -1454,6 +1454,489 @@ app.use(errorHandler);
 
 ## Question 5. How to implement error handling in async/await in Node.js
 
+## Short Answer
+
+When using `async/await` in Node.js, the primary way to handle errors is with **`try...catch`**. Since an `async` function always returns a Promise, any thrown error or rejected Promise can be caught using `try...catch` inside the async function or `.catch()` where the function is called.
+
+```js
+async function getUser() {
+  try {
+    const user = await fetchUser();
+    return user;
+  } catch (err) {
+    console.error("Failed to fetch user:", err);
+  }
+}
+```
+
+---
+
+# Why Error Handling is Needed
+
+With Promises:
+
+```js
+fetchUser()
+  .then((user) => console.log(user))
+  .catch((err) => console.error(err));
+```
+
+Using `async/await`, the equivalent is:
+
+```js
+async function getUser() {
+  try {
+    const user = await fetchUser();
+    console.log(user);
+  } catch (err) {
+    console.error(err);
+  }
+}
+```
+
+Any Promise rejection becomes a thrown exception that can be caught by `catch`.
+
+---
+
+# Basic try/catch Pattern
+
+```js
+async function readData() {
+  try {
+    const data = await someAsyncOperation();
+    console.log(data);
+  } catch (err) {
+    console.error("Error:", err.message);
+  }
+}
+```
+
+Execution flow:
+
+```txt
+await Promise
+      ↓
+Success → continue
+Failure → throw error
+      ↓
+catch block
+```
+
+---
+
+# Handling Multiple Await Operations
+
+```js
+async function processUser() {
+  try {
+    const user = await getUser();
+    const orders = await getOrders(user.id);
+
+    console.log(orders);
+  } catch (err) {
+    console.error("Operation failed:", err);
+  }
+}
+```
+
+A single `catch` handles errors from either `await`.
+
+---
+
+# Catching Errors at the Caller
+
+Sometimes it's cleaner to let errors propagate upward.
+
+```js
+async function getUser() {
+  const user = await fetchUser();
+  return user;
+}
+```
+
+Caller:
+
+```js
+async function main() {
+  try {
+    const user = await getUser();
+    console.log(user);
+  } catch (err) {
+    console.error("Main error:", err);
+  }
+}
+```
+
+This approach centralizes error handling.
+
+---
+
+# Using `.catch()` with Async Functions
+
+Since async functions return Promises:
+
+```js
+async function getUser() {
+  throw new Error("User not found");
+}
+
+getUser().catch((err) => {
+  console.error(err.message);
+});
+```
+
+Output:
+
+```txt
+User not found
+```
+
+---
+
+# Custom Error Classes
+
+A common production pattern is creating custom errors.
+
+```js
+class ValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "ValidationError";
+  }
+}
+```
+
+Usage:
+
+```js
+async function createUser(data) {
+  if (!data.email) {
+    throw new ValidationError("Email is required");
+  }
+}
+```
+
+Handling:
+
+```js
+try {
+  await createUser({});
+} catch (err) {
+  if (err instanceof ValidationError) {
+    console.log("Validation failed");
+  }
+}
+```
+
+---
+
+# Express.js Async Error Handling
+
+A very common interview topic.
+
+### Problem
+
+```js
+app.get("/users", async (req, res) => {
+  const users = await getUsers();
+  res.json(users);
+});
+```
+
+If `getUsers()` rejects, Express 4 will not automatically catch it.
+
+---
+
+### Solution 1: try/catch
+
+```js
+app.get("/users", async (req, res, next) => {
+  try {
+    const users = await getUsers();
+    res.json(users);
+  } catch (err) {
+    next(err);
+  }
+});
+```
+
+---
+
+### Solution 2: Async Wrapper
+
+```js
+const asyncHandler = (fn) => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
+```
+
+Usage:
+
+```js
+app.get(
+  "/users",
+  asyncHandler(async (req, res) => {
+    const users = await getUsers();
+    res.json(users);
+  }),
+);
+```
+
+This removes repetitive try/catch blocks.
+
+---
+
+# Global Express Error Middleware
+
+```js
+app.use((err, req, res, next) => {
+  console.error(err);
+
+  res.status(500).json({
+    message: "Internal Server Error",
+  });
+});
+```
+
+Flow:
+
+```txt
+Route Error
+    ↓
+next(err)
+    ↓
+Error Middleware
+    ↓
+Response
+```
+
+---
+
+# Unhandled Promise Rejections
+
+Bad:
+
+```js
+async function test() {
+  throw new Error("Boom");
+}
+
+test();
+```
+
+This creates an unhandled rejection.
+
+Modern Node.js treats unhandled rejections seriously and may terminate the process depending on configuration/version.
+
+---
+
+## Handling Globally
+
+```js
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled Rejection:", err);
+});
+```
+
+Useful for logging, but not a substitute for proper local error handling.
+
+---
+
+# Handling Errors in Parallel Operations
+
+Consider:
+
+```js
+const users = await Promise.all([getUser1(), getUser2(), getUser3()]);
+```
+
+If one Promise rejects:
+
+```txt
+Promise.all rejects immediately
+```
+
+Handle it:
+
+```js
+try {
+  const users = await Promise.all([getUser1(), getUser2(), getUser3()]);
+} catch (err) {
+  console.error(err);
+}
+```
+
+---
+
+## Using Promise.allSettled
+
+If you want all results regardless of failures:
+
+```js
+const results = await Promise.allSettled([getUser1(), getUser2(), getUser3()]);
+
+console.log(results);
+```
+
+Output:
+
+```js
+[
+  { status: "fulfilled", value: ... },
+  { status: "rejected", reason: ... },
+  { status: "fulfilled", value: ... }
+]
+```
+
+---
+
+# Using finally
+
+Cleanup logic belongs in `finally`.
+
+```js
+async function processFile() {
+  let connection;
+
+  try {
+    connection = await connectDB();
+    await doWork();
+  } catch (err) {
+    console.error(err);
+  } finally {
+    if (connection) {
+      await connection.close();
+    }
+  }
+}
+```
+
+`finally` runs whether success or failure occurs.
+
+---
+
+# Common Pitfalls
+
+## 1. Forgetting await
+
+```js
+try {
+  getUser(); // Missing await
+} catch (err) {
+  console.log(err);
+}
+```
+
+This won't catch async errors because the Promise rejection happens later.
+
+Correct:
+
+```js
+await getUser();
+```
+
+---
+
+## 2. Swallowing Errors
+
+Bad:
+
+```js
+catch (err) {
+  console.log(err);
+}
+```
+
+The caller never knows something failed.
+
+Better:
+
+```js
+catch (err) {
+  console.error(err);
+  throw err;
+}
+```
+
+---
+
+## 3. Mixing Patterns Unnecessarily
+
+Avoid:
+
+```js
+try {
+  await getUser().catch(console.error);
+} catch (err) {
+  console.error(err);
+}
+```
+
+Use either:
+
+```js
+try {
+  await getUser();
+} catch (err) {
+  console.error(err);
+}
+```
+
+or
+
+```js
+getUser().catch(console.error);
+```
+
+---
+
+# Best Practices
+
+### Use try/catch around awaited operations
+
+```js
+try {
+  await operation();
+} catch (err) {
+  handleError(err);
+}
+```
+
+### Create custom error types
+
+```js
+class NotFoundError extends Error {}
+```
+
+### Let errors bubble when appropriate
+
+```js
+throw err;
+```
+
+### Use centralized error middleware in Express
+
+```js
+next(err);
+```
+
+### Use `finally` for cleanup
+
+```js
+finally {
+  await closeConnection();
+}
+```
+
+### Avoid unhandled Promise rejections
+
+Always await or catch Promises.
+
+---
+
+# Final Interview Answer
+
+> In Node.js, errors in `async/await` code are typically handled using `try...catch`. Since async functions return Promises, any rejected Promise is converted into a thrown exception that can be caught in a `catch` block. Errors can either be handled locally or propagated to higher layers for centralized handling. In Express applications, async route handlers should pass errors to `next(err)` so that global error middleware can process them. For cleanup tasks, `finally` should be used, and developers should avoid unhandled Promise rejections by always awaiting or catching Promises.
+
 ## Question 6. How to stream large files efficiently in Node.js
 
 ## Question 7. Difference between `fs.readFile` and streams
