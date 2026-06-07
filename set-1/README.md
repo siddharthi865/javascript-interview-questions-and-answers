@@ -887,6 +887,194 @@ let obj2 = { ...obj1 }; // shallow copy
 
 ## Question 5. Difference between null and undefined
 
+**Short answer:**
+`undefined` means a variable has been declared but not assigned a value, while `null` is an intentional assignment representing “no value” or “empty value”.
+
+---
+
+# 🔍 Detailed Interview Explanation
+
+In JavaScript, both `null` and `undefined` represent absence of value, but they are used in **different contexts and have different meanings**.
+
+---
+
+# 1. 🟡 undefined
+
+## 📌 Meaning:
+
+A variable is `undefined` when:
+
+- It is declared but not initialized
+- A function does not return a value
+- A missing object property is accessed
+
+---
+
+## Example 1: Declared but not assigned
+
+```js id="u1"
+let a;
+console.log(a); // undefined
+```
+
+---
+
+## Example 2: Missing return value
+
+```js id="u2"
+function test() {}
+console.log(test()); // undefined
+```
+
+---
+
+## Example 3: Missing object property
+
+```js id="u3"
+const user = { name: "John" };
+console.log(user.age); // undefined
+```
+
+---
+
+## Key idea:
+
+👉 JavaScript engine assigns `undefined` automatically
+
+---
+
+# 2. 🔴 null
+
+## 📌 Meaning:
+
+`null` is a **manually assigned value** representing “no value” or “empty”.
+
+---
+
+## Example:
+
+```js id="n1"
+let user = null;
+console.log(user); // null
+```
+
+---
+
+## Key idea:
+
+👉 Developer explicitly sets `null` to indicate intentional absence of value
+
+---
+
+# 🧠 Core Difference Concept
+
+| Feature       | undefined         | null                |
+| ------------- | ----------------- | ------------------- |
+| Type          | Primitive         | Primitive           |
+| Meaning       | Not assigned      | Intentionally empty |
+| Assigned by   | JavaScript engine | Developer           |
+| Default value | Yes               | No                  |
+| Usage         | Implicit          | Explicit            |
+
+---
+
+# ⚙️ typeof Behavior (Important Interview Point)
+
+```js id="t1"
+console.log(typeof undefined); // "undefined"
+console.log(typeof null); // "object" ❗ (historical bug)
+```
+
+👉 This is one of the most famous JavaScript quirks.
+
+---
+
+# 🔄 Equality Comparison
+
+## Loose equality (==)
+
+```js id="c1"
+console.log(null == undefined); // true
+```
+
+👉 They are considered equal in loose comparison.
+
+---
+
+## Strict equality (===)
+
+```js id="c2"
+console.log(null === undefined); // false
+```
+
+👉 Because type is different.
+
+---
+
+# 🧪 Practical Example
+
+## Case 1: API response handling
+
+```js id="api1"
+let data = null; // no data yet (intentional)
+```
+
+## Case 2: Missing value from system
+
+```js id="api2"
+let data;
+console.log(data); // undefined (system assigned)
+```
+
+---
+
+# ⚠️ Common Interview Pitfalls
+
+## 1. Confusing meaning
+
+- ❌ “Both mean same thing” → incorrect
+- ✔️ undefined = system missing value
+- ✔️ null = intentional absence
+
+---
+
+## 2. typeof null confusion
+
+```js id="pit1"
+typeof null; // "object"
+```
+
+👉 Interview trick question
+
+---
+
+## 3. Loose equality confusion
+
+```js id="pit2"
+null == undefined; // true
+```
+
+👉 But they are NOT strictly equal
+
+---
+
+# 🚀 Best Practices
+
+- Use `undefined` as default state (system-level absence)
+- Use `null` when you want to explicitly clear a variable
+- Avoid relying on `==` comparisons
+- Prefer strict equality `===`
+
+---
+
+# 🎯 Final Summary
+
+- **undefined** → variable exists but has no value assigned (automatic)
+- **null** → intentional empty value assigned by developer
+- Both represent “no value” but differ in **intent and usage**
+- `typeof null` returning `"object"` is a known historical bug
+- `null == undefined` is `true`, but `null === undefined` is `false`
+
 ## Question 6. Explain type coercion in JavaScript
 
 ## Question 7. What is the difference between == and ===?
