@@ -1965,6 +1965,526 @@ Important interview discussion areas:
 
 ## Question 5. How to implement a strategy pattern in JavaScript
 
+The Strategy Pattern is a behavioral design pattern that allows you to define a family of algorithms, encapsulate each one, and make them interchangeable at runtime.
+
+Instead of hardcoding logic using large `if/else` or `switch` statements, you delegate behavior to separate strategy objects or functions.
+
+It helps with:
+
+- reducing conditional complexity
+- improving extensibility
+- following the Open/Closed Principle
+- enabling runtime behavior changes
+
+---
+
+# Core Idea
+
+Instead of:
+
+```js id="2aqy95"
+if (paymentType === "paypal") {
+  // PayPal logic
+} else if (paymentType === "stripe") {
+  // Stripe logic
+}
+```
+
+Use interchangeable strategies:
+
+```js id="6w6p7g"
+paymentStrategy.pay(amount);
+```
+
+---
+
+# Basic Strategy Pattern Structure
+
+```txt id="yz17dx"
+Context
+   ↓ uses
+Strategy Interface
+   ↓
+Concrete Strategies
+```
+
+---
+
+# Simple Example
+
+---
+
+# Without Strategy Pattern
+
+```js id="bl37jd"
+function calculatePrice(type, price) {
+  if (type === "regular") {
+    return price;
+  }
+
+  if (type === "premium") {
+    return price * 0.8;
+  }
+
+  if (type === "vip") {
+    return price * 0.6;
+  }
+}
+```
+
+Problems:
+
+- difficult to extend
+- violates Open/Closed Principle
+- large conditionals grow over time
+
+---
+
+# With Strategy Pattern
+
+---
+
+# 1. Define Strategies
+
+```js id="jlwmg6"
+class RegularPricing {
+  calculate(price) {
+    return price;
+  }
+}
+
+class PremiumPricing {
+  calculate(price) {
+    return price * 0.8;
+  }
+}
+
+class VIPPricing {
+  calculate(price) {
+    return price * 0.6;
+  }
+}
+```
+
+---
+
+# 2. Context Class
+
+```js id="d8tz7m"
+class PriceCalculator {
+  constructor(strategy) {
+    this.strategy = strategy;
+  }
+
+  setStrategy(strategy) {
+    this.strategy = strategy;
+  }
+
+  calculate(price) {
+    return this.strategy.calculate(price);
+  }
+}
+```
+
+---
+
+# 3. Usage
+
+```js id="0g94of"
+const calculator = new PriceCalculator(new PremiumPricing());
+
+console.log(calculator.calculate(100));
+```
+
+Output:
+
+```txt id="p6xrfm"
+80
+```
+
+Switch strategy dynamically:
+
+```js id="g5mdx9"
+calculator.setStrategy(new VIPPricing());
+
+console.log(calculator.calculate(100));
+```
+
+---
+
+# JavaScript Functional Approach (Common Modern Style)
+
+Because functions are first-class citizens, JavaScript often implements strategy pattern using functions instead of classes.
+
+---
+
+# Functional Strategy Example
+
+```js id="3ln1py"
+const strategies = {
+  regular: (price) => price,
+
+  premium: (price) => price * 0.8,
+
+  vip: (price) => price * 0.6,
+};
+```
+
+Usage:
+
+```js id="sjhv1f"
+function calculatePrice(type, price) {
+  return strategies[type](price);
+}
+
+console.log(calculatePrice("vip", 100));
+```
+
+This is the most common real-world JS implementation.
+
+---
+
+# Real-World Example: Payment Processing
+
+---
+
+# Strategies
+
+```js id="d7fy81"
+class PayPalPayment {
+  pay(amount) {
+    console.log(`Paid ${amount} using PayPal`);
+  }
+}
+
+class StripePayment {
+  pay(amount) {
+    console.log(`Paid ${amount} using Stripe`);
+  }
+}
+
+class CryptoPayment {
+  pay(amount) {
+    console.log(`Paid ${amount} using Crypto`);
+  }
+}
+```
+
+---
+
+# Context
+
+```js id="8r4xj6"
+class PaymentProcessor {
+  constructor(strategy) {
+    this.strategy = strategy;
+  }
+
+  process(amount) {
+    this.strategy.pay(amount);
+  }
+}
+```
+
+Usage:
+
+```js id="zqjlwm"
+const payment = new PaymentProcessor(new StripePayment());
+
+payment.process(500);
+```
+
+---
+
+# Strategy Pattern with Configuration Objects
+
+Modern frontend apps often use object maps.
+
+```js id="x4d5g8"
+const renderers = {
+  json: (data) => JSON.stringify(data),
+
+  html: (data) => `<div>${data}</div>`,
+
+  text: (data) => String(data),
+};
+```
+
+Usage:
+
+```js id="kbb8hc"
+function render(type, data) {
+  return renderers[type](data);
+}
+```
+
+Very common in:
+
+- React apps
+- middleware systems
+- plugin architectures
+
+---
+
+# Strategy Pattern in React
+
+---
+
+# Dynamic Component Strategy
+
+```jsx id="zjzccl"
+const strategies = {
+  admin: AdminDashboard,
+  user: UserDashboard,
+};
+
+function Dashboard({ role }) {
+  const Component = strategies[role];
+
+  return <Component />;
+}
+```
+
+This is strategy pattern in UI rendering.
+
+---
+
+# Strategy Pattern in Express Middleware
+
+```js id="n3uzmy"
+const authStrategies = {
+  jwt: jwtAuth,
+  oauth: oauthAuth,
+};
+
+app.use(authStrategies[type]);
+```
+
+---
+
+# Strategy Pattern in Validation Systems
+
+```js id="4wjv6m"
+const validators = {
+  email: (value) => value.includes("@"),
+
+  password: (value) => value.length >= 8,
+};
+```
+
+Usage:
+
+```js id="3nzw1m"
+validators.email("test@example.com");
+```
+
+---
+
+# Advantages of Strategy Pattern
+
+| Benefit                       | Explanation                              |
+| ----------------------------- | ---------------------------------------- |
+| Eliminates large conditionals | Cleaner code                             |
+| Easy to extend                | Add strategies without modifying context |
+| Runtime flexibility           | Switch behavior dynamically              |
+| Better separation             | Each algorithm isolated                  |
+| Easier testing                | Strategies test independently            |
+
+---
+
+# Common Pitfalls
+
+---
+
+# 1. Too Many Tiny Classes
+
+In JavaScript, class-heavy strategies can become verbose.
+
+Prefer functions when possible.
+
+---
+
+# 2. Overengineering
+
+Simple logic may not need full strategy abstraction.
+
+Bad:
+
+```js id="d75f72"
+if (x > 5)
+```
+
+No strategy needed.
+
+---
+
+# 3. Inconsistent Interfaces
+
+All strategies should expose the same API.
+
+Bad:
+
+```js id="n5c08u"
+paypal.pay();
+stripe.process();
+crypto.send();
+```
+
+Good:
+
+```js id="3tgu95"
+strategy.execute();
+```
+
+---
+
+# 4. Hidden Runtime Errors
+
+If strategy missing:
+
+```js id="u9u0j5"
+strategies[type]();
+```
+
+Can throw:
+
+```txt id="8fy0vb"
+TypeError: undefined is not a function
+```
+
+Safer:
+
+```js id="qfjlwm"
+if (!strategies[type]) {
+  throw new Error("Invalid strategy");
+}
+```
+
+---
+
+# Strategy vs State Pattern
+
+Interviewers often ask this.
+
+---
+
+# Strategy Pattern
+
+- algorithms are interchangeable
+- chosen externally
+- behavior selected intentionally
+
+Example:
+
+```txt id="njlwmw"
+Payment strategy
+Sorting strategy
+Validation strategy
+```
+
+---
+
+# State Pattern
+
+- behavior changes automatically based on internal state
+
+Example:
+
+```txt id="kg7flg"
+Traffic light states
+Game character states
+```
+
+Structure looks similar, intent differs.
+
+---
+
+# Strategy vs Factory Pattern
+
+| Strategy                    | Factory                          |
+| --------------------------- | -------------------------------- |
+| Chooses behavior            | Creates objects                  |
+| Runtime algorithm selection | Object instantiation abstraction |
+
+Often used together.
+
+---
+
+# Best Practices
+
+---
+
+# Prefer Functional Strategies in JS
+
+Very idiomatic:
+
+```js id="pjb4kp"
+const strategies = {
+  a: fn1,
+  b: fn2,
+};
+```
+
+---
+
+# Keep Interfaces Consistent
+
+Every strategy should behave predictably.
+
+---
+
+# Combine with Dependency Injection
+
+Inject strategy externally:
+
+```js id="v5qbtv"
+new PaymentProcessor(strategy);
+```
+
+---
+
+# Avoid Massive Strategy Registries
+
+Too many strategies may indicate architectural issues.
+
+---
+
+# Interview Summary
+
+The Strategy Pattern encapsulates interchangeable algorithms and allows behavior to be selected dynamically at runtime.
+
+Key concepts:
+
+- separates algorithms from consumers
+- eliminates large conditional logic
+- promotes extensibility
+- follows Open/Closed Principle
+
+Common JavaScript implementations:
+
+- class-based strategies
+- function-based strategies
+- object maps
+- configuration-driven handlers
+
+Widely used in:
+
+- payment systems
+- validation engines
+- middleware selection
+- React rendering
+- sorting/filtering systems
+- authentication providers
+
+A strong interview answer should also discuss:
+
+- runtime behavior switching
+- functional strategies in JS
+- strategy vs state pattern
+- strategy vs factory
+- avoiding overengineering
+- consistent interfaces and error handling
+
 ## Question 6. How to implement command pattern in JavaScript
 
 ## Question 7. How to implement middleware pattern in frontend or backend
