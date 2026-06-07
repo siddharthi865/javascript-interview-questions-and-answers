@@ -954,6 +954,238 @@ output.textContent = userInput;
 
 ## Question 5. How to change the style of an element using JavaScript?
 
+## Short Answer
+
+You can change the style of an element in JavaScript using:
+
+- **`element.style` (inline styles)**
+- **`classList` (recommended for real projects)**
+- **Setting CSS variables or stylesheets (advanced cases)**
+
+The most common interview answer is:
+👉 Use `element.style` for single changes and `classList` for scalable styling.
+
+---
+
+# 1. Using `element.style` (Inline Styling)
+
+### What it does:
+
+Directly modifies the **inline CSS** of an element.
+
+### Syntax:
+
+```js id="a1"
+element.style.propertyName = "value";
+```
+
+---
+
+### Example:
+
+```js id="a2"
+const box = document.getElementById("box");
+
+box.style.backgroundColor = "red";
+box.style.width = "200px";
+box.style.color = "white";
+```
+
+---
+
+### HTML:
+
+```html id="a3"
+<div id="box">Hello</div>
+```
+
+---
+
+### Output:
+
+Box becomes red with white text.
+
+---
+
+## ⚠️ Important Rule
+
+CSS properties with hyphens use **camelCase** in JS:
+
+| CSS              | JS              |
+| ---------------- | --------------- |
+| background-color | backgroundColor |
+| font-size        | fontSize        |
+| border-radius    | borderRadius    |
+
+---
+
+# 2. Using `classList` (BEST PRACTICE)
+
+### Why preferred?
+
+- Cleaner
+- Reusable styles
+- Separation of concerns (JS vs CSS)
+
+---
+
+### Example:
+
+#### CSS:
+
+```css id="b1"
+.active {
+  background-color: green;
+  color: white;
+}
+```
+
+#### JS:
+
+```js id="b2"
+const box = document.getElementById("box");
+
+box.classList.add("active");
+```
+
+---
+
+### Other classList methods:
+
+```js id="b3"
+box.classList.remove("active");
+box.classList.toggle("active");
+box.classList.contains("active");
+```
+
+---
+
+### Example toggle (very common interview question):
+
+```js id="b4"
+button.addEventListener("click", () => {
+  box.classList.toggle("active");
+});
+```
+
+---
+
+# 3. Direct `style.cssText`
+
+### What it does:
+
+Overwrites all inline styles at once.
+
+```js id="c1"
+box.style.cssText = "background-color: blue; color: white; width: 150px;";
+```
+
+---
+
+### ⚠️ Warning:
+
+- Replaces existing inline styles completely
+- Harder to maintain
+
+---
+
+# 4. Using `setProperty()` (Advanced)
+
+### Useful for CSS variables or dynamic properties:
+
+```js id="d1"
+box.style.setProperty("background-color", "purple");
+```
+
+---
+
+### With CSS variables:
+
+```css id="d2"
+:root {
+  --main-color: red;
+}
+```
+
+```js id="d3"
+document.documentElement.style.setProperty("--main-color", "blue");
+```
+
+---
+
+# 5. Comparison (Interview Table)
+
+| Method           | Use Case              | Pros             | Cons                  |
+| ---------------- | --------------------- | ---------------- | --------------------- |
+| `style.property` | Single style changes  | Simple           | Not scalable          |
+| `classList`      | Best practice styling | Clean & reusable | Needs CSS             |
+| `cssText`        | Bulk inline styles    | Quick            | Overwrites everything |
+| `setProperty()`  | CSS variables         | Flexible         | Less common           |
+
+---
+
+# 6. Real-world Example
+
+### Highlight element on click:
+
+```js id="e1"
+const items = document.querySelectorAll(".item");
+
+items.forEach((item) => {
+  item.addEventListener("click", () => {
+    items.forEach((i) => i.classList.remove("active"));
+    item.classList.add("active");
+  });
+});
+```
+
+---
+
+### CSS:
+
+```css id="e2"
+.active {
+  background-color: yellow;
+  font-weight: bold;
+}
+```
+
+---
+
+# 7. Common Interview Pitfalls
+
+### ❌ Wrong:
+
+```js id="f1"
+box.style.background-color = "red"; // invalid
+```
+
+### ✅ Correct:
+
+```js id="f2"
+box.style.backgroundColor = "red";
+```
+
+---
+
+### ❌ Overusing inline styles:
+
+Leads to messy code and overrides CSS specificity.
+
+---
+
+# 8. Performance Tip
+
+- `classList` is more maintainable
+- Inline styles can increase specificity conflicts
+- Modern frameworks (React, Vue) avoid direct DOM styling in most cases
+
+---
+
+# 💡 Final Interview Summary
+
+> In JavaScript, element styles can be changed using `style.property` for direct inline styling, but the best practice is using `classList` to add or remove CSS classes for maintainability and cleaner separation of concerns. Advanced options include `cssText` and `setProperty()` for dynamic styling.
+
 ## Question 6. Difference between appendChild() and insertBefore()
 
 ## Question 7. What is an HTMLCollection vs NodeList?
