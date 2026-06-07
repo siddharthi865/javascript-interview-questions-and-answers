@@ -1014,6 +1014,211 @@ let obj2 = { b: 2 };
 
 ## Question 5. What is rest parameter vs arguments object?
 
+## Direct Answer
+
+- The **rest parameter (`...args`)** is a modern ES6 feature that collects arguments into a real array.
+- The **`arguments` object** is an old, array-like object available inside regular functions that contains all passed arguments.
+
+👉 Key difference:
+**Rest parameters are real arrays and work in all modern JS features; `arguments` is array-like and has several limitations.**
+
+---
+
+# 1. Rest Parameter (`...args`)
+
+Introduced in ES6, it collects remaining arguments into an actual array.
+
+```js id="rest1"
+function sum(...numbers) {
+  return numbers.reduce((acc, num) => acc + num, 0);
+}
+
+console.log(sum(1, 2, 3, 4)); // 10
+```
+
+## Key Features
+
+- Always an **array**
+- Can use array methods (`map`, `filter`, `reduce`)
+- Must be the **last parameter**
+- Works with arrow functions
+
+---
+
+### Example: Multiple arguments
+
+```js id="rest2"
+function show(a, b, ...rest) {
+  console.log(a); // 1
+  console.log(b); // 2
+  console.log(rest); // [3, 4, 5]
+}
+
+show(1, 2, 3, 4, 5);
+```
+
+---
+
+# 2. `arguments` Object
+
+A special **array-like object** available in non-arrow functions.
+
+```js id="args1"
+function sum() {
+  let total = 0;
+
+  for (let i = 0; i < arguments.length; i++) {
+    total += arguments[i];
+  }
+
+  return total;
+}
+
+console.log(sum(1, 2, 3)); // 6
+```
+
+---
+
+## Key Features
+
+- Not a real array (array-like)
+- Has `.length`, but not array methods
+- Only available in **regular functions**
+- Not available in arrow functions
+
+---
+
+# 3. Key Differences (Important for Interviews)
+
+| Feature                  | Rest Parameter | Arguments Object  |
+| ------------------------ | -------------- | ----------------- |
+| Type                     | Real Array     | Array-like object |
+| ES Version               | ES6+           | Pre-ES6           |
+| Arrow functions          | Works          | Not available     |
+| Array methods            | Yes            | No                |
+| Readability              | High           | Low               |
+| Flexibility              | High           | Limited           |
+| Named parameters support | Yes            | No                |
+
+---
+
+# 4. Arrow Function Difference (Very Important)
+
+### arguments does NOT work:
+
+```js id="arrow1"
+const fn = () => {
+  console.log(arguments);
+};
+
+fn(1, 2, 3); // ReferenceError
+```
+
+---
+
+### Rest parameter works:
+
+```js id="arrow2"
+const fn = (...args) => {
+  console.log(args);
+};
+
+fn(1, 2, 3); // [1, 2, 3]
+```
+
+---
+
+# 5. Array-Like Nature of `arguments`
+
+You cannot directly use array methods:
+
+```js id="args2"
+function test() {
+  console.log(arguments.map); // undefined
+}
+```
+
+But you can convert it:
+
+```js id="args3"
+function test() {
+  const argsArray = Array.from(arguments);
+  console.log(argsArray.map((x) => x * 2));
+}
+
+test(1, 2, 3);
+```
+
+---
+
+# 6. Use Cases
+
+## Rest Parameter (Modern usage)
+
+```js id="rest3"
+function multiply(multiplier, ...nums) {
+  return nums.map((n) => n * multiplier);
+}
+
+console.log(multiply(2, 1, 2, 3));
+```
+
+---
+
+## Arguments Object (Legacy code)
+
+Still found in:
+
+- Older codebases
+- Polyfills
+- Internal utilities
+
+---
+
+# 7. Common Pitfalls
+
+### Pitfall 1: Mixing both
+
+```js id="mix1"
+function test(...args) {
+  console.log(arguments); // still exists but not recommended
+}
+```
+
+👉 Avoid mixing `arguments` with rest parameters.
+
+---
+
+### Pitfall 2: Using arguments in arrow functions
+
+```js id="mix2"
+const fn = () => arguments; // ❌ error
+```
+
+---
+
+### Pitfall 3: Thinking arguments is an array
+
+```js id="mix3"
+arguments.push(10); // ❌ TypeError
+```
+
+---
+
+# 8. Why Rest Parameter is Preferred (Modern JS)
+
+- Cleaner syntax
+- Works with modern APIs
+- Supports functional programming
+- Better performance optimizations in engines
+- Compatible with arrow functions
+
+---
+
+# 9. Interview-Friendly Summary
+
+> The rest parameter (`...args`) is a modern ES6 feature that collects function arguments into a real array, making it easier to work with array methods and arrow functions. The `arguments` object is an older array-like object available only in regular functions and lacks array methods and modern flexibility. In modern JavaScript, rest parameters are preferred due to better readability, usability, and compatibility with ES6+ features.
+
 ## Question 6. Explain dynamic import in ES6
 
 ## Question 7. What are JavaScript generators? How do they differ from regular functions?
