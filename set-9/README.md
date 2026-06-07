@@ -1036,6 +1036,403 @@ So:
 
 ## Question 5. What are the differences between classical object-oriented programming and JS prototypal inheritance?
 
+## Short Answer (Interview-ready)
+
+**Classical OOP** (Java, C++, C#) is based on **classes creating objects**, where inheritance occurs between classes. **JavaScript prototypal inheritance** is based on **objects inheriting directly from other objects** through the prototype chain.
+
+Modern JavaScript has `class` syntax, but under the hood it still uses **prototypes**, not classical inheritance.
+
+---
+
+# 🧠 Detailed Explanation (Senior Interview Level)
+
+The fundamental difference is:
+
+### Classical OOP
+
+```txt
+Class → Object
+```
+
+### JavaScript
+
+```txt
+Object → Object
+```
+
+In JavaScript, objects can inherit directly from other objects without requiring a class.
+
+---
+
+# 🏛️ 1. Classical OOP (Java, C++, C#)
+
+Classes act as blueprints.
+
+```java
+class Animal {
+    void speak() {
+        System.out.println("Animal");
+    }
+}
+
+class Dog extends Animal {
+}
+```
+
+Usage:
+
+```java
+Dog d = new Dog();
+d.speak();
+```
+
+### Characteristics
+
+- Classes are first-class language constructs
+- Objects are instances of classes
+- Inheritance happens between classes
+- Usually strongly typed
+
+---
+
+# ⚡ 2. JavaScript Prototypal Inheritance
+
+Objects inherit from other objects.
+
+```js
+const animal = {
+  speak() {
+    console.log("Animal");
+  },
+};
+
+const dog = Object.create(animal);
+
+dog.speak();
+```
+
+### Prototype Chain
+
+```txt
+dog
+ ↓
+animal
+ ↓
+Object.prototype
+ ↓
+null
+```
+
+When JavaScript cannot find a property on an object, it searches up the prototype chain.
+
+---
+
+# 🔥 Example: Property Lookup
+
+```js
+const animal = {
+  type: "animal",
+};
+
+const dog = Object.create(animal);
+
+console.log(dog.type);
+```
+
+Output:
+
+```txt
+animal
+```
+
+JavaScript finds `type` on the prototype object.
+
+---
+
+# ⚖️ Key Differences
+
+| Feature              | Classical OOP     | JavaScript Prototypal  |
+| -------------------- | ----------------- | ---------------------- |
+| Basis                | Classes           | Objects                |
+| Inheritance          | Class → Class     | Object → Object        |
+| Blueprint Required   | Yes               | No                     |
+| Object Creation      | Instantiate class | Create object directly |
+| Property Lookup      | Class hierarchy   | Prototype chain        |
+| Runtime Flexibility  | Lower             | Higher                 |
+| Dynamic Modification | Limited           | Very flexible          |
+
+---
+
+# 🧠 Classes in Modern JavaScript
+
+Many developers think JavaScript now has classical inheritance because of `class`.
+
+Example:
+
+```js
+class Animal {
+  speak() {
+    console.log("Animal");
+  }
+}
+
+class Dog extends Animal {}
+```
+
+Looks like Java:
+
+```js
+const d = new Dog();
+d.speak();
+```
+
+---
+
+## But internally...
+
+JavaScript converts this into prototype relationships.
+
+```js
+console.log(Dog.prototype.__proto__ === Animal.prototype);
+```
+
+Output:
+
+```txt
+true
+```
+
+So:
+
+```txt
+Dog instance
+      ↓
+Dog.prototype
+      ↓
+Animal.prototype
+      ↓
+Object.prototype
+      ↓
+null
+```
+
+Still prototypal inheritance.
+
+---
+
+# 🔥 Dynamic Nature of Prototypes
+
+One major difference:
+
+### Classical OOP
+
+Changing a class at runtime is difficult or impossible.
+
+### JavaScript
+
+You can modify prototypes dynamically.
+
+```js
+function Animal() {}
+
+Animal.prototype.walk = function () {
+  console.log("walking");
+};
+
+const dog = new Animal();
+
+dog.walk();
+```
+
+Later:
+
+```js
+Animal.prototype.run = function () {
+  console.log("running");
+};
+
+dog.run();
+```
+
+Output:
+
+```txt
+running
+```
+
+Existing objects gain access immediately.
+
+---
+
+# 🧠 Constructor Functions (Pre-ES6)
+
+Before `class` syntax:
+
+```js
+function Animal(name) {
+  this.name = name;
+}
+
+Animal.prototype.speak = function () {
+  console.log(this.name);
+};
+```
+
+This is the original JavaScript inheritance model.
+
+---
+
+# 🔥 Object Delegation
+
+JavaScript inheritance is often described as:
+
+> Objects delegate behavior to prototypes.
+
+Example:
+
+```js
+const animal = {
+  speak() {
+    console.log("Animal");
+  },
+};
+
+const dog = Object.create(animal);
+
+dog.speak();
+```
+
+`dog` doesn't own `speak`.
+
+It delegates lookup to `animal`.
+
+---
+
+# ⚠️ Common Interview Traps
+
+## Trap 1: "JavaScript is class-based"
+
+❌ Incorrect
+
+JavaScript is fundamentally:
+
+```txt
+Prototype-based
+```
+
+Even ES6 classes use prototypes internally.
+
+---
+
+## Trap 2: "Classes create copies of methods"
+
+```js
+class User {
+  greet() {}
+}
+```
+
+Methods are stored on:
+
+```js
+User.prototype;
+```
+
+Not copied to every instance.
+
+---
+
+## Trap 3: Confusing prototype with instance
+
+```js
+function User() {}
+
+const u = new User();
+```
+
+```txt
+u → instance
+User.prototype → prototype object
+```
+
+Different things.
+
+---
+
+# 🔥 Real Internal Relationship
+
+```js
+class A {}
+
+const a = new A();
+```
+
+Internally:
+
+```txt
+a
+ ↓
+A.prototype
+ ↓
+Object.prototype
+ ↓
+null
+```
+
+Checking:
+
+```js
+console.log(Object.getPrototypeOf(a) === A.prototype);
+```
+
+Output:
+
+```txt
+true
+```
+
+---
+
+# 🧠 Advantages of Prototypal Inheritance
+
+### 1. Dynamic
+
+Modify behavior at runtime.
+
+### 2. Memory Efficient
+
+Methods shared through prototypes.
+
+### 3. Flexible
+
+Objects can inherit directly from objects.
+
+### 4. No Blueprint Requirement
+
+Can create inheritance without classes.
+
+---
+
+# 🧠 Advantages of Classical OOP
+
+### 1. Easier for large teams
+
+Clear hierarchy.
+
+### 2. Strong typing support
+
+(Java/C#/C++)
+
+### 3. Familiar architecture
+
+Common enterprise pattern.
+
+---
+
+# 💣 Senior-Level Interview Answer
+
+> “Classical OOP is based on classes acting as blueprints for objects, with inheritance occurring between classes. JavaScript, however, uses prototypal inheritance, where objects inherit directly from other objects through the prototype chain. Although ES6 introduced class syntax, it is primarily syntactic sugar over the existing prototype-based model. Property and method lookup in JavaScript occurs dynamically through prototype delegation, making the language more flexible and dynamic than traditional class-based OOP systems.”
+
 ## Question 6. How does new keyword work internally?
 
 ## Question 7. Explain super() in classes
