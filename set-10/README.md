@@ -1750,6 +1750,417 @@ const metadata = new WeakMap();
 
 ## Question 5. How to implement private variables using closures?
 
+# How to Implement Private Variables Using Closures?
+
+## Short Answer
+
+Private variables can be implemented using **closures** by defining variables inside a function and returning methods that access them. Since the variables are not exposed outside the function, they remain private.
+
+```js
+function createCounter() {
+  let count = 0; // private variable
+
+  return {
+    increment() {
+      count++;
+    },
+
+    getCount() {
+      return count;
+    },
+  };
+}
+
+const counter = createCounter();
+
+counter.increment();
+console.log(counter.getCount()); // 1
+
+console.log(counter.count); // undefined
+```
+
+---
+
+# What Is a Closure?
+
+A **closure** is created when a function remembers and can access variables from its lexical scope even after the outer function has finished executing.
+
+```js
+function outer() {
+  let message = "Hello";
+
+  return function inner() {
+    console.log(message);
+  };
+}
+
+const fn = outer();
+fn(); // Hello
+```
+
+Even though `outer()` has completed, `inner()` still has access to `message`.
+
+This ability is what enables private variables.
+
+---
+
+# Basic Private Variable Example
+
+```js
+function createUser(name) {
+  let username = name; // private
+
+  return {
+    getName() {
+      return username;
+    },
+
+    setName(newName) {
+      username = newName;
+    },
+  };
+}
+
+const user = createUser("John");
+
+console.log(user.getName()); // John
+
+user.setName("Alice");
+
+console.log(user.getName()); // Alice
+console.log(user.username); // undefined
+```
+
+### Why is `username` private?
+
+Because it exists only inside `createUser()`'s scope.
+
+External code cannot access it directly.
+
+---
+
+# Interview Favorite: Counter Example
+
+```js
+function createCounter() {
+  let count = 0;
+
+  return {
+    increment() {
+      count++;
+      return count;
+    },
+
+    decrement() {
+      count--;
+      return count;
+    },
+
+    value() {
+      return count;
+    },
+  };
+}
+
+const counter = createCounter();
+
+console.log(counter.increment()); // 1
+console.log(counter.increment()); // 2
+console.log(counter.decrement()); // 1
+```
+
+Here:
+
+- `count` is private
+- Only returned methods can modify it
+- External code cannot change it directly
+
+---
+
+# Multiple Instances Have Separate Private State
+
+```js
+function createCounter() {
+  let count = 0;
+
+  return {
+    increment() {
+      return ++count;
+    },
+  };
+}
+
+const c1 = createCounter();
+const c2 = createCounter();
+
+console.log(c1.increment()); // 1
+console.log(c1.increment()); // 2
+
+console.log(c2.increment()); // 1
+```
+
+Each closure gets its own copy of `count`.
+
+---
+
+# Module Pattern (Classic JavaScript)
+
+Before ES Modules, closures were commonly used for encapsulation.
+
+```js
+const Calculator = (function () {
+  let result = 0;
+
+  return {
+    add(num) {
+      result += num;
+    },
+
+    subtract(num) {
+      result -= num;
+    },
+
+    getResult() {
+      return result;
+    },
+  };
+})();
+
+Calculator.add(10);
+Calculator.add(5);
+
+console.log(Calculator.getResult()); // 15
+```
+
+The variable `result` is completely private.
+
+---
+
+# Simulating Private Methods
+
+Closures can hide both data and helper functions.
+
+```js
+function createBankAccount(balance) {
+  function validate(amount) {
+    return amount > 0;
+  }
+
+  return {
+    deposit(amount) {
+      if (validate(amount)) {
+        balance += amount;
+      }
+    },
+
+    getBalance() {
+      return balance;
+    },
+  };
+}
+```
+
+Both:
+
+```js
+balance;
+validate();
+```
+
+are private.
+
+---
+
+# Why Closures Work for Privacy
+
+When a function returns another function:
+
+```js
+function outer() {
+  let secret = "hidden";
+
+  return function () {
+    return secret;
+  };
+}
+```
+
+JavaScript's garbage collector keeps `secret` alive because the inner function still references it.
+
+This preserved lexical environment is the closure.
+
+---
+
+# Common Pitfall
+
+Developers sometimes think this is private:
+
+```js
+function User(name) {
+  this.name = name;
+}
+
+const user = new User("John");
+
+console.log(user.name);
+```
+
+It is not private.
+
+Anyone can do:
+
+```js
+user.name = "Hacked";
+```
+
+Closures provide true encapsulation.
+
+---
+
+# Closure-Based Privacy vs `#private` Fields
+
+Modern JavaScript supports private class fields:
+
+```js
+class User {
+  #name;
+
+  constructor(name) {
+    this.#name = name;
+  }
+
+  getName() {
+    return this.#name;
+  }
+}
+```
+
+---
+
+## Closure Approach
+
+```js
+function createUser(name) {
+  let username = name;
+
+  return {
+    getName() {
+      return username;
+    },
+  };
+}
+```
+
+---
+
+## Comparison
+
+| Feature                             | Closures      | `#private` Fields |
+| ----------------------------------- | ------------- | ----------------- |
+| Truly private                       | ✅            | ✅                |
+| Works in functions                  | ✅            | ❌                |
+| Works in classes                    | Possible      | ✅                |
+| Memory efficient for many instances | ❌            | ✅                |
+| Modern standard                     | Older pattern | ✅                |
+
+---
+
+# Performance Consideration
+
+With closures:
+
+```js
+function createUser(name) {
+  return {
+    getName() {
+      return name;
+    },
+  };
+}
+```
+
+Every instance creates new function objects.
+
+```js
+const u1 = createUser("A");
+const u2 = createUser("B");
+```
+
+Each instance gets its own `getName()` function.
+
+With classes:
+
+```js
+class User {
+  getName() {}
+}
+```
+
+Methods are shared via the prototype, making them more memory-efficient for many instances.
+
+---
+
+# Real-World Example: Secure Token Storage
+
+```js
+function createAuth() {
+  let token = null;
+
+  return {
+    login(newToken) {
+      token = newToken;
+    },
+
+    getToken() {
+      return token;
+    },
+
+    logout() {
+      token = null;
+    },
+  };
+}
+
+const auth = createAuth();
+
+auth.login("abc123");
+
+console.log(auth.getToken()); // abc123
+console.log(auth.token); // undefined
+```
+
+The token cannot be accessed directly from outside.
+
+---
+
+# Interview Summary
+
+> Private variables can be implemented using closures by defining variables inside an outer function and returning inner functions that access those variables. The returned functions retain access to the outer scope through lexical scoping, while external code cannot access the variables directly.
+
+```js
+function createCounter() {
+  let count = 0;
+
+  return {
+    increment() {
+      count++;
+    },
+
+    getCount() {
+      return count;
+    },
+  };
+}
+```
+
+### Key Interview Takeaways
+
+- Closures preserve access to outer-scope variables.
+- Private variables are inaccessible from outside the closure.
+- Each function invocation gets its own private state.
+- This pattern was widely used before `#private` class fields.
+- Modern JavaScript often prefers `#private` fields for class-based designs, but closures remain fundamental and are frequently asked in interviews.
+
 ## Question 6. Explain JavaScript memory model: stack vs heap
 
 ## Question 7. How to handle circular references in objects?
