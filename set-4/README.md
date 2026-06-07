@@ -962,6 +962,303 @@ const city = user?.address?.city;
 
 ## Question 5. Explain Map vs Object
 
+### Short Answer
+
+A **Map** is a collection of key–value pairs where keys can be of any type and the order of insertion is preserved. An **Object** is also a key–value structure, but keys are usually strings or symbols, and it is primarily designed for structured data representation.
+
+---
+
+# 1. Core Difference
+
+| Feature     | Object                                 | Map                                    |
+| ----------- | -------------------------------------- | -------------------------------------- |
+| Key types   | String / Symbol only                   | Any type (object, function, primitive) |
+| Order       | Not reliably guaranteed (historically) | Maintains insertion order              |
+| Size        | Manual (`Object.keys().length`)        | Built-in `.size`                       |
+| Iteration   | Needs `Object.keys/entries`            | Direct iteration supported             |
+| Performance | Good for small/structured data         | Better for frequent additions/removals |
+| Prototype   | Has prototype chain                    | No default keys (clean map)            |
+
+---
+
+# 2. Object Basics
+
+Objects are the most common structure in JavaScript.
+
+```javascript id="obj1"
+const user = {
+  name: "Aman",
+  age: 30,
+};
+
+console.log(user.name); // Aman
+```
+
+### Keys are always strings (implicitly)
+
+```javascript id="obj2"
+const obj = {};
+obj[1] = "one";
+
+console.log(obj["1"]); // "one"
+```
+
+👉 `1` becomes `"1"`
+
+---
+
+## Object limitations
+
+```javascript id="obj3"
+const obj = {};
+
+obj[true] = "yes";
+obj[{ a: 1 }] = "object key";
+
+console.log(obj);
+// keys become "[object Object]" and "true"
+```
+
+This shows key coercion problem.
+
+---
+
+# 3. Map Basics
+
+Map is designed for **better key flexibility and iteration control**.
+
+```javascript id="map1"
+const map = new Map();
+
+map.set("name", "Aman");
+map.set(1, "number key");
+map.set(true, "boolean key");
+
+console.log(map.get(1)); // "number key"
+```
+
+---
+
+## Key advantage: any type as key
+
+```javascript id="map2"
+const objKey = { id: 1 };
+
+const map = new Map();
+map.set(objKey, "Object as key");
+
+console.log(map.get(objKey)); // "Object as key"
+```
+
+👉 Objects cannot do this cleanly.
+
+---
+
+# 4. Size difference
+
+### Object
+
+```javascript id="objsize"
+const obj = { a: 1, b: 2 };
+
+console.log(Object.keys(obj).length); // 2
+```
+
+### Map
+
+```javascript id="mapsize"
+const map = new Map([
+  ["a", 1],
+  ["b", 2],
+]);
+
+console.log(map.size); // 2
+```
+
+---
+
+# 5. Iteration difference
+
+### Object (less direct)
+
+```javascript id="objiter"
+const obj = { a: 1, b: 2 };
+
+for (let key of Object.keys(obj)) {
+  console.log(key, obj[key]);
+}
+```
+
+---
+
+### Map (clean iteration)
+
+```javascript id="mapiter"
+const map = new Map([
+  ["a", 1],
+  ["b", 2],
+]);
+
+for (let [key, value] of map) {
+  console.log(key, value);
+}
+```
+
+---
+
+# 6. Order behavior
+
+### Object
+
+Historically unordered (modern engines preserve insertion order for most cases, but not fully reliable in all scenarios especially numeric keys).
+
+```javascript id="objorder"
+const obj = {
+  b: 2,
+  a: 1,
+};
+```
+
+---
+
+### Map
+
+Always preserves insertion order:
+
+```javascript id="maporder"
+const map = new Map();
+
+map.set("b", 2);
+map.set("a", 1);
+
+console.log([...map.keys()]); // ["b", "a"]
+```
+
+---
+
+# 7. Performance difference (important interview point)
+
+| Operation | Object                    | Map                                |
+| --------- | ------------------------- | ---------------------------------- |
+| Insert    | Fast                      | Fast (better for frequent updates) |
+| Delete    | Slower (`delete` keyword) | Faster (`map.delete()`)            |
+| Lookup    | Very fast                 | Very fast                          |
+| Iteration | Slower for large sets     | Optimized for iteration            |
+
+👉 Map performs better when frequently adding/removing entries.
+
+---
+
+# 8. Real-world usage examples
+
+## Object use case (structured data)
+
+```javascript id="objuse"
+const user = {
+  id: 1,
+  name: "Aman",
+  isActive: true,
+};
+```
+
+✔ Best for:
+
+- Models
+- JSON data
+- API responses
+
+---
+
+## Map use case (dynamic collections)
+
+```javascript id="mapuse"
+const cache = new Map();
+
+cache.set("/api/user", { id: 1 });
+cache.set("/api/posts", [1, 2, 3]);
+```
+
+✔ Best for:
+
+- Caching
+- Lookup tables
+- Dynamic key-value storage
+- Associative mapping
+
+---
+
+# 9. Garbage collection advantage
+
+Map allows better memory control in some cases:
+
+```javascript id="gcmap"
+let obj = { key: "data" };
+
+const map = new Map();
+map.set(obj, "value");
+
+obj = null; // object can be garbage collected if no other references
+```
+
+Object keys don’t behave as cleanly for this pattern.
+
+---
+
+# 10. Common pitfalls
+
+## ❌ Object key coercion surprises
+
+```javascript id="pitobj"
+const obj = {};
+
+obj[1] = "one";
+obj["1"] = "string one";
+
+console.log(obj); // same key overwrites
+```
+
+---
+
+## ❌ Map misuse for simple data
+
+Using Map when Object is enough adds unnecessary complexity.
+
+---
+
+# 11. When to use what?
+
+## Use Object when:
+
+- Data is static / structured
+- You need JSON compatibility
+- You are modeling entities
+
+```javascript id="useobj"
+const product = {
+  id: 1,
+  name: "Phone",
+};
+```
+
+---
+
+## Use Map when:
+
+- Keys are dynamic or unknown
+- Keys are not strings
+- Frequent insert/delete operations
+- Need guaranteed iteration order
+
+```javascript id="usemap"
+const sessions = new Map();
+```
+
+---
+
+# 12. Interview One-liner
+
+> An Object is best for structured, static key-value data with string keys, while a Map is a more powerful and flexible collection that supports any type of key, preserves insertion order, and is optimized for dynamic operations like frequent insertions and deletions.
+
 ## Question 6. Explain Set in JavaScript
 
 ## Question 7. How to remove duplicates from an array using Set
