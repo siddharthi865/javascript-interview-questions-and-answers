@@ -1081,6 +1081,267 @@ Touch and gesture handling in JavaScript is implemented using either Touch Event
 
 ## Question 5. How to implement drag-and-drop using `dragstart`, `dragover`, `drop`
 
+# ✅ Direct Answer
+
+Drag-and-drop in JavaScript is implemented using the **HTML Drag and Drop API**, primarily with three events:
+
+- `dragstart` → when dragging begins
+- `dragover` → when dragged item is over a valid drop target (must call `preventDefault`)
+- `drop` → when item is dropped
+
+You also typically use `dataTransfer` to pass data between drag source and drop target.
+
+---
+
+# 🧠 Interview-Level Explanation
+
+The Drag and Drop API works by:
+
+1. Marking an element as draggable (`draggable="true"`)
+2. Capturing drag metadata in `dragstart`
+3. Allowing drop zones via `dragover`
+4. Handling the final placement in `drop`
+
+The browser uses a shared object called:
+
+> `event.dataTransfer`
+
+to transfer data during drag operations.
+
+---
+
+# 📌 Basic Working Example
+
+## HTML
+
+```html id="k2p9ab"
+<div id="item" draggable="true">Drag me</div>
+
+<div id="dropzone">Drop here</div>
+```
+
+---
+
+## JS Implementation
+
+### 1. dragstart
+
+```js id="a9m2xz"
+const item = document.getElementById("item");
+
+item.addEventListener("dragstart", (e) => {
+  e.dataTransfer.setData("text/plain", e.target.id);
+});
+```
+
+---
+
+### 2. dragover (IMPORTANT)
+
+```js id="p3k8nv"
+const dropzone = document.getElementById("dropzone");
+
+dropzone.addEventListener("dragover", (e) => {
+  e.preventDefault(); // REQUIRED to allow dropping
+});
+```
+
+---
+
+### 3. drop
+
+```js id="x7q1lm"
+dropzone.addEventListener("drop", (e) => {
+  e.preventDefault();
+
+  const id = e.dataTransfer.getData("text/plain");
+  const draggedElement = document.getElementById(id);
+
+  dropzone.appendChild(draggedElement);
+
+  console.log("Dropped!");
+});
+```
+
+---
+
+# 🧠 Key Concept: `dataTransfer`
+
+This object is the **bridge between drag source and drop target**.
+
+## Common methods:
+
+```js id="c1v8dd"
+e.dataTransfer.setData("text/plain", "value");
+e.dataTransfer.getData("text/plain");
+```
+
+## You can also set:
+
+- `text/plain`
+- `text/html`
+- custom MIME types
+
+---
+
+# ⚙️ Optional Enhancements
+
+## 1. dragenter / dragleave (UI feedback)
+
+```js id="m0k9zx"
+dropzone.addEventListener("dragenter", () => {
+  dropzone.classList.add("active");
+});
+
+dropzone.addEventListener("dragleave", () => {
+  dropzone.classList.remove("active");
+});
+```
+
+---
+
+## 2. dragend (cleanup)
+
+```js id="q8n3lp"
+item.addEventListener("dragend", () => {
+  console.log("Drag finished");
+});
+```
+
+---
+
+# 🎯 Real-World Example: Reordering List Items
+
+```js id="t5p9kc"
+let dragged;
+
+document.querySelectorAll(".item").forEach((el) => {
+  el.addEventListener("dragstart", (e) => {
+    dragged = e.target;
+  });
+
+  el.addEventListener("dragover", (e) => {
+    e.preventDefault();
+  });
+
+  el.addEventListener("drop", (e) => {
+    e.preventDefault();
+
+    if (dragged !== e.target) {
+      const parent = e.target.parentNode;
+      parent.insertBefore(dragged, e.target);
+    }
+  });
+});
+```
+
+---
+
+# ⚠️ Important Interview Pitfalls
+
+## ❌ 1. Forgetting `preventDefault()` in dragover
+
+Without it, drop will NOT work.
+
+```js id="n1p3kd"
+dropzone.addEventListener("dragover", (e) => {
+  // missing preventDefault ❌
+});
+```
+
+---
+
+## ❌ 2. Using innerHTML for data transfer
+
+Bad:
+
+```js id="v9k2lm"
+e.dataTransfer.setData("html", e.target.innerHTML);
+```
+
+Better:
+
+- use IDs or structured data (JSON)
+
+---
+
+## ❌ 3. Not handling mobile devices
+
+⚠️ Native Drag-and-Drop API is:
+
+- poorly supported on mobile
+- inconsistent on touch devices
+
+👉 For mobile, use Pointer Events instead.
+
+---
+
+## ❌ 4. Losing reference to dragged element
+
+Always store reference or use `dataTransfer`.
+
+---
+
+# 🧠 How It Works Internally (Important Senior Insight)
+
+When dragging:
+
+- Browser creates a **drag session**
+- Tracks pointer movement
+- Fires:
+  - `dragstart`
+  - many `dragover` events
+  - `drop`
+  - `dragend`
+
+Event frequency can be very high → avoid heavy logic inside handlers.
+
+---
+
+# ⚡ Performance Best Practices
+
+- Keep `dragover` handler lightweight
+- Avoid DOM mutations during dragover
+- Use CSS classes for visual feedback
+- Debounce expensive operations if needed
+
+---
+
+# ⚖️ Drag-and-Drop vs Pointer Events
+
+| Feature         | Drag & Drop API | Pointer Events |
+| --------------- | --------------- | -------------- |
+| Desktop support | ✅              | ✅             |
+| Mobile support  | ❌ weak         | ✅ strong      |
+| Custom gestures | ❌ limited      | ✅ flexible    |
+| File dragging   | ✅ built-in     | ❌ manual      |
+
+---
+
+# 📁 Bonus: File Drag-and-Drop
+
+```js id="r3m8pp"
+dropzone.addEventListener("drop", (e) => {
+  e.preventDefault();
+
+  const files = e.dataTransfer.files;
+
+  console.log(files);
+});
+```
+
+Used in:
+
+- uploaders
+- image editors
+- cloud storage apps
+
+---
+
+# 🧾 Interview Summary
+
+Drag-and-drop in JavaScript is implemented using the Drag and Drop API with `dragstart`, `dragover`, and `drop` events. Data is passed via `dataTransfer`, and `preventDefault()` in `dragover` is required to enable dropping. While effective on desktop, it has limitations on mobile, so Pointer Events are often preferred for modern cross-device gesture handling.
+
 ## Question 6. Difference between capturing, bubbling, and target phases
 
 ## Question 7. How to prevent memory leaks in long-lived event listeners
