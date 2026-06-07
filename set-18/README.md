@@ -1266,6 +1266,516 @@ It is commonly used with `async/await` to pause asynchronous workflows without b
 
 ## Question 5. How to chain promises sequentially
 
+## ✅ Direct Answer
+
+To execute promises **sequentially**, each promise must be started only after the previous one resolves. This is done by returning a promise from `.then()` callbacks or by using `async/await`.
+
+```javascript
+task1()
+  .then(() => task2())
+  .then(() => task3())
+  .then(() => console.log("Done"));
+```
+
+Or:
+
+```javascript
+await task1();
+await task2();
+await task3();
+```
+
+---
+
+# 🧠 What Does "Sequentially" Mean?
+
+Sequential execution means:
+
+```text
+Task 1 finishes
+     ↓
+Task 2 starts
+     ↓
+Task 3 starts
+```
+
+Not:
+
+```text
+Task 1 starts
+Task 2 starts
+Task 3 starts
+```
+
+(which is concurrent execution)
+
+---
+
+# Basic Promise Chaining
+
+Suppose:
+
+```javascript
+function fetchUser() {
+  return Promise.resolve("User");
+}
+
+function fetchOrders() {
+  return Promise.resolve("Orders");
+}
+
+function fetchPayments() {
+  return Promise.resolve("Payments");
+}
+```
+
+Sequential chain:
+
+```javascript
+fetchUser()
+  .then((user) => {
+    console.log(user);
+    return fetchOrders();
+  })
+  .then((orders) => {
+    console.log(orders);
+    return fetchPayments();
+  })
+  .then((payments) => {
+    console.log(payments);
+  });
+```
+
+Output:
+
+```javascript
+User;
+Orders;
+Payments;
+```
+
+---
+
+# Why Returning the Promise Matters
+
+Correct:
+
+```javascript
+task1()
+  .then(() => {
+    return task2();
+  })
+  .then(() => {
+    return task3();
+  });
+```
+
+Incorrect:
+
+```javascript
+task1()
+  .then(() => {
+    task2();
+  })
+  .then(() => {
+    task3();
+  });
+```
+
+Problem:
+
+```text
+task2() starts
+next .then() executes immediately
+```
+
+because nothing was returned.
+
+This is one of the most common interview mistakes.
+
+---
+
+# Sequential Delays Example
+
+```javascript
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+delay(1000)
+  .then(() => {
+    console.log("1");
+    return delay(1000);
+  })
+  .then(() => {
+    console.log("2");
+    return delay(1000);
+  })
+  .then(() => {
+    console.log("3");
+  });
+```
+
+Output:
+
+```javascript
+1  (after 1s)
+2  (after 2s)
+3  (after 3s)
+```
+
+---
+
+# Sequential Chaining with async/await
+
+Modern JavaScript usually prefers:
+
+```javascript
+async function run() {
+  await task1();
+  await task2();
+  await task3();
+
+  console.log("Done");
+}
+
+run();
+```
+
+This is functionally equivalent to promise chaining but easier to read.
+
+---
+
+# Chaining Dynamic Tasks
+
+Interviewers often ask:
+
+> "What if you have an array of async functions?"
+
+Example:
+
+```javascript
+const tasks = [
+  () => Promise.resolve(1),
+  () => Promise.resolve(2),
+  () => Promise.resolve(3),
+];
+```
+
+Sequential execution:
+
+```javascript
+tasks.reduce((promise, task) => {
+  return promise.then(() => task());
+}, Promise.resolve());
+```
+
+Output:
+
+```javascript
+1;
+2;
+3;
+```
+
+---
+
+# Collecting Results Sequentially
+
+```javascript
+const tasks = [
+  () => Promise.resolve("A"),
+  () => Promise.resolve("B"),
+  () => Promise.resolve("C"),
+];
+
+async function runSequentially() {
+  const results = [];
+
+  for (const task of tasks) {
+    results.push(await task());
+  }
+
+  return results;
+}
+
+runSequentially().then(console.log);
+```
+
+Output:
+
+```javascript
+["A", "B", "C"];
+```
+
+---
+
+# Sequential Execution Using reduce()
+
+A classic FAANG interview question:
+
+```javascript
+const tasks = [1, 2, 3];
+
+tasks.reduce((chain, num) => {
+  return chain.then(() => {
+    console.log(num);
+  });
+}, Promise.resolve());
+```
+
+Output:
+
+```javascript
+1;
+2;
+3;
+```
+
+### How it works
+
+Iteration 1:
+
+```javascript
+Promise.resolve().then(() => console.log(1));
+```
+
+Iteration 2:
+
+```javascript
+previousPromise.then(() => console.log(2));
+```
+
+Iteration 3:
+
+```javascript
+previousPromise.then(() => console.log(3));
+```
+
+The chain grows sequentially.
+
+---
+
+# Sequential vs Parallel
+
+### Sequential
+
+```javascript
+await task1();
+await task2();
+await task3();
+```
+
+Time:
+
+```text
+T1 + T2 + T3
+```
+
+---
+
+### Parallel
+
+```javascript
+await Promise.all([task1(), task2(), task3()]);
+```
+
+Time:
+
+```text
+max(T1, T2, T3)
+```
+
+Example:
+
+```javascript
+// Sequential: ~3 seconds
+await delay(1000);
+await delay(1000);
+await delay(1000);
+
+// Parallel: ~1 second
+await Promise.all([delay(1000), delay(1000), delay(1000)]);
+```
+
+---
+
+# Error Handling in Sequential Chains
+
+Using `.catch()`:
+
+```javascript
+task1()
+  .then(() => task2())
+  .then(() => task3())
+  .catch((err) => {
+    console.error(err);
+  });
+```
+
+If `task2()` rejects:
+
+```text
+task3() never runs
+catch executes
+```
+
+---
+
+# Error Handling with async/await
+
+```javascript
+async function run() {
+  try {
+    await task1();
+    await task2();
+    await task3();
+  } catch (err) {
+    console.error(err);
+  }
+}
+```
+
+---
+
+# Advanced: Continue Even if One Fails
+
+```javascript
+for (const task of tasks) {
+  try {
+    await task();
+  } catch (err) {
+    console.error("Failed:", err);
+  }
+}
+```
+
+This allows later tasks to continue.
+
+---
+
+# Event Loop Perspective
+
+When a promise resolves:
+
+```javascript
+promise.then(...)
+```
+
+the callback is placed in the **microtask queue**.
+
+Example:
+
+```javascript
+Promise.resolve()
+  .then(() => console.log("A"))
+  .then(() => console.log("B"))
+  .then(() => console.log("C"));
+```
+
+Output:
+
+```javascript
+A;
+B;
+C;
+```
+
+Each `.then()` waits for the previous promise to settle before scheduling the next microtask.
+
+---
+
+# Common Interview Pitfalls
+
+### ❌ Starting all promises immediately
+
+```javascript
+const p1 = task1();
+const p2 = task2();
+const p3 = task3();
+
+await p1;
+await p2;
+await p3;
+```
+
+These run concurrently, not sequentially.
+
+---
+
+### ❌ Forgetting `return`
+
+```javascript
+.then(() => {
+  task2();
+})
+```
+
+Must be:
+
+```javascript
+.then(() => {
+  return task2();
+})
+```
+
+or simply:
+
+```javascript
+.then(() => task2())
+```
+
+---
+
+### ❌ Using `forEach` with async
+
+```javascript
+tasks.forEach(async (task) => {
+  await task();
+});
+```
+
+`forEach` does not wait.
+
+Use:
+
+```javascript
+for (const task of tasks) {
+  await task();
+}
+```
+
+---
+
+# 🚀 Interview-Ready Summary
+
+Promises are chained sequentially by returning a promise from each `.then()` callback:
+
+```javascript
+task1()
+  .then(() => task2())
+  .then(() => task3());
+```
+
+or more commonly with `async/await`:
+
+```javascript
+await task1();
+await task2();
+await task3();
+```
+
+Key interview concepts include:
+
+- Promise chaining
+- Returning promises from `.then()`
+- Microtask queue behavior
+- Sequential vs parallel execution
+- Error propagation
+- Dynamic chaining with `reduce()` and `for...of`
+
+Understanding these patterns is essential for building reliable asynchronous workflows in JavaScript.
+
 ## Question 6. How to handle errors in promise chains
 
 ## Question 7. Difference between fetch API and XMLHttpRequest
