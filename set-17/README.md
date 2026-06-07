@@ -1037,6 +1037,294 @@ A strong interview answer is:
 
 ## Question 5. How to restrict input fields to accept only numbers
 
+## Short answer
+
+The best way to restrict an input field to numbers is to:
+
+1. Use an appropriate HTML input type (`type="number"` when suitable).
+2. Validate and sanitize input using the `input` event.
+3. Always perform server-side validation as well.
+
+For maximum control and cross-browser consistency, many applications use a text input with JavaScript filtering.
+
+---
+
+# 1. Using `type="number"`
+
+```html
+<input type="number" min="0" max="100" />
+```
+
+### Advantages
+
+- Built-in browser validation
+- Mobile devices show numeric keyboards
+- Supports min/max/step
+
+### Limitations
+
+Users can still enter characters such as:
+
+```text
+e
+E
++
+-
+.
+```
+
+because browsers support scientific notation:
+
+```text
+1e5 = 100000
+```
+
+Therefore, `type="number"` alone is often insufficient.
+
+---
+
+# 2. Restricting Input Using the `input` Event (Recommended)
+
+The most reliable approach is to sanitize the value whenever it changes.
+
+```html
+<input type="text" id="numberInput" />
+```
+
+```javascript
+const input = document.getElementById("numberInput");
+
+input.addEventListener("input", (e) => {
+  e.target.value = e.target.value.replace(/\D/g, "");
+});
+```
+
+### How it works
+
+`\D` means:
+
+```text
+Any non-digit character
+```
+
+Examples:
+
+| Input   | Result |
+| ------- | ------ |
+| `123`   | `123`  |
+| `12a3`  | `123`  |
+| `1@2#3` | `123`  |
+| `abc`   | ``     |
+
+---
+
+# 3. Restricting at `keydown` Time
+
+Another approach is to prevent invalid keys before they appear.
+
+```javascript
+input.addEventListener("keydown", (e) => {
+  if (!/[0-9]/.test(e.key)) {
+    e.preventDefault();
+  }
+});
+```
+
+### Problem
+
+This blocks useful keys:
+
+```text
+Backspace
+Delete
+ArrowLeft
+ArrowRight
+Tab
+```
+
+So you must explicitly allow them.
+
+```javascript
+const allowedKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+
+input.addEventListener("keydown", (e) => {
+  if (!/[0-9]/.test(e.key) && !allowedKeys.includes(e.key)) {
+    e.preventDefault();
+  }
+});
+```
+
+---
+
+# 4. Handling Paste Operations
+
+Users can bypass `keydown` restrictions by pasting.
+
+```text
+Ctrl + V
+Right-click → Paste
+```
+
+This is why `input` event validation is superior.
+
+```javascript
+input.addEventListener("input", (e) => {
+  e.target.value = e.target.value.replace(/\D/g, "");
+});
+```
+
+It handles:
+
+- Typing
+- Paste
+- Drag-and-drop
+- Autofill
+
+---
+
+# 5. Allowing Decimals
+
+For decimal numbers:
+
+```javascript
+input.addEventListener("input", (e) => {
+  e.target.value = e.target.value.replace(/[^\d.]/g, "");
+});
+```
+
+Input:
+
+```text
+12.34
+```
+
+Output:
+
+```text
+12.34
+```
+
+---
+
+# 6. Allowing Negative Numbers
+
+```javascript
+input.addEventListener("input", (e) => {
+  e.target.value = e.target.value.replace(/[^\d-]/g, "");
+});
+```
+
+More robust validation would ensure `-` appears only at the beginning.
+
+---
+
+# 7. Mobile-Friendly Numeric Input
+
+A common production pattern:
+
+```html
+<input type="text" inputmode="numeric" pattern="[0-9]*" />
+```
+
+### Benefits
+
+- Shows numeric keyboard on mobile
+- Avoids quirks of `type="number"`
+- Gives full control to JavaScript
+
+This is often preferred in OTP, PIN, and phone number fields.
+
+---
+
+# 8. React Example
+
+```jsx
+function NumberInput() {
+  const handleChange = (e) => {
+    e.target.value = e.target.value.replace(/\D/g, "");
+  };
+
+  return <input type="text" onInput={handleChange} />;
+}
+```
+
+---
+
+# Common Interview Pitfalls
+
+### ❌ Only using `keydown`
+
+```javascript
+input.addEventListener("keydown", validate);
+```
+
+Fails for:
+
+- Paste
+- Drag/drop
+- Autofill
+
+---
+
+### ❌ Trusting `type="number"`
+
+```html
+<input type="number" />
+```
+
+Many browsers still allow:
+
+```text
+1e5
++
+-
+.
+```
+
+---
+
+### ❌ Relying solely on frontend validation
+
+Never trust client-side validation alone.
+
+Always validate again on the server.
+
+---
+
+# Best Practice (Senior-Level Answer)
+
+For numeric-only input:
+
+```html
+<input type="text" inputmode="numeric" />
+```
+
+```javascript
+input.addEventListener("input", (e) => {
+  e.target.value = e.target.value.replace(/\D/g, "");
+});
+```
+
+This approach:
+
+- Works for typing and paste
+- Is mobile-friendly
+- Avoids `type="number"` quirks
+- Provides consistent behavior across browsers
+
+---
+
+# Interview Summary
+
+| Technique             | Recommended        | Notes                      |
+| --------------------- | ------------------ | -------------------------- |
+| `type="number"`       | ⚠️ Partial         | Allows `e`, `+`, `-`, etc. |
+| `keydown` filtering   | ⚠️ Okay            | Misses paste/autofill      |
+| `input` sanitization  | ✅ Best            | Handles all input methods  |
+| `inputmode="numeric"` | ✅ Best for mobile | Shows numeric keyboard     |
+
+A senior frontend answer is: **Use the `input` event to sanitize input, optionally combine it with `inputmode="numeric"` for mobile keyboards, and never rely solely on `type="number"` or frontend validation.**
+
 ## Question 6. How to create a countdown timer using JavaScript
 
 ## Question 7. Difference between document.body and document.documentElement
