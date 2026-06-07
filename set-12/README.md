@@ -828,6 +828,200 @@ console.log(a[0].value); // 99
 
 ## Question 5. How to empty an array in JavaScript?
 
+## Short Answer
+
+There are several ways to empty an array in JavaScript, but the most common and recommended method is:
+
+```js
+arr.length = 0;
+```
+
+This clears the array **in place** and preserves existing references.
+
+---
+
+# Method 1: Set `length = 0` (Recommended)
+
+```js
+const arr = [1, 2, 3, 4];
+
+arr.length = 0;
+
+console.log(arr); // []
+```
+
+### Why it's good
+
+- Simple and fast
+- Modifies the existing array
+- Keeps all references pointing to the same (now empty) array
+
+```js
+const arr1 = [1, 2, 3];
+const arr2 = arr1;
+
+arr1.length = 0;
+
+console.log(arr2); // []
+```
+
+Both variables reference the same array, so both see the change.
+
+---
+
+# Method 2: Assign a New Empty Array
+
+```js
+let arr = [1, 2, 3];
+
+arr = [];
+
+console.log(arr); // []
+```
+
+### Important Difference
+
+This creates a **new array** rather than clearing the existing one.
+
+```js
+let arr1 = [1, 2, 3];
+const arr2 = arr1;
+
+arr1 = [];
+
+console.log(arr1); // []
+console.log(arr2); // [1, 2, 3]
+```
+
+`arr2` still points to the original array.
+
+---
+
+# Method 3: Using `splice()`
+
+```js
+const arr = [1, 2, 3, 4];
+
+arr.splice(0, arr.length);
+
+console.log(arr); // []
+```
+
+Or:
+
+```js
+arr.splice(0);
+```
+
+### Characteristics
+
+- Mutates the original array
+- Preserves references
+- Slightly more verbose than `length = 0`
+
+---
+
+# Method 4: Remove Elements in a Loop
+
+```js
+const arr = [1, 2, 3];
+
+while (arr.length) {
+  arr.pop();
+}
+
+console.log(arr); // []
+```
+
+### Why it's rarely used
+
+- Less efficient
+- More code
+- Usually only useful when you need per-element cleanup logic
+
+---
+
+# Comparison
+
+| Method                        | Preserves References? | Mutates Original? | Recommended?                     |
+| ----------------------------- | --------------------- | ----------------- | -------------------------------- |
+| `arr.length = 0`              | ✅ Yes                | ✅ Yes            | ⭐ Best                          |
+| `arr = []`                    | ❌ No                 | ❌ No             | Use when references don't matter |
+| `arr.splice(0)`               | ✅ Yes                | ✅ Yes            | Good                             |
+| `while(arr.length) arr.pop()` | ✅ Yes                | ✅ Yes            | Rarely                           |
+
+---
+
+# Common Interview Question
+
+## What happens here?
+
+```js
+const a = [1, 2, 3];
+const b = a;
+
+a = [];
+```
+
+This actually throws an error because `a` is declared with `const`.
+
+Let's use `let`:
+
+```js
+let a = [1, 2, 3];
+const b = a;
+
+a = [];
+
+console.log(b);
+```
+
+Output:
+
+```js
+[1, 2, 3];
+```
+
+Because `a = []` creates a new array and only changes what `a` points to.
+
+---
+
+## What about this?
+
+```js
+const a = [1, 2, 3];
+const b = a;
+
+a.length = 0;
+
+console.log(b);
+```
+
+Output:
+
+```js
+[];
+```
+
+Because the original array object was emptied.
+
+---
+
+# Time Complexity
+
+| Method       | Complexity |
+| ------------ | ---------- |
+| `length = 0` | O(1)       |
+| `arr = []`   | O(1)       |
+| `splice(0)`  | O(n)       |
+| `pop()` loop | O(n)       |
+
+---
+
+# Interview-Ready Answer
+
+> The most common way to empty an array is `arr.length = 0`. It clears the existing array in place, preserves references, and is very efficient. Another option is `arr = []`, but that creates a new array and does not affect other variables referencing the original array. `splice(0)` can also be used when you want to mutate the original array while keeping references intact. For most cases, `arr.length = 0` is the preferred solution.
+
 ## Question 6. Difference between `Array.isArray()` and `instanceof Array`
 
 ## Question 7. What is the difference between `document.createElement()` and `innerHTML`?
