@@ -1241,6 +1241,357 @@ They can cause jank and poor user experience.
 
 ## Question 5. How does `stopImmediatePropagation` differ from `stopPropagation`?
 
+## Direct Answer
+
+Both methods stop event propagation, but they differ in **how much they stop**:
+
+- **`event.stopPropagation()`**
+  - Stops the event from propagating to parent elements.
+  - Other listeners on the **same element** will still execute.
+
+- **`event.stopImmediatePropagation()`**
+  - Stops propagation to parent elements.
+  - Stops all remaining listeners on the **same element** from executing.
+
+---
+
+# Visual Example
+
+Suppose we have:
+
+```html
+<div id="parent">
+  <button id="btn">Click</button>
+</div>
+```
+
+---
+
+# 1. stopPropagation()
+
+```javascript
+btn.addEventListener("click", () => {
+  console.log("Listener 1");
+});
+
+btn.addEventListener("click", (e) => {
+  console.log("Listener 2");
+  e.stopPropagation();
+});
+
+btn.addEventListener("click", () => {
+  console.log("Listener 3");
+});
+
+parent.addEventListener("click", () => {
+  console.log("Parent");
+});
+```
+
+### 👉 Output
+
+```text
+Listener 1
+Listener 2
+Listener 3
+```
+
+### Why?
+
+- `stopPropagation()` prevents bubbling to `parent`.
+- It **does not stop other listeners on the same element**.
+- Therefore Listener 3 still runs.
+
+---
+
+# 2. stopImmediatePropagation()
+
+```javascript
+btn.addEventListener("click", () => {
+  console.log("Listener 1");
+});
+
+btn.addEventListener("click", (e) => {
+  console.log("Listener 2");
+  e.stopImmediatePropagation();
+});
+
+btn.addEventListener("click", () => {
+  console.log("Listener 3");
+});
+
+parent.addEventListener("click", () => {
+  console.log("Parent");
+});
+```
+
+### 👉 Output
+
+```text
+Listener 1
+Listener 2
+```
+
+### Why?
+
+After `stopImmediatePropagation()`:
+
+- Listener 3 is skipped.
+- Parent listener is skipped.
+- Event processing ends immediately.
+
+---
+
+# Key Difference Table
+
+| Behavior                                  | stopPropagation() | stopImmediatePropagation() |
+| ----------------------------------------- | ----------------- | -------------------------- |
+| Stops bubbling to parent                  | ✅                | ✅                         |
+| Stops capturing beyond current point      | ✅                | ✅                         |
+| Stops remaining listeners on same element | ❌                | ✅                         |
+| Ends event processing immediately         | ❌                | ✅                         |
+
+---
+
+# FAANG Interview Favorite Example
+
+```javascript
+button.addEventListener("click", () => console.log("A"));
+
+button.addEventListener("click", (e) => {
+  console.log("B");
+  e.stopPropagation();
+});
+
+button.addEventListener("click", () => console.log("C"));
+
+document.body.addEventListener("click", () => console.log("BODY"));
+```
+
+### Click button
+
+Output:
+
+```text
+A
+B
+C
+```
+
+Notice:
+
+```text
+BODY
+```
+
+never runs.
+
+---
+
+Now replace:
+
+```javascript
+e.stopPropagation();
+```
+
+with:
+
+```javascript
+e.stopImmediatePropagation();
+```
+
+Output:
+
+```text
+A
+B
+```
+
+`C` is skipped.
+
+---
+
+# Event Flow Illustration
+
+Assume:
+
+```text
+BODY
+ └── DIV
+      └── BUTTON
+```
+
+Button has:
+
+```javascript
+Listener A
+Listener B (calls stopImmediatePropagation)
+Listener C
+```
+
+Click button:
+
+```text
+BUTTON Listener A
+BUTTON Listener B
+STOP
+```
+
+Listener C never executes.
+
+---
+
+# Capturing Phase Behavior
+
+The same rule applies during capture.
+
+```javascript
+parent.addEventListener(
+  "click",
+  (e) => {
+    console.log("Parent Capture");
+    e.stopImmediatePropagation();
+  },
+  true,
+);
+```
+
+Any remaining listeners on that element and further propagation are prevented.
+
+---
+
+# Common Real-World Use Cases
+
+## stopPropagation()
+
+Useful when:
+
+```javascript
+modal.addEventListener("click", (e) => {
+  e.stopPropagation();
+});
+```
+
+Prevent click from reaching page background.
+
+---
+
+## stopImmediatePropagation()
+
+Useful when:
+
+```javascript
+button.addEventListener("click", (e) => {
+  if (!userIsAuthorized) {
+    e.stopImmediatePropagation();
+    return;
+  }
+});
+```
+
+Prevent all other click handlers from executing.
+
+---
+
+# Common Pitfall
+
+Many developers think:
+
+```javascript
+e.stopPropagation();
+```
+
+stops everything.
+
+It does **not**.
+
+Example:
+
+```javascript
+button.addEventListener("click", () => console.log("1"));
+
+button.addEventListener("click", (e) => {
+  console.log("2");
+  e.stopPropagation();
+});
+
+button.addEventListener("click", () => console.log("3"));
+```
+
+Output:
+
+```text
+1
+2
+3
+```
+
+This is a very common interview trap.
+
+---
+
+# Relationship with preventDefault()
+
+These APIs solve different problems:
+
+```javascript
+e.preventDefault();
+```
+
+- Prevents browser default behavior.
+
+```javascript
+e.stopPropagation();
+```
+
+- Stops event moving through DOM.
+
+```javascript
+e.stopImmediatePropagation();
+```
+
+- Stops event moving through DOM **and** prevents remaining listeners on current element.
+
+Example:
+
+```javascript
+e.preventDefault();
+e.stopImmediatePropagation();
+```
+
+Can be used together.
+
+---
+
+# Interview Summary
+
+### `stopPropagation()`
+
+```javascript
+event.stopPropagation();
+```
+
+- Stops bubbling/capturing beyond current element.
+- Other listeners on same element still execute.
+
+---
+
+### `stopImmediatePropagation()`
+
+```javascript
+event.stopImmediatePropagation();
+```
+
+- Stops bubbling/capturing.
+- Stops all remaining listeners on same element.
+- Ends event processing immediately.
+
+---
+
+### One-Line Interview Answer
+
+**`stopPropagation()` prevents an event from reaching ancestor elements but allows other handlers on the same element to run, whereas `stopImmediatePropagation()` also prevents any remaining handlers on the current element from executing, effectively terminating event processing immediately.**
+
 ## Question 6. How to check if an object has a property directly (not in prototype chain)
 
 ## Question 7. Difference between `Object.create()` and `{}` object literal
