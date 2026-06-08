@@ -1022,6 +1022,436 @@ Uses dynamic import.
 
 ## Question 4. How to implement a simple Express.js middleware
 
+## Short Answer
+
+An **Express middleware** is a function that has access to the request (`req`), response (`res`), and next middleware function (`next`). It can execute code, modify the request/response objects, end the request-response cycle, or pass control to the next middleware.
+
+Basic example:
+
+```js
+function logger(req, res, next) {
+  console.log(`${req.method} ${req.url}`);
+  next(); // Pass control to the next middleware
+}
+```
+
+```js
+app.use(logger);
+```
+
+---
+
+# What is Middleware?
+
+Middleware sits between:
+
+```txt
+Incoming Request
+       ↓
+   Middleware
+       ↓
+Route Handler
+       ↓
+Response
+```
+
+Every request passes through the middleware chain in the order they are registered.
+
+---
+
+# Simple Middleware Example
+
+```js
+const express = require("express");
+const app = express();
+
+function logger(req, res, next) {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+}
+
+app.use(logger);
+
+app.get("/", (req, res) => {
+  res.send("Hello World");
+});
+
+app.listen(3000);
+```
+
+Request:
+
+```txt
+GET /
+```
+
+Console:
+
+```txt
+[2026-06-10T10:00:00.000Z] GET /
+```
+
+Response:
+
+```txt
+Hello World
+```
+
+---
+
+# Understanding `next()`
+
+The `next` function tells Express:
+
+> "I'm done, continue to the next middleware."
+
+```js
+function middleware(req, res, next) {
+  console.log("Middleware executed");
+  next();
+}
+```
+
+Without `next()`, the request will hang unless a response is sent.
+
+---
+
+## Common Mistake
+
+```js
+function middleware(req, res, next) {
+  console.log("Running...");
+  // next() missing
+}
+```
+
+The browser will wait forever because Express never moves to the next step.
+
+---
+
+# Middleware That Modifies the Request
+
+Middleware often attaches data to the request object.
+
+```js
+function addUser(req, res, next) {
+  req.user = {
+    id: 1,
+    name: "John",
+  };
+
+  next();
+}
+```
+
+```js
+app.use(addUser);
+
+app.get("/profile", (req, res) => {
+  res.json(req.user);
+});
+```
+
+Output:
+
+```json
+{
+  "id": 1,
+  "name": "John"
+}
+```
+
+---
+
+# Middleware That Ends the Request
+
+A middleware doesn't have to call `next()` if it sends a response.
+
+```js
+function maintenanceMode(req, res, next) {
+  res.status(503).send("Server under maintenance");
+}
+```
+
+```txt
+Request
+   ↓
+Maintenance Middleware
+   ↓
+Response Sent
+```
+
+No other middleware or route handler executes.
+
+---
+
+# Route-Specific Middleware
+
+Instead of applying middleware globally:
+
+```js
+app.use(logger);
+```
+
+You can apply it to specific routes:
+
+```js
+function auth(req, res, next) {
+  if (req.headers.authorization) {
+    next();
+  } else {
+    res.status(401).send("Unauthorized");
+  }
+}
+
+app.get("/dashboard", auth, (req, res) => {
+  res.send("Dashboard");
+});
+```
+
+---
+
+# Multiple Middleware Functions
+
+```js
+function first(req, res, next) {
+  console.log("First");
+  next();
+}
+
+function second(req, res, next) {
+  console.log("Second");
+  next();
+}
+
+app.get("/", first, second, (req, res) => {
+  res.send("Done");
+});
+```
+
+Output:
+
+```txt
+First
+Second
+```
+
+---
+
+# Built-in Middleware Example
+
+Express provides built-in middleware:
+
+```js
+app.use(express.json());
+```
+
+This parses JSON request bodies.
+
+Without it:
+
+```js
+req.body; // undefined
+```
+
+With it:
+
+```js
+req.body;
+```
+
+contains the parsed JSON object.
+
+---
+
+# Error-Handling Middleware
+
+Express recognizes error middleware by the **four parameters**:
+
+```js
+function errorHandler(err, req, res, next) {
+  console.error(err);
+
+  res.status(500).json({
+    error: "Something went wrong",
+  });
+}
+```
+
+Register it after routes:
+
+```js
+app.use(errorHandler);
+```
+
+Throwing an error:
+
+```js
+app.get("/", (req, res, next) => {
+  next(new Error("Database failed"));
+});
+```
+
+---
+
+# Middleware Execution Order
+
+Order matters.
+
+```js
+app.use(first);
+app.use(second);
+
+app.get("/", handler);
+```
+
+Execution:
+
+```txt
+first
+   ↓
+second
+   ↓
+handler
+```
+
+If reversed:
+
+```js
+app.use(second);
+app.use(first);
+```
+
+Execution changes accordingly.
+
+---
+
+# Async Middleware
+
+Modern Express middleware often uses `async/await`.
+
+```js
+async function loadUser(req, res, next) {
+  try {
+    const user = await getUserFromDB();
+
+    req.user = user;
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+```
+
+Important: pass errors to `next(err)`.
+
+---
+
+# Real-World Authentication Middleware
+
+```js
+function auth(req, res, next) {
+  const token = req.headers.authorization;
+
+  if (!token) {
+    return res.status(401).json({
+      message: "Authentication required",
+    });
+  }
+
+  req.user = {
+    id: 123,
+  };
+
+  next();
+}
+```
+
+Usage:
+
+```js
+app.get("/account", auth, (req, res) => {
+  res.json({
+    userId: req.user.id,
+  });
+});
+```
+
+---
+
+# Common Interview Follow-Up: `app.use()` vs Route Middleware
+
+### Global Middleware
+
+```js
+app.use(logger);
+```
+
+Runs for every request.
+
+---
+
+### Route Middleware
+
+```js
+app.get("/admin", auth, handler);
+```
+
+Runs only for that route.
+
+---
+
+# Best Practices
+
+### Always call `next()`
+
+Unless you send a response.
+
+```js
+next();
+```
+
+---
+
+### Keep middleware focused
+
+Good:
+
+```js
+logger();
+auth();
+validate();
+```
+
+Avoid giant middleware functions doing everything.
+
+---
+
+### Handle async errors
+
+```js
+try {
+  await something();
+  next();
+} catch (err) {
+  next(err);
+}
+```
+
+---
+
+### Register error middleware last
+
+```js
+app.use(errorHandler);
+```
+
+---
+
+# Final Interview Answer
+
+> In Express.js, middleware is a function with the signature `(req, res, next)` that executes during the request-response cycle. Middleware can inspect or modify requests, perform authentication, logging, validation, or send responses directly. If it wants processing to continue, it must call `next()`. Middleware can be applied globally using `app.use()` or to specific routes, and Express executes middleware in the order it is registered. Error-handling middleware is defined with four parameters: `(err, req, res, next)`.
+
 ## Question 5. How to implement error handling in async/await in Node.js
 
 ## Question 6. How to stream large files efficiently in Node.js
