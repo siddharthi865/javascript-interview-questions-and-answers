@@ -805,6 +805,213 @@ function Button({ label = "Click", disabled = false } = {}) {
 
 ## Question 4. How to swap two variables without using a third variable?
 
+## Direct Answer
+
+You can swap two variables without a third variable using techniques like **destructuring assignment**, **arithmetic operations**, or **bitwise XOR**.
+
+In modern JavaScript, the **best and recommended way is array destructuring**:
+
+```js
+let a = 10;
+let b = 20;
+
+[a, b] = [b, a];
+
+console.log(a, b); // 20 10
+```
+
+---
+
+# Detailed Interview Explanation
+
+Swapping variables is a classic interview question that tests your understanding of assignment, memory manipulation, and JavaScript evaluation behavior.
+
+There are multiple ways to do it, each with different trade-offs.
+
+---
+
+# 1. ES6 Destructuring (Best Approach)
+
+```js id="swap1"
+let a = 5;
+let b = 10;
+
+[a, b] = [b, a];
+
+console.log(a, b); // 10 5
+```
+
+## How it works
+
+- A temporary array `[b, a]` is created.
+- Values are unpacked into `a` and `b` simultaneously.
+- No explicit temporary variable needed.
+
+## Why it's preferred
+
+- Clean and readable
+- Safe for all data types
+- No overflow or precision issues
+- Widely used in production code
+
+---
+
+# 2. Using Arithmetic Operators
+
+### Addition/Subtraction method
+
+```js id="swap2"
+let a = 5;
+let b = 10;
+
+a = a + b;
+b = a - b;
+a = a - b;
+
+console.log(a, b); // 10 5
+```
+
+## How it works
+
+Step-by-step:
+
+- `a = 15`
+- `b = 15 - 10 = 5`
+- `a = 15 - 5 = 10`
+
+## Pros
+
+- No extra variable
+
+## Cons / Pitfalls
+
+- Risk of **integer overflow**
+- Not safe for very large numbers
+- Not readable compared to destructuring
+
+---
+
+# 3. Using Multiplication/Division
+
+```js id="swap3"
+let a = 5;
+let b = 10;
+
+a = a * b;
+b = a / b;
+a = a / b;
+
+console.log(a, b); // 10 5
+```
+
+## Issues
+
+- Fails when one value is `0`
+- Not safe for decimals due to floating-point precision
+
+```js
+let a = 0;
+let b = 10;
+
+// breaks logic
+```
+
+---
+
+# 4. Using Bitwise XOR (Advanced)
+
+Works only with integers.
+
+```js id="swap4"
+let a = 5;
+let b = 10;
+
+a = a ^ b;
+b = a ^ b;
+a = a ^ b;
+
+console.log(a, b); // 10 5
+```
+
+## How it works
+
+Uses XOR property:
+
+- `x ^ x = 0`
+- `x ^ 0 = x`
+
+So values cancel and reconstruct each other.
+
+## Limitations
+
+- Only works with **32-bit integers**
+- Not readable for most teams
+- Rarely used in modern JavaScript interviews except for edge-case discussions
+
+---
+
+# 5. Using Array Reassignment (Alternative to destructuring syntax)
+
+```js
+let a = 1,
+  b = 2;
+
+const temp = [a, b];
+a = temp[1];
+b = temp[0];
+```
+
+This is essentially manual destructuring.
+
+---
+
+# Comparison Table
+
+| Method         | Readability | Safety     | Performance | Recommendation          |
+| -------------- | ----------- | ---------- | ----------- | ----------------------- |
+| Destructuring  | ⭐⭐⭐⭐⭐  | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐  | ✅ Best                 |
+| Arithmetic     | ⭐⭐        | ⭐⭐       | ⭐⭐⭐      | ⚠️ Avoid                |
+| Multiplication | ⭐          | ⭐         | ⭐⭐⭐      | ❌ Not safe             |
+| XOR            | ⭐          | ⭐⭐       | ⭐⭐⭐⭐    | ⚠️ Interview trick only |
+
+---
+
+# Common Interview Follow-Ups
+
+## Q1: Why is destructuring preferred?
+
+Because it is:
+
+- Declarative
+- Safe for all data types
+- Less error-prone
+- Internally optimized by JS engines
+
+---
+
+## Q2: Does destructuring use a temporary variable?
+
+Yes internally, but it's abstracted away by the engine.
+
+---
+
+## Q3: Can we swap objects using same technique?
+
+Yes:
+
+```js
+let obj1 = { a: 1 };
+let obj2 = { b: 2 };
+
+[obj1, obj2] = [obj2, obj1];
+```
+
+---
+
+# Interview Summary
+
+> The most modern and preferred way to swap two variables in JavaScript is using array destructuring: `[a, b] = [b, a]`. While arithmetic and bitwise XOR methods exist and are often asked in interviews, they are less safe and less readable. Destructuring is the cleanest, most reliable, and production-ready approach.
+
 ## Question 5. What is rest parameter vs arguments object?
 
 ## Question 6. Explain dynamic import in ES6
