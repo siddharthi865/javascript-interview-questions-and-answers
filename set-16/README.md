@@ -829,6 +829,416 @@ Many candidates incorrectly assume both behave the same.
 
 ## Question 4. Difference between passive and non-passive event listeners
 
+## Direct Answer
+
+A **passive event listener** tells the browser that the event handler **will not call `event.preventDefault()`**, allowing the browser to perform optimizations (especially for scrolling and touch events).
+
+A **non-passive event listener** (the default behavior) allows `preventDefault()`, so the browser may need to wait for the handler to finish before performing certain actions like scrolling.
+
+```javascript
+element.addEventListener("touchmove", handler, {
+  passive: true,
+});
+```
+
+---
+
+# Why Passive Event Listeners Exist
+
+Consider a mobile page:
+
+```javascript
+document.addEventListener("touchmove", (e) => {
+  // Some expensive logic
+});
+```
+
+When the user scrolls:
+
+1. Browser receives touch event.
+2. Browser doesn't know whether you'll call:
+
+```javascript
+e.preventDefault();
+```
+
+3. Browser must wait for JavaScript execution.
+4. Scrolling may feel laggy.
+
+To solve this:
+
+```javascript
+document.addEventListener("touchmove", handler, {
+  passive: true,
+});
+```
+
+Now the browser knows:
+
+> "This handler will never cancel scrolling."
+
+So scrolling can start immediately.
+
+---
+
+# Non-Passive Listener (Default)
+
+```javascript
+document.addEventListener("touchmove", (e) => {
+  e.preventDefault();
+});
+```
+
+Here:
+
+- Browser must wait
+- Scrolling can be blocked
+- Useful when you intentionally want to disable default behavior
+
+Examples:
+
+- Custom drag systems
+- Gesture libraries
+- Custom touch interactions
+
+---
+
+# Passive Listener Example
+
+```javascript
+document.addEventListener(
+  "touchmove",
+  (e) => {
+    console.log("Scrolling...");
+  },
+  { passive: true },
+);
+```
+
+Benefits:
+
+- Smoother scrolling
+- Better responsiveness
+- Better mobile performance
+
+---
+
+# What Happens If You Call preventDefault()?
+
+```javascript
+document.addEventListener(
+  "touchmove",
+  (e) => {
+    e.preventDefault();
+  },
+  { passive: true },
+);
+```
+
+Browser warning:
+
+```text
+Unable to preventDefault inside passive event listener
+```
+
+The call is ignored.
+
+---
+
+# Syntax
+
+## Non-passive
+
+```javascript
+element.addEventListener("wheel", handler);
+```
+
+Equivalent to:
+
+```javascript
+element.addEventListener("wheel", handler, {
+  passive: false,
+});
+```
+
+---
+
+## Passive
+
+```javascript
+element.addEventListener("wheel", handler, {
+  passive: true,
+});
+```
+
+---
+
+# Common Events That Benefit from Passive Listeners
+
+### Touch Events
+
+```javascript
+touchstart;
+touchmove;
+touchend;
+```
+
+### Scroll-related Events
+
+```javascript
+wheel;
+mousewheel;
+```
+
+These events can affect scrolling performance.
+
+---
+
+# Performance Impact
+
+### Non-passive
+
+```javascript
+window.addEventListener("wheel", heavyFunction);
+```
+
+Browser:
+
+```text
+Receive wheel event
+↓
+Wait for JS
+↓
+Maybe preventDefault?
+↓
+Scroll
+```
+
+---
+
+### Passive
+
+```javascript
+window.addEventListener("wheel", heavyFunction, {
+  passive: true,
+});
+```
+
+Browser:
+
+```text
+Receive wheel event
+↓
+Start scrolling immediately
+↓
+Run JS in parallel with scrolling
+```
+
+Result:
+
+✅ smoother UI
+
+---
+
+# Combining Listener Options
+
+`addEventListener` supports multiple options:
+
+```javascript
+element.addEventListener("click", handler, {
+  capture: true,
+  once: true,
+  passive: true,
+});
+```
+
+### Meaning
+
+- `capture` → capture phase
+- `once` → auto-remove after first call
+- `passive` → cannot cancel default behavior
+
+---
+
+# Interview Trap #1
+
+```javascript
+document.addEventListener(
+  "touchmove",
+  (e) => {
+    e.preventDefault();
+  },
+  { passive: true },
+);
+```
+
+### Question
+
+Will scrolling be prevented?
+
+### Answer
+
+❌ No
+
+Because passive listeners cannot cancel default behavior.
+
+---
+
+# Interview Trap #2
+
+```javascript
+document.addEventListener(
+  "wheel",
+  () => {
+    console.log("scroll");
+  },
+  { passive: true },
+);
+```
+
+### Question
+
+Can the event still be received?
+
+### Answer
+
+✅ Yes
+
+Passive only affects cancellation, not event delivery.
+
+---
+
+# Interview Trap #3
+
+```javascript
+button.addEventListener(
+  "click",
+  (e) => {
+    e.preventDefault();
+  },
+  { passive: true },
+);
+```
+
+### Question
+
+Will the click handler run?
+
+### Answer
+
+✅ Yes
+
+The handler executes normally.
+
+Only `preventDefault()` becomes ineffective.
+
+---
+
+# When to Use Passive Listeners
+
+## Use Passive
+
+```javascript
+window.addEventListener("scroll", onScroll, {
+  passive: true,
+});
+```
+
+When:
+
+- Monitoring scroll position
+- Analytics
+- Lazy loading
+- Infinite scrolling
+- Reading touch movement
+
+---
+
+## Use Non-Passive
+
+```javascript
+element.addEventListener("touchmove", (e) => {
+  e.preventDefault();
+});
+```
+
+When:
+
+- Custom gestures
+- Drag-and-drop systems
+- Preventing page scroll
+- Mobile games
+- Drawing applications
+
+---
+
+# Browser Optimization Perspective
+
+Without passive:
+
+```text
+Event
+↓
+Wait for JS
+↓
+Check preventDefault
+↓
+Perform scroll
+```
+
+With passive:
+
+```text
+Event
+↓
+Scroll immediately
+↓
+Run JS
+```
+
+This is why passive listeners significantly improve perceived performance on mobile devices.
+
+---
+
+# Best Practices
+
+### Prefer passive for scroll/touch monitoring
+
+```javascript
+window.addEventListener("scroll", handleScroll, {
+  passive: true,
+});
+```
+
+### Use non-passive only when cancellation is required
+
+```javascript
+element.addEventListener("touchmove", dragHandler, {
+  passive: false,
+});
+```
+
+### Avoid unnecessary scroll-blocking listeners
+
+They can cause jank and poor user experience.
+
+---
+
+# Interview Summary
+
+| Feature                            | Passive Listener | Non-Passive Listener |
+| ---------------------------------- | ---------------- | -------------------- |
+| Can call `preventDefault()`        | ❌ No            | ✅ Yes               |
+| Browser waits before scrolling     | ❌ No            | ✅ Yes               |
+| Scroll performance                 | Faster           | Potentially slower   |
+| Best for analytics/scroll tracking | ✅ Yes           | ❌ Not needed        |
+| Best for custom gestures           | ❌ No            | ✅ Yes               |
+| Default mode                       | ❌ No            | ✅ Yes               |
+
+### One-line Interview Answer
+
+**A passive event listener guarantees that it won't call `preventDefault()`, allowing the browser to optimize scrolling and touch performance, while a non-passive listener can cancel default behavior but may introduce scroll latency because the browser must wait for the handler to finish.**
+
 ## Question 5. How does `stopImmediatePropagation` differ from `stopPropagation`?
 
 ## Question 6. How to check if an object has a property directly (not in prototype chain)
