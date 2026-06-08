@@ -686,6 +686,355 @@ A strong senior-level answer:
 
 ## Question 4. Difference between keydown, keypress, and keyup
 
+## Short answer
+
+These three keyboard events occur at different stages of a key interaction:
+
+| Event      | When it Fires                                            |
+| ---------- | -------------------------------------------------------- |
+| `keydown`  | When a key is pressed down                               |
+| `keypress` | When a character-producing key is pressed _(deprecated)_ |
+| `keyup`    | When the key is released                                 |
+
+**Modern JavaScript typically uses `keydown` and `keyup`. `keypress` is deprecated and should be avoided.**
+
+---
+
+# Event Sequence
+
+When you press and release the **A** key:
+
+```text
+keydown
+keypress   (deprecated)
+keyup
+```
+
+Example:
+
+```javascript
+document.addEventListener("keydown", () => {
+  console.log("keydown");
+});
+
+document.addEventListener("keypress", () => {
+  console.log("keypress");
+});
+
+document.addEventListener("keyup", () => {
+  console.log("keyup");
+});
+```
+
+Output after pressing A:
+
+```text
+keydown
+keypress
+keyup
+```
+
+---
+
+# 1. `keydown`
+
+Fires immediately when a key is pressed.
+
+```javascript
+document.addEventListener("keydown", (event) => {
+  console.log(event.key);
+});
+```
+
+### Works for:
+
+- Letters
+- Numbers
+- Arrow keys
+- Shift
+- Ctrl
+- Alt
+- Function keys
+
+Example:
+
+```text
+ArrowUp
+Shift
+Enter
+a
+```
+
+### Common Uses
+
+- Keyboard shortcuts
+- Game controls
+- Form navigation
+- Preventing default actions
+
+```javascript
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.key === "s") {
+    e.preventDefault();
+    console.log("Save");
+  }
+});
+```
+
+---
+
+# 2. `keypress` (Deprecated)
+
+Historically used to detect character input.
+
+```javascript
+document.addEventListener("keypress", (e) => {
+  console.log(e.key);
+});
+```
+
+### Important
+
+`keypress`:
+
+- Fires only for printable characters
+- Often ignores keys like:
+  - Shift
+  - Ctrl
+  - Alt
+  - Arrow keys
+  - Function keys
+
+Example:
+
+| Key     | keypress Fires?   |
+| ------- | ----------------- |
+| A       | ✅                |
+| 1       | ✅                |
+| Enter   | Browser-dependent |
+| Shift   | ❌                |
+| ArrowUp | ❌                |
+
+### Why deprecated?
+
+Different browsers behaved inconsistently.
+
+Modern standards recommend:
+
+```javascript
+keydown;
+keyup;
+```
+
+instead.
+
+---
+
+# 3. `keyup`
+
+Fires when the key is released.
+
+```javascript
+document.addEventListener("keyup", (e) => {
+  console.log("Released:", e.key);
+});
+```
+
+### Common Uses
+
+- Stop movement in games
+- Final validation
+- Detect completed keyboard actions
+
+Example:
+
+```javascript
+document.addEventListener("keyup", (e) => {
+  if (e.key === "Enter") {
+    submitForm();
+  }
+});
+```
+
+---
+
+# Auto-Repeat Behavior
+
+Holding a key down causes repeated `keydown` events.
+
+```javascript
+document.addEventListener("keydown", () => {
+  console.log("down");
+});
+```
+
+Holding **A**:
+
+```text
+down
+down
+down
+down
+...
+```
+
+But:
+
+```text
+keyup
+```
+
+fires only once when released.
+
+---
+
+# Practical Example
+
+Track whether a key is currently pressed:
+
+```javascript
+const pressedKeys = {};
+
+document.addEventListener("keydown", (e) => {
+  pressedKeys[e.key] = true;
+});
+
+document.addEventListener("keyup", (e) => {
+  pressedKeys[e.key] = false;
+});
+```
+
+Used frequently in:
+
+- Games
+- Drawing apps
+- Keyboard navigation systems
+
+---
+
+# Modern Properties
+
+Instead of old properties:
+
+```javascript
+event.keyCode;
+event.which;
+event.charCode;
+```
+
+Use:
+
+```javascript
+event.key;
+event.code;
+```
+
+Example:
+
+```javascript
+document.addEventListener("keydown", (e) => {
+  console.log(e.key); // "a"
+  console.log(e.code); // "KeyA"
+});
+```
+
+### Difference
+
+```text
+event.key  → actual character
+event.code → physical key position
+```
+
+For example on different keyboard layouts:
+
+```text
+key  = "z"
+code = "KeyY"
+```
+
+can occur.
+
+---
+
+# Common Interview Pitfalls
+
+## Pitfall 1: Using `keypress`
+
+```javascript
+document.addEventListener("keypress", handler);
+```
+
+This is deprecated.
+
+Prefer:
+
+```javascript
+document.addEventListener("keydown", handler);
+```
+
+---
+
+## Pitfall 2: Expecting Arrow Keys in `keypress`
+
+```javascript
+document.addEventListener("keypress", (e) => {
+  console.log(e.key);
+});
+```
+
+Pressing ArrowUp may produce nothing.
+
+Use `keydown`.
+
+---
+
+## Pitfall 3: Reading Input Value During `keydown`
+
+```javascript
+input.addEventListener("keydown", () => {
+  console.log(input.value);
+});
+```
+
+The new character hasn't been inserted yet.
+
+Example:
+
+```text
+Input = ""
+Press A
+
+keydown -> ""
+keyup   -> "a"
+```
+
+For text input changes, consider:
+
+```javascript
+input.addEventListener("input", handler);
+```
+
+---
+
+# Interview Comparison Table
+
+| Feature                     | keydown | keypress          | keyup |
+| --------------------------- | ------- | ----------------- | ----- |
+| Fires when key pressed      | ✅      | ✅                | ❌    |
+| Fires when key released     | ❌      | ❌                | ✅    |
+| Supports non-character keys | ✅      | ❌ Mostly         | ✅    |
+| Auto-repeat when held       | ✅      | Browser-dependent | ❌    |
+| Deprecated                  | ❌      | ✅ Yes            | ❌    |
+| Recommended today           | ✅      | ❌                | ✅    |
+
+---
+
+# Interview Tip
+
+A strong interview answer is:
+
+> `keydown` fires when a key is pressed, `keyup` fires when it is released, and `keypress` was historically used for character input but is now deprecated. Modern applications use `keydown` and `keyup` because they work consistently for all keys, including modifiers, navigation keys, and shortcuts.
+
 ## Question 5. How to restrict input fields to accept only numbers
 
 ## Question 6. How to create a countdown timer using JavaScript
