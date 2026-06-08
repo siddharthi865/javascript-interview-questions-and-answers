@@ -651,6 +651,247 @@ A strong answer should emphasize:
 
 ## Question 4. How to loop over object properties?
 
+### **Short Answer**
+
+You can loop over JavaScript object properties using:
+
+- `for...in` loop (traditional)
+- `Object.keys()` + `forEach`
+- `Object.values()` (for values only)
+- `Object.entries()` (key–value pairs, most commonly used in modern JS)
+
+---
+
+## **Detailed Explanation (Interview Perspective)**
+
+Objects in JavaScript are not directly iterable like arrays. So we use built-in utilities or specific loops to access their properties.
+
+---
+
+# **1. `for...in` loop (classic approach)**
+
+### **What it does**
+
+Iterates over all **enumerable properties** of an object (including inherited ones).
+
+### **Syntax**
+
+```javascript id="forin1"
+for (let key in obj) {
+  console.log(key, obj[key]);
+}
+```
+
+### **Example**
+
+```javascript id="forin2"
+const user = {
+  name: "Alice",
+  age: 25,
+  city: "Delhi",
+};
+
+for (let key in user) {
+  console.log(key, user[key]);
+}
+```
+
+### **Output**
+
+```
+name Alice
+age 25
+city Delhi
+```
+
+---
+
+### ⚠️ Important Pitfall
+
+`for...in` also iterates over inherited properties, so you should filter with `hasOwnProperty()`:
+
+```javascript id="forin3"
+for (let key in user) {
+  if (user.hasOwnProperty(key)) {
+    console.log(key, user[key]);
+  }
+}
+```
+
+---
+
+# **2. `Object.keys()` (most common in modern JS)**
+
+### **What it does**
+
+Returns an array of object’s own keys.
+
+### **Example**
+
+```javascript id="keys1"
+const user = {
+  name: "Alice",
+  age: 25,
+};
+
+Object.keys(user).forEach((key) => {
+  console.log(key, user[key]);
+});
+```
+
+### **Why it's preferred**
+
+- Safer than `for...in`
+- No inherited properties
+- Works naturally with array methods
+
+---
+
+# **3. `Object.values()` (values only)**
+
+### **What it does**
+
+Returns an array of values.
+
+```javascript id="values1"
+const user = {
+  name: "Alice",
+  age: 25,
+};
+
+Object.values(user).forEach((value) => {
+  console.log(value);
+});
+```
+
+### **Output**
+
+```
+Alice
+25
+```
+
+---
+
+# **4. `Object.entries()` (best modern approach)**
+
+### **What it does**
+
+Returns array of `[key, value]` pairs.
+
+### **Example**
+
+```javascript id="entries1"
+const user = {
+  name: "Alice",
+  age: 25,
+};
+
+Object.entries(user).forEach(([key, value]) => {
+  console.log(key, value);
+});
+```
+
+### **Output**
+
+```
+name Alice
+age 25
+```
+
+---
+
+## **Why `Object.entries()` is powerful**
+
+You can easily transform or map objects:
+
+```javascript id="entries2"
+const user = {
+  name: "Alice",
+  age: 25,
+};
+
+const result = Object.entries(user).map(([key, value]) => {
+  return `${key.toUpperCase()}: ${value}`;
+});
+
+console.log(result);
+```
+
+---
+
+# **Comparison of Methods**
+
+| Method             | Returns                    | Best Use Case      | Modern?        |
+| ------------------ | -------------------------- | ------------------ | -------------- |
+| `for...in`         | keys (including inherited) | legacy code        | ❌             |
+| `Object.keys()`    | array of keys              | safe key iteration | ✅             |
+| `Object.values()`  | array of values            | value-only logic   | ✅             |
+| `Object.entries()` | key-value pairs            | most flexible      | ⭐ Recommended |
+
+---
+
+# **Real-world Example**
+
+```javascript id="real1"
+const prices = {
+  apple: 100,
+  banana: 60,
+  mango: 150,
+};
+
+Object.entries(prices).forEach(([fruit, price]) => {
+  console.log(`${fruit} costs ${price}`);
+});
+```
+
+---
+
+# **Common Pitfalls**
+
+### 1. Using `for...in` without filtering
+
+Can accidentally include prototype properties.
+
+---
+
+### 2. Expecting order guarantee
+
+Object property order is mostly stable now (ES6+), but:
+
+- Numeric keys are sorted
+- String keys follow insertion order
+
+---
+
+### 3. Trying to use `for...of` directly on objects
+
+```javascript id="pit1"
+for (let item of user) {
+} // ❌ TypeError
+```
+
+Objects are not iterable unless converted.
+
+---
+
+# **Best Practices (Interview Answer Summary)**
+
+- Use `Object.entries()` for most cases (clean + flexible)
+- Use `Object.keys()` when only keys are needed
+- Avoid `for...in` unless working with legacy code or prototype-aware logic
+- Always prefer explicit iteration methods over raw loops
+
+---
+
+## **Interview Tip**
+
+A strong senior-level answer highlights:
+
+- Objects are not directly iterable
+- ES6 introduced safer utility methods (`keys`, `values`, `entries`)
+- `Object.entries()` is the most powerful and commonly used modern approach
+
 ## Question 5. What are arrays in JavaScript? How to loop over them?
 
 ## Question 6. Difference between for loop, for…of, and for…in
