@@ -614,6 +614,218 @@ For extremely large datasets, prefer iterative merging.
 
 ## Question 4. Difference between shallow copy and reference copy of arrays
 
+## Short Answer
+
+A **reference copy** means two variables point to the **same array in memory**. Modifying one affects the other.
+
+A **shallow copy** creates a **new array object**, but nested objects inside the array are still shared by reference.
+
+---
+
+# 1. Reference Copy
+
+When you assign one array to another variable:
+
+```js
+const arr1 = [1, 2, 3];
+const arr2 = arr1;
+
+arr2.push(4);
+
+console.log(arr1); // [1, 2, 3, 4]
+console.log(arr2); // [1, 2, 3, 4]
+```
+
+## Memory Representation
+
+```js
+arr1 ──┐
+       ▼
+     [1,2,3]
+
+arr2 ──┘
+```
+
+Both variables point to the **same array**.
+
+### Equality
+
+```js
+const arr1 = [1, 2];
+const arr2 = arr1;
+
+console.log(arr1 === arr2);
+// true
+```
+
+Because both references point to the same object.
+
+---
+
+# 2. Shallow Copy
+
+A shallow copy creates a new array.
+
+```js
+const arr1 = [1, 2, 3];
+const arr2 = [...arr1];
+
+arr2.push(4);
+
+console.log(arr1); // [1, 2, 3]
+console.log(arr2); // [1, 2, 3, 4]
+```
+
+## Memory Representation
+
+```js
+arr1 ──► [1,2,3]
+
+arr2 ──► [1,2,3]
+```
+
+Different arrays in memory.
+
+### Equality
+
+```js
+const arr1 = [1, 2];
+const arr2 = [...arr1];
+
+console.log(arr1 === arr2);
+// false
+```
+
+---
+
+# The Important Interview Gotcha
+
+A shallow copy only copies the first level.
+
+```js
+const arr1 = [{ name: "John" }];
+
+const arr2 = [...arr1];
+
+arr2[0].name = "Mike";
+
+console.log(arr1[0].name);
+// Mike
+```
+
+Why?
+
+Because the object inside the array is still shared.
+
+## Memory
+
+```js
+arr1 ──► [ obj ]
+            ▲
+            │
+arr2 ──► [ obj ]
+```
+
+The arrays are different, but the nested object is the same.
+
+---
+
+# Common Ways to Create a Shallow Copy
+
+### Spread Operator
+
+```js
+const copy = [...arr];
+```
+
+### slice()
+
+```js
+const copy = arr.slice();
+```
+
+### Array.from()
+
+```js
+const copy = Array.from(arr);
+```
+
+### concat()
+
+```js
+const copy = [].concat(arr);
+```
+
+All create a **shallow copy**.
+
+---
+
+# Deep vs Shallow Copy
+
+```js
+const arr1 = [{ x: 1 }];
+
+const shallow = [...arr1];
+const deep = structuredClone(arr1);
+
+shallow[0].x = 100;
+
+console.log(arr1[0].x);
+// 100
+
+deep[0].x = 200;
+
+console.log(arr1[0].x);
+// 100
+```
+
+`structuredClone()` creates a true deep copy of nested objects and arrays.
+
+---
+
+# Comparison Table
+
+| Feature                                     | Reference Copy | Shallow Copy |
+| ------------------------------------------- | -------------- | ------------ |
+| New array created?                          | ❌ No          | ✅ Yes       |
+| Top-level array shared?                     | ✅ Yes         | ❌ No        |
+| Nested objects shared?                      | ✅ Yes         | ✅ Yes       |
+| `===` comparison                            | true           | false        |
+| Changes to array structure affect original? | ✅ Yes         | ❌ No        |
+| Changes to nested objects affect original?  | ✅ Yes         | ✅ Yes       |
+
+---
+
+# Interview Example
+
+```js
+const a = [{ value: 1 }];
+const b = a; // reference copy
+const c = [...a]; // shallow copy
+
+b.push({ value: 2 });
+
+console.log(a.length); // 2
+console.log(c.length); // 1
+
+c[0].value = 99;
+
+console.log(a[0].value); // 99
+```
+
+### Explanation
+
+- `b = a` → same array reference.
+- `c = [...a]` → new array.
+- Pushing into `b` affects `a`.
+- Modifying `c[0]` affects `a[0]` because the object inside is shared.
+
+---
+
+# Interview-Ready Answer
+
+> A reference copy occurs when you assign one array variable to another (`const b = a`). Both variables point to the same array in memory, so any modification through one reference is visible through the other. A shallow copy (`const b = [...a]`, `slice()`, `Array.from()`) creates a new array object, so changes to the array structure do not affect the original. However, nested objects and arrays are still copied by reference, meaning changes to nested data are reflected in both arrays. This is why shallow copies solve top-level mutation issues but not nested mutation issues.
+
 ## Question 5. How to empty an array in JavaScript?
 
 ## Question 6. Difference between `Array.isArray()` and `instanceof Array`
