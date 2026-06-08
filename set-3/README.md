@@ -837,6 +837,329 @@ null
 
 ## Question 4. Difference between classical inheritance and prototypal inheritance
 
+## Short Answer
+
+**Classical inheritance** is based on **classes** that define the structure and behavior of objects. Objects are instances of classes.
+
+**Prototypal inheritance** is based on **objects inheriting directly from other objects**. There are no true classes at the language level; objects are linked through prototypes.
+
+JavaScript uses **prototypal inheritance**, although ES6 `class` syntax makes it look similar to classical inheritance.
+
+---
+
+# Detailed Explanation
+
+## 1. Classical Inheritance
+
+Languages like **Java, C++, C#, and Python** primarily use classical inheritance.
+
+You define a class and create objects from it.
+
+### Example (Java-like)
+
+```java
+class Animal {
+    void speak() {
+        System.out.println("Animal sound");
+    }
+}
+
+class Dog extends Animal {
+    void bark() {
+        System.out.println("Bark");
+    }
+}
+```
+
+Usage:
+
+```java
+Dog d = new Dog();
+d.speak();
+d.bark();
+```
+
+### Characteristics
+
+- Class-based
+- Blueprint → Object
+- Inheritance defined between classes
+- Typically supports access modifiers (`public`, `private`, etc.)
+- Hierarchy designed before runtime
+
+---
+
+# 2. Prototypal Inheritance
+
+In prototypal inheritance, objects inherit directly from other objects.
+
+### Example
+
+```javascript id="o3q03o"
+const animal = {
+  speak() {
+    console.log("Animal sound");
+  },
+};
+
+const dog = Object.create(animal);
+
+dog.bark = function () {
+  console.log("Bark");
+};
+
+dog.speak();
+dog.bark();
+```
+
+Output:
+
+```javascript id="s35bvt"
+Animal sound
+Bark
+```
+
+No class was required.
+
+`dog` inherits directly from `animal`.
+
+---
+
+# How JavaScript Inheritance Works
+
+```javascript id="t6cn2e"
+const animal = {
+  eats: true,
+};
+
+const dog = Object.create(animal);
+
+console.log(dog.eats);
+```
+
+JavaScript looks up the prototype chain:
+
+```text
+dog
+ ↓
+animal
+ ↓
+Object.prototype
+ ↓
+null
+```
+
+Output:
+
+```javascript id="1tmg7s"
+true;
+```
+
+---
+
+# ES6 Classes: Are They Classical Inheritance?
+
+Consider:
+
+```javascript id="5h8dys"
+class Animal {
+  speak() {
+    console.log("Animal sound");
+  }
+}
+
+class Dog extends Animal {
+  bark() {
+    console.log("Bark");
+  }
+}
+```
+
+Looks like Java or C#.
+
+However, internally JavaScript converts this into prototype-based behavior.
+
+```javascript id="25t0te"
+console.log(Dog.prototype.__proto__ === Animal.prototype);
+// true
+```
+
+So ES6 classes are **syntactic sugar** over prototypes.
+
+---
+
+# Key Differences
+
+| Feature              | Classical Inheritance | Prototypal Inheritance         |
+| -------------------- | --------------------- | ------------------------------ |
+| Based on             | Classes               | Objects                        |
+| Inheritance between  | Classes               | Objects                        |
+| Object creation      | Instance of class     | Clone/link from another object |
+| Flexibility          | More rigid            | More dynamic                   |
+| Runtime modification | Limited               | Easy                           |
+| Method sharing       | Via class methods     | Via prototypes                 |
+| Used by              | Java, C#, C++         | JavaScript                     |
+
+---
+
+# Runtime Flexibility
+
+One major advantage of prototypal inheritance is that behavior can be changed dynamically.
+
+### Classical Style
+
+Typically fixed after compilation.
+
+### Prototypal Style
+
+```javascript id="r8bq7s"
+const animal = {
+  speak() {
+    console.log("Animal sound");
+  },
+};
+
+const dog = Object.create(animal);
+
+animal.run = function () {
+  console.log("Running");
+};
+
+dog.run();
+```
+
+Output:
+
+```javascript id="g1bc7r"
+Running;
+```
+
+The new method becomes immediately available through the prototype chain.
+
+---
+
+# Method Sharing Comparison
+
+### Classical
+
+```java
+class Person {
+    void greet() {}
+}
+```
+
+Instances share methods defined in the class.
+
+---
+
+### Prototypal
+
+```javascript id="sx4q1h"
+function Person() {}
+
+Person.prototype.greet = function () {
+  console.log("Hello");
+};
+```
+
+All instances share the same prototype method.
+
+---
+
+# Memory Efficiency
+
+### Bad Approach
+
+```javascript id="ewvp72"
+function Person(name) {
+  this.name = name;
+
+  this.greet = function () {
+    console.log("Hello");
+  };
+}
+```
+
+Each object gets its own copy of `greet`.
+
+---
+
+### Better Approach
+
+```javascript id="74zzga"
+function Person(name) {
+  this.name = name;
+}
+
+Person.prototype.greet = function () {
+  console.log("Hello");
+};
+```
+
+One shared method for all instances.
+
+This is how prototypal inheritance achieves memory efficiency.
+
+---
+
+# Common Interview Question
+
+### Does JavaScript support classical inheritance?
+
+**Answer:**
+
+Not natively.
+
+JavaScript's inheritance model is fundamentally **prototypal**.
+
+ES6 introduced `class` syntax:
+
+```javascript id="y0vx1i"
+class Person {}
+```
+
+but this is only syntactic sugar over prototypes and does not change the underlying inheritance mechanism.
+
+---
+
+# Real-World Analogy
+
+### Classical Inheritance
+
+```text
+Blueprint (Class)
+       ↓
+ Create Object
+       ↓
+    Instance
+```
+
+Like building multiple houses from the same architectural blueprint.
+
+---
+
+### Prototypal Inheritance
+
+```text
+Object A
+   ↓
+Object B inherits from A
+   ↓
+Object C inherits from B
+```
+
+Like copying an existing house and modifying it instead of using a blueprint.
+
+---
+
+# Interview Summary
+
+**Classical inheritance** creates objects from classes and defines inheritance between classes.
+
+**Prototypal inheritance** allows objects to inherit directly from other objects through the prototype chain.
+
+**JavaScript is fundamentally prototype-based**, and ES6 classes are simply a cleaner syntax built on top of the prototype system.
+
 ## Question 5. What are JavaScript classes? How are they different from functions?
 
 ## Question 6. What is the difference between static and instance methods?
