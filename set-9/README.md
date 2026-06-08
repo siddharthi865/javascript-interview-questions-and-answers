@@ -858,6 +858,182 @@ if (this.isEmpty()) return null;
 
 ## Question 4. Difference between event.target and event.currentTarget
 
+## Short Answer (Interview-ready)
+
+- **`event.target`** → the _actual element_ that triggered the event.
+- **`event.currentTarget`** → the _element to which the event listener is attached_.
+
+They are often different in **event bubbling scenarios**.
+
+---
+
+# 🧠 Detailed Explanation (FAANG-level)
+
+In JavaScript event handling, events travel in two main phases:
+
+1. **Capturing phase**
+2. **Bubbling phase (most commonly used)**
+
+During bubbling, an event triggered on a child element propagates up to its parents.
+
+---
+
+## 🔹 `event.target` (Origin of event)
+
+👉 The element where the event **actually happened**
+
+Example:
+
+- Click on a button inside a div → button is the target
+
+---
+
+## 🔹 `event.currentTarget` (Handler owner)
+
+👉 The element that the **event listener is attached to**
+
+Even if the event originated from a child, this remains fixed.
+
+---
+
+# ⚡ Example (Very Important for Interviews)
+
+```html
+<div id="parent">
+  <button id="child">Click me</button>
+</div>
+```
+
+```js id="evt1"
+document.getElementById("parent").addEventListener("click", function (event) {
+  console.log("target:", event.target.id);
+  console.log("currentTarget:", event.currentTarget.id);
+});
+```
+
+---
+
+## 👉 If you click the button:
+
+### Output:
+
+```
+target: child
+currentTarget: parent
+```
+
+---
+
+# 🧠 Why this happens
+
+- Click happened on **button** → so `target = button`
+- Listener is on **div#parent** → so `currentTarget = parent`
+
+---
+
+# 🔥 If you click the parent div directly
+
+```
+target: parent
+currentTarget: parent
+```
+
+Now both are same.
+
+---
+
+# 📌 Key Difference Table
+
+| Feature                   | event.target           | event.currentTarget        |
+| ------------------------- | ---------------------- | -------------------------- |
+| Meaning                   | Where event originated | Where listener is attached |
+| Changes during bubbling   | ❌ No                  | ❌ No                      |
+| Depends on click position | ✅ Yes                 | ❌ No                      |
+| Common use                | Delegation logic       | Stable reference           |
+
+---
+
+# 🧠 Real-world Use Case: Event Delegation
+
+This is where interviewers LOVE this question.
+
+```js id="evt2"
+document.getElementById("list").addEventListener("click", function (e) {
+  if (e.target.tagName === "LI") {
+    console.log("Clicked item:", e.target.textContent);
+  }
+});
+```
+
+### Why `target` is used:
+
+Because we want the actual clicked `<li>`, not the parent `<ul>`.
+
+---
+
+# ⚠️ Common Pitfalls
+
+## ❌ Using currentTarget for delegation
+
+```js id="evt3"
+e.currentTarget.tagName; // always UL in this case
+```
+
+This breaks logic for child detection.
+
+---
+
+## ❌ Assuming both are same
+
+They are only same when:
+
+- event is triggered directly on the element with listener
+
+---
+
+## ❌ Arrow function confusion
+
+```js id="evt4"
+element.addEventListener("click", (e) => {
+  console.log(this); // ❌ not currentTarget
+});
+```
+
+Arrow functions do NOT bind `this`.
+
+Use:
+
+```js id="evt5"
+function (e) {
+  console.log(this === e.currentTarget); // true
+}
+```
+
+---
+
+# 🔥 Bonus: Relationship with `this`
+
+In non-arrow functions inside event handlers:
+
+```js id="evt6"
+element.addEventListener("click", function (e) {
+  console.log(this === e.currentTarget); // true
+});
+```
+
+So:
+
+| Concept  | Value                   |
+| -------- | ----------------------- |
+| `this`   | same as `currentTarget` |
+| `target` | actual clicked element  |
+
+---
+
+# 🧠 Senior-Level Interview Answer
+
+> “`event.target` refers to the element that actually triggered the event, while `event.currentTarget` refers to the element on which the event listener is registered. In event bubbling scenarios, these often differ. This distinction is crucial for event delegation patterns, where we attach a single listener on a parent but handle events from dynamically generated child elements using `event.target`.”
+
 ## Question 5. What are the differences between classical object-oriented programming and JS prototypal inheritance?
 
 ## Question 6. How does new keyword work internally?
