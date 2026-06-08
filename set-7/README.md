@@ -680,6 +680,278 @@ false; // Cancel
 
 ## Question 4. What is the difference between innerHTML and textContent?
 
+## Short Answer
+
+- **`innerHTML`** → returns/sets **HTML markup inside an element** (parses tags)
+- **`textContent`** → returns/sets **only plain text content** (no HTML parsing)
+
+So:
+
+- `innerHTML` = HTML-aware
+- `textContent` = text-only (safer + faster)
+
+---
+
+# 1. `innerHTML`
+
+### What it does:
+
+- Gets or sets the **HTML inside an element**
+- Parses HTML tags
+
+### Example:
+
+```js id="a1"
+const div = document.querySelector("#box");
+
+div.innerHTML = "<b>Hello</b>";
+```
+
+### Result in DOM:
+
+👉 “Hello” appears **bold**
+
+---
+
+### Reading innerHTML:
+
+```js id="a2"
+console.log(div.innerHTML);
+```
+
+### Output:
+
+```html
+<b>Hello</b>
+```
+
+---
+
+## ⚠️ Important behavior
+
+It **executes HTML structure**, not just text.
+
+So this:
+
+```js id="a3"
+div.innerHTML = "<img src='x' onerror='alert(1)'>";
+```
+
+⚠️ Can lead to **XSS (Cross-Site Scripting)** vulnerabilities if input is untrusted.
+
+---
+
+# 2. `textContent`
+
+### What it does:
+
+- Gets/sets **only plain text**
+- Ignores HTML tags completely
+- Treats everything as text
+
+### Example:
+
+```js id="b1"
+const div = document.querySelector("#box");
+
+div.textContent = "<b>Hello</b>";
+```
+
+### Result:
+
+```
+<b>Hello</b>
+```
+
+👉 Tags are NOT rendered, just displayed as text.
+
+---
+
+### Reading textContent:
+
+```js id="b2"
+console.log(div.textContent);
+```
+
+### Output:
+
+```
+Hello
+```
+
+(returns only visible text content)
+
+---
+
+# 🔥 Key Differences (Interview Table)
+
+| Feature                | innerHTML  | textContent |
+| ---------------------- | ---------- | ----------- |
+| Parses HTML            | ✅ Yes     | ❌ No       |
+| Renders tags           | ✅ Yes     | ❌ No       |
+| Returns HTML structure | Yes        | No          |
+| Performance            | Slower     | Faster      |
+| Security risk          | High (XSS) | Safe        |
+| Includes hidden text   | Yes        | Yes         |
+
+---
+
+# 3. Important Behavioral Differences
+
+---
+
+## ❓ HTML rendering
+
+```js id="c1"
+div.innerHTML = "<i>Hello</i>";
+```
+
+➡️ Output: _Hello_ (italic)
+
+---
+
+```js id="c2"
+div.textContent = "<i>Hello</i>";
+```
+
+➡️ Output: `<i>Hello</i>` (plain text)
+
+---
+
+## ❓ Whitespace handling
+
+```html
+<div id="box">Hello World</div>
+```
+
+```js id="c3"
+box.innerHTML;
+box.textContent;
+```
+
+### Difference:
+
+- `innerHTML` → preserves structure (with whitespace as part of HTML string)
+- `textContent` → returns clean text like:
+
+```
+Hello World
+```
+
+---
+
+## ❓ Hidden elements
+
+```html
+<div>
+  Visible
+  <span style="display:none">Hidden</span>
+</div>
+```
+
+```js id="c4"
+element.innerHTML;
+element.textContent;
+```
+
+### Result:
+
+- `innerHTML` → includes hidden HTML
+- `textContent` → still includes hidden text (important interview trick)
+
+👉 If you want only visible text, use:
+
+```js id="c5"
+element.innerText;
+```
+
+---
+
+# 4. Related property: `innerText` (bonus interview point)
+
+| Property    | Behavior                             |
+| ----------- | ------------------------------------ |
+| innerHTML   | HTML included                        |
+| textContent | all text (fast, no layout awareness) |
+| innerText   | visible text only (layout-aware)     |
+
+---
+
+### Example:
+
+```js id="d1"
+div.innerText;
+```
+
+- Respects CSS (`display:none`)
+- Slower than `textContent`
+
+---
+
+# 5. Performance Difference
+
+### `textContent` is faster because:
+
+- No HTML parsing
+- Direct text assignment
+
+### `innerHTML` is slower because:
+
+- Parses string into DOM nodes
+- Reconstructs DOM tree
+
+---
+
+# 6. Security (Very important interview point)
+
+## ❌ Dangerous:
+
+```js id="e1"
+div.innerHTML = userInput;
+```
+
+If `userInput = "<script>alert(1)</script>"`, it executes.
+
+---
+
+## ✅ Safe:
+
+```js id="e2"
+div.textContent = userInput;
+```
+
+No execution, safe output.
+
+---
+
+# 7. Real-world usage
+
+### Use `innerHTML` when:
+
+- You want to inject HTML templates
+- You trust the source
+
+```js id="f1"
+container.innerHTML = `<h1>${title}</h1>`;
+```
+
+---
+
+### Use `textContent` when:
+
+- Displaying user input
+- Preventing XSS
+
+```js id="f2"
+output.textContent = userInput;
+```
+
+---
+
+# 💡 Final Interview Summary
+
+> `innerHTML` allows reading and writing HTML content inside an element and parses tags, while `textContent` deals only with plain text and ignores HTML markup. `textContent` is safer and faster, whereas `innerHTML` is useful when dynamic HTML rendering is needed.
+
 ## Question 5. How to change the style of an element using JavaScript?
 
 ## Question 6. Difference between appendChild() and insertBefore()
