@@ -817,6 +817,414 @@ results.filter((r) => r.status === "fulfilled");
 
 ## Question 4. How to handle errors in `async/await`
 
+## Concise Answer
+
+Errors in `async/await` are typically handled using **`try...catch`** blocks. Since an `async` function automatically returns a Promise, any thrown error or rejected Promise can be caught with `catch`.
+
+---
+
+# 1. Basic Error Handling with `try...catch`
+
+```js
+async function getUser() {
+  try {
+    const response = await fetch("/api/user");
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch user");
+    }
+
+    const user = await response.json();
+    console.log(user);
+  } catch (error) {
+    console.error("Error:", error.message);
+  }
+}
+```
+
+### How it works
+
+1. `await` pauses execution until the Promise settles.
+2. If the Promise rejects, control jumps to `catch`.
+3. Any manually thrown error is also caught.
+
+---
+
+# 2. Rejected Promise Example
+
+```js
+async function test() {
+  try {
+    await Promise.reject("Something went wrong");
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+test();
+```
+
+### Output
+
+```js
+Something went wrong
+```
+
+---
+
+# 3. Errors Thrown Inside Async Functions
+
+```js
+async function divide(a, b) {
+  if (b === 0) {
+    throw new Error("Cannot divide by zero");
+  }
+
+  return a / b;
+}
+
+async function run() {
+  try {
+    const result = await divide(10, 0);
+    console.log(result);
+  } catch (err) {
+    console.log(err.message);
+  }
+}
+
+run();
+```
+
+### Output
+
+```js
+Cannot divide by zero
+```
+
+---
+
+# 4. Async Functions Return Rejected Promises
+
+This is important for interviews.
+
+```js
+async function test() {
+  throw new Error("Oops");
+}
+
+test().catch((err) => console.log(err.message));
+```
+
+### Output
+
+```js
+Oops;
+```
+
+### Equivalent Promise Version
+
+```js
+function test() {
+  return Promise.reject(new Error("Oops"));
+}
+```
+
+---
+
+# 5. Using `.catch()` Instead of `try...catch`
+
+```js
+async function getData() {
+  const data = await Promise.resolve("Hello");
+  return data;
+}
+
+getData().then(console.log).catch(console.error);
+```
+
+### Output
+
+```js
+Hello;
+```
+
+You can handle errors either:
+
+```js
+try {
+  await something();
+} catch (err) {
+  // handle
+}
+```
+
+or
+
+```js
+something().catch((err) => {});
+```
+
+---
+
+# 6. Handling Multiple Awaits
+
+```js
+async function loadData() {
+  try {
+    const user = await getUser();
+    const orders = await getOrders(user.id);
+    const payment = await getPayment(orders[0].id);
+
+    console.log(payment);
+  } catch (err) {
+    console.error("Failed:", err);
+  }
+}
+```
+
+### Benefit
+
+A single `catch` handles errors from:
+
+- `getUser`
+- `getOrders`
+- `getPayment`
+
+---
+
+# 7. Independent Error Handling
+
+Sometimes each operation needs its own handling.
+
+```js
+async function run() {
+  try {
+    const user = await getUser();
+    console.log(user);
+  } catch {
+    console.log("User fetch failed");
+  }
+
+  try {
+    const orders = await getOrders();
+    console.log(orders);
+  } catch {
+    console.log("Orders fetch failed");
+  }
+}
+```
+
+---
+
+# 8. Using `finally`
+
+`finally` always runs whether success or failure.
+
+```js
+async function fetchData() {
+  try {
+    console.log("Loading...");
+    await Promise.resolve();
+  } catch (err) {
+    console.error(err);
+  } finally {
+    console.log("Cleanup");
+  }
+}
+
+fetchData();
+```
+
+### Output
+
+```js
+Loading...
+Cleanup
+```
+
+Common uses:
+
+- Hide loading spinner
+- Close database connection
+- Release resources
+
+---
+
+# 9. Common Interview Pitfall: Forgotten `await`
+
+```js
+async function run() {
+  try {
+    Promise.reject("Error");
+  } catch (err) {
+    console.log("Caught");
+  }
+}
+
+run();
+```
+
+### Output
+
+```js
+Unhandled Promise Rejection
+```
+
+### Why?
+
+`try...catch` only catches:
+
+- synchronous errors
+- rejected Promises that are **awaited**
+
+Correct version:
+
+```js
+async function run() {
+  try {
+    await Promise.reject("Error");
+  } catch (err) {
+    console.log("Caught");
+  }
+}
+```
+
+### Output
+
+```js
+Caught;
+```
+
+---
+
+# 10. Parallel Operations with Error Handling
+
+### Using `Promise.all`
+
+```js
+async function load() {
+  try {
+    const [users, posts] = await Promise.all([fetchUsers(), fetchPosts()]);
+
+    console.log(users, posts);
+  } catch (err) {
+    console.error("One request failed");
+  }
+}
+```
+
+### Important
+
+If any Promise rejects:
+
+```js
+Promise.all(...)
+```
+
+rejects immediately.
+
+---
+
+# 11. Partial Failure Handling
+
+Use `Promise.allSettled`.
+
+```js
+async function load() {
+  const results = await Promise.allSettled([
+    fetchUsers(),
+    fetchPosts(),
+    fetchComments(),
+  ]);
+
+  console.log(results);
+}
+```
+
+This allows processing successful results even when some fail.
+
+---
+
+# 12. Advanced: Custom Error Types
+
+```js
+class ValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "ValidationError";
+  }
+}
+
+async function register(user) {
+  if (!user.email) {
+    throw new ValidationError("Email required");
+  }
+}
+```
+
+```js
+try {
+  await register({});
+} catch (err) {
+  if (err instanceof ValidationError) {
+    console.log("Validation failed");
+  }
+}
+```
+
+This pattern is common in large applications.
+
+---
+
+# 13. Common Mistakes
+
+### ❌ Empty catch blocks
+
+```js
+try {
+  await fetchData();
+} catch (err) {}
+```
+
+Swallows errors and makes debugging difficult.
+
+---
+
+### ❌ Catching and ignoring errors
+
+```js
+catch (err) {
+  return null;
+}
+```
+
+Only do this intentionally.
+
+---
+
+### ❌ Forgetting to rethrow
+
+```js
+catch (err) {
+  console.error(err);
+}
+```
+
+Sometimes you should propagate:
+
+```js
+catch (err) {
+  console.error(err);
+  throw err;
+}
+```
+
+---
+
+# Interview Summary
+
+> In `async/await`, errors are usually handled with `try...catch`. When an awaited Promise rejects or an error is thrown, execution jumps to the `catch` block. `finally` can be used for cleanup logic, and for parallel operations, `Promise.all` or `Promise.allSettled` can be combined with `await` depending on whether partial failures should be tolerated. A common pitfall is forgetting to use `await`, because `try...catch` cannot catch unawaited Promise rejections.
+
 ## Question 5. Difference between event delegation and direct event listener
 
 ## Question 6. How to stop event propagation
