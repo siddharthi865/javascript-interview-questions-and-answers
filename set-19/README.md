@@ -965,6 +965,506 @@ A Proxy in JavaScript allows you to intercept and redefine fundamental operation
 
 ## Question 4. How to use Reflect API to manipulate objects
 
+## Direct Answer
+
+The **Reflect API** is a built-in JavaScript object that provides methods for performing object operations (get, set, delete, define properties, construct objects, etc.) in a more consistent and functional way than using operators or `Object` methods directly.
+
+It is especially useful with **Proxies**, where `Reflect` allows you to forward operations to the target object while preserving default behavior.
+
+---
+
+# What is Reflect?
+
+Introduced in **ES6**, `Reflect` is a static object (similar to `Math`) that contains methods corresponding to many JavaScript internal object operations.
+
+```js
+console.log(typeof Reflect);
+```
+
+Output:
+
+```js
+"object";
+```
+
+You cannot instantiate it:
+
+```js
+new Reflect(); // TypeError
+```
+
+---
+
+# Why Was Reflect Introduced?
+
+Before ES6, object operations were performed using:
+
+```js
+obj.name = "John";
+delete obj.name;
+
+Object.defineProperty(obj, "age", {
+  value: 25,
+});
+```
+
+The APIs were inconsistent:
+
+- Some returned booleans
+- Some threw errors
+- Some used operators
+
+Reflect provides a unified functional interface:
+
+```js
+Reflect.set(obj, "name", "John");
+Reflect.deleteProperty(obj, "name");
+Reflect.defineProperty(obj, "age", {
+  value: 25,
+});
+```
+
+---
+
+# 1. Reflect.get()
+
+Equivalent to property access.
+
+```js
+const user = {
+  name: "John",
+};
+
+console.log(Reflect.get(user, "name"));
+```
+
+Output:
+
+```js
+John;
+```
+
+Equivalent to:
+
+```js
+user.name;
+```
+
+---
+
+# 2. Reflect.set()
+
+Sets a property value.
+
+```js
+const user = {};
+
+Reflect.set(user, "name", "Alice");
+
+console.log(user);
+```
+
+Output:
+
+```js
+{
+  name: "Alice";
+}
+```
+
+Equivalent to:
+
+```js
+user.name = "Alice";
+```
+
+---
+
+# 3. Reflect.has()
+
+Checks property existence.
+
+```js
+const user = {
+  name: "John",
+};
+
+console.log(Reflect.has(user, "name"));
+```
+
+Output:
+
+```js
+true;
+```
+
+Equivalent to:
+
+```js
+"name" in user;
+```
+
+---
+
+# 4. Reflect.deleteProperty()
+
+Deletes properties safely.
+
+```js
+const user = {
+  name: "John",
+};
+
+Reflect.deleteProperty(user, "name");
+
+console.log(user);
+```
+
+Output:
+
+```js
+{
+}
+```
+
+Equivalent to:
+
+```js
+delete user.name;
+```
+
+---
+
+# 5. Reflect.ownKeys()
+
+Returns all keys.
+
+```js
+const obj = {
+  a: 1,
+  b: 2,
+};
+
+console.log(Reflect.ownKeys(obj));
+```
+
+Output:
+
+```js
+["a", "b"];
+```
+
+Unlike:
+
+```js
+Object.keys();
+```
+
+it also includes:
+
+- Non-enumerable keys
+- Symbols
+
+---
+
+# 6. Reflect.defineProperty()
+
+Defines properties.
+
+```js
+const obj = {};
+
+Reflect.defineProperty(obj, "id", {
+  value: 101,
+  writable: false,
+});
+
+console.log(obj.id);
+```
+
+Output:
+
+```js
+101;
+```
+
+### Difference from Object.defineProperty
+
+```js
+Object.defineProperty(...)
+```
+
+returns the object.
+
+```js
+Reflect.defineProperty(...)
+```
+
+returns a boolean.
+
+```js
+const success = Reflect.defineProperty(obj, "x", {
+  value: 10,
+});
+
+console.log(success);
+```
+
+Output:
+
+```js
+true;
+```
+
+---
+
+# 7. Reflect.getOwnPropertyDescriptor()
+
+```js
+const user = {
+  name: "John",
+};
+
+console.log(Reflect.getOwnPropertyDescriptor(user, "name"));
+```
+
+Output:
+
+```js
+{
+  value: 'John',
+  writable: true,
+  enumerable: true,
+  configurable: true
+}
+```
+
+---
+
+# 8. Reflect.preventExtensions()
+
+Prevents adding new properties.
+
+```js
+const obj = {};
+
+Reflect.preventExtensions(obj);
+
+console.log(Reflect.isExtensible(obj));
+```
+
+Output:
+
+```js
+false;
+```
+
+---
+
+# 9. Reflect.construct()
+
+Programmatic version of `new`.
+
+```js
+class User {
+  constructor(name) {
+    this.name = name;
+  }
+}
+
+const user = Reflect.construct(User, ["John"]);
+
+console.log(user);
+```
+
+Output:
+
+```js
+User { name: 'John' }
+```
+
+Equivalent to:
+
+```js
+new User("John");
+```
+
+---
+
+# 10. Reflect.apply()
+
+Programmatic function invocation.
+
+```js
+function greet(name) {
+  return `Hello ${name}`;
+}
+
+const result = Reflect.apply(greet, null, ["John"]);
+
+console.log(result);
+```
+
+Output:
+
+```js
+Hello John
+```
+
+Equivalent to:
+
+```js
+greet.call(null, "John");
+```
+
+---
+
+# Reflect + Proxy (Most Important Interview Topic)
+
+Reflect is heavily used inside Proxy handlers.
+
+Without Reflect:
+
+```js
+const proxy = new Proxy(
+  {},
+  {
+    get(target, prop) {
+      console.log(`Reading ${prop}`);
+      return target[prop];
+    },
+  },
+);
+```
+
+With Reflect:
+
+```js
+const proxy = new Proxy(
+  {},
+  {
+    get(target, prop, receiver) {
+      console.log(`Reading ${prop}`);
+
+      return Reflect.get(target, prop, receiver);
+    },
+  },
+);
+```
+
+### Why?
+
+Reflect preserves JavaScript's default internal behavior.
+
+---
+
+# Example: Validation Proxy
+
+```js
+const user = {};
+
+const proxy = new Proxy(user, {
+  set(target, prop, value) {
+    if (prop === "age" && value < 0) {
+      throw new Error("Age cannot be negative");
+    }
+
+    return Reflect.set(target, prop, value);
+  },
+});
+
+proxy.age = 30;
+
+console.log(proxy.age);
+```
+
+Output:
+
+```js
+30;
+```
+
+---
+
+# Common Interview Question
+
+### Why use Reflect inside Proxy traps?
+
+Because:
+
+```js
+target[prop] = value;
+```
+
+may not preserve all built-in semantics.
+
+Instead:
+
+```js
+Reflect.set(target, prop, value);
+```
+
+delegates the operation to JavaScript's internal object behavior.
+
+This avoids subtle bugs involving:
+
+- inheritance
+- getters/setters
+- receivers
+- prototype chains
+
+---
+
+# Reflect vs Object Methods
+
+| Operation       | Traditional               | Reflect                    |
+| --------------- | ------------------------- | -------------------------- |
+| Get property    | `obj.x`                   | `Reflect.get()`            |
+| Set property    | `obj.x = 1`               | `Reflect.set()`            |
+| Delete property | `delete obj.x`            | `Reflect.deleteProperty()` |
+| Check existence | `"x" in obj`              | `Reflect.has()`            |
+| Define property | `Object.defineProperty()` | `Reflect.defineProperty()` |
+| Create instance | `new Constructor()`       | `Reflect.construct()`      |
+| Call function   | `fn.call()`               | `Reflect.apply()`          |
+
+---
+
+# Best Practices
+
+### Use Reflect when:
+
+✅ Writing Proxy handlers
+
+✅ Building frameworks/libraries
+
+✅ Need functional object operations
+
+✅ Need consistent return values
+
+---
+
+### Avoid unnecessary Reflect usage
+
+Instead of:
+
+```js
+Reflect.get(user, "name");
+```
+
+normal code should usually be:
+
+```js
+user.name;
+```
+
+Reflect shines in meta-programming, not everyday property access.
+
+---
+
+# Senior-Level Interview Summary
+
+The **Reflect API** is a standardized set of methods that expose JavaScript's internal object operations through a functional interface. It provides consistent behavior for getting, setting, deleting, defining properties, invoking functions, and constructing objects. Its primary use case is **meta-programming**, particularly when combined with **Proxy**, where `Reflect` allows traps to forward operations while preserving JavaScript's default semantics, prototype behavior, getters/setters, and receiver handling. This makes Reflect a fundamental tool for advanced object manipulation and framework development.
+
 ## Question 5. How to implement a reactive object (like Vue.js reactivity system)
 
 ## Question 6. How to implement observer pattern in JavaScript
