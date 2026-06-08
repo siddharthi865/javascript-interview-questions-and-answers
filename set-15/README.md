@@ -805,6 +805,401 @@ Without `Reflect`, you may break:
 
 ## Question 4. Difference between WeakMap and Map in garbage collection
 
+## Concise Answer
+
+The key difference is:
+
+- **`Map` holds strong references to its keys**, so keys cannot be garbage-collected while they remain in the map.
+- **`WeakMap` holds weak references to its keys**, so if there are no other references to a key object, it can be garbage-collected automatically, and its associated entry is removed.
+
+This makes `WeakMap` useful for storing metadata, private data, caches, and DOM-related information without causing memory leaks.
+
+---
+
+# Interview-Friendly Explanation
+
+## How Garbage Collection Works
+
+JavaScript's garbage collector frees memory occupied by objects that are no longer reachable from the application.
+
+Example:
+
+```js
+let user = {
+  name: "John",
+};
+
+user = null;
+```
+
+Since nothing references the original object anymore, it becomes eligible for garbage collection.
+
+---
+
+# Map and Garbage Collection
+
+A `Map` maintains a **strong reference** to its keys.
+
+```js
+let user = {
+  name: "John",
+};
+
+const map = new Map();
+
+map.set(user, "Some metadata");
+
+user = null;
+```
+
+Many developers assume the object can now be collected.
+
+### Reality
+
+The object is still referenced by the `Map`:
+
+```js
+map
+  ↓
+{ {name:"John"} => "Some metadata" }
+```
+
+Therefore:
+
+- Object remains in memory
+- Entry remains in the map
+- Garbage collector cannot remove it
+
+This can cause memory leaks if entries aren't manually removed.
+
+---
+
+# WeakMap and Garbage Collection
+
+A `WeakMap` stores keys weakly.
+
+```js
+let user = {
+  name: "John",
+};
+
+const weakMap = new WeakMap();
+
+weakMap.set(user, "Some metadata");
+
+user = null;
+```
+
+Now:
+
+- No strong references to the object exist
+- Object becomes eligible for garbage collection
+- WeakMap entry disappears automatically
+
+Conceptually:
+
+```js
+WeakMap
+  ↓
+weak reference
+```
+
+The WeakMap does not keep the object alive.
+
+---
+
+# Visual Comparison
+
+## Map
+
+```text
+Map
+ ↓
+Object Key
+```
+
+Strong reference:
+
+```text
+Map ─────► Object
+```
+
+Object cannot be collected.
+
+---
+
+## WeakMap
+
+```text
+WeakMap
+ ~~~► Object
+```
+
+Weak reference:
+
+```text
+WeakMap ~~~► Object
+```
+
+If no other references exist:
+
+```text
+Object removed by GC
+Entry removed automatically
+```
+
+---
+
+# Why WeakMap Keys Must Be Objects
+
+This is a common interview question.
+
+Valid:
+
+```js
+const wm = new WeakMap();
+
+const obj = {};
+
+wm.set(obj, "data");
+```
+
+Invalid:
+
+```js
+wm.set("name", "John");
+```
+
+Output:
+
+```js
+TypeError;
+```
+
+### Why?
+
+Primitive values:
+
+- strings
+- numbers
+- booleans
+- symbols (non-registered)
+
+cannot be garbage-collected in the same way as objects.
+
+Weak references only make sense for objects.
+
+---
+
+# Why WeakMap Has No Size Property
+
+Another popular interview question.
+
+`Map`:
+
+```js
+console.log(map.size);
+```
+
+Works.
+
+---
+
+`WeakMap`:
+
+```js
+console.log(weakMap.size);
+```
+
+Undefined.
+
+### Why?
+
+Garbage collection is non-deterministic.
+
+The engine may remove entries at any time.
+
+Therefore JavaScript cannot reliably tell you:
+
+- current size
+- keys
+- values
+- entries
+
+---
+
+# Why WeakMap Is Not Iterable
+
+`Map`:
+
+```js
+for (const [key, value] of map) {
+  console.log(key, value);
+}
+```
+
+Works.
+
+---
+
+`WeakMap`:
+
+```js
+for (const item of weakMap) {
+}
+```
+
+Throws.
+
+### Reason
+
+Imagine:
+
+```js
+for (...) {
+   // GC runs here
+}
+```
+
+Entries could disappear during iteration.
+
+To avoid inconsistent behavior:
+
+- no iteration
+- no keys()
+- no values()
+- no entries()
+- no size
+
+---
+
+# Real-World Example: DOM Metadata
+
+Memory leak with Map:
+
+```js
+const map = new Map();
+
+let button = document.querySelector("button");
+
+map.set(button, {
+  clicks: 0,
+});
+
+button = null;
+```
+
+The DOM element remains in memory because `Map` still references it.
+
+---
+
+Better:
+
+```js
+const weakMap = new WeakMap();
+
+let button = document.querySelector("button");
+
+weakMap.set(button, {
+  clicks: 0,
+});
+
+button = null;
+```
+
+When the DOM node is removed and no other references exist:
+
+- node can be garbage-collected
+- metadata disappears automatically
+
+---
+
+# Private Data Pattern (Before `#private` Fields)
+
+```js
+const privateData = new WeakMap();
+
+class User {
+  constructor(name) {
+    privateData.set(this, {
+      name,
+    });
+  }
+
+  getName() {
+    return privateData.get(this).name;
+  }
+}
+```
+
+Benefits:
+
+- data hidden from outside
+- automatically cleaned when instance is collected
+
+---
+
+# Feature Comparison
+
+| Feature                | Map       | WeakMap      |
+| ---------------------- | --------- | ------------ |
+| Key type               | Any value | Objects only |
+| Strong references      | ✅ Yes    | ❌ No        |
+| Weak references        | ❌ No     | ✅ Yes       |
+| Prevents GC            | ✅ Yes    | ❌ No        |
+| Iterable               | ✅ Yes    | ❌ No        |
+| size property          | ✅ Yes    | ❌ No        |
+| keys()                 | ✅ Yes    | ❌ No        |
+| values()               | ✅ Yes    | ❌ No        |
+| entries()              | ✅ Yes    | ❌ No        |
+| Good for caches        | Limited   | Excellent    |
+| Memory leak prevention | ❌ No     | ✅ Yes       |
+
+---
+
+# Common Interview Questions
+
+### Q: Can you force garbage collection to test WeakMap?
+
+No.
+
+JavaScript engines decide when GC runs.
+
+You cannot rely on immediate cleanup.
+
+---
+
+### Q: Can WeakMap keys be strings?
+
+No.
+
+```js
+weakMap.set("name", "John");
+```
+
+Throws a `TypeError`.
+
+Only objects are allowed as keys.
+
+---
+
+### Q: When should you choose WeakMap?
+
+Use `WeakMap` when:
+
+- Keys are objects
+- You don't want the map to keep objects alive
+- Building caches
+- Storing metadata
+- Associating data with DOM nodes
+- Implementing private object state
+
+---
+
+# Interview Summary
+
+> `Map` keeps strong references to keys, so objects stored as keys remain in memory until explicitly removed. `WeakMap` keeps weak references to object keys, allowing them to be garbage-collected when no other references exist. This makes `WeakMap` ideal for metadata, caches, and preventing memory leaks, but it cannot be iterated and only accepts object keys.
+
 ## Question 5. How to implement memoization for expensive function calls
 
 ## Question 6. Difference between synchronous and asynchronous iterables
