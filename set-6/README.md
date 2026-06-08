@@ -514,6 +514,201 @@ Internally:
 
 ## Question 4. Explain the difference between undefined and undeclared variables
 
+**Direct answer:**
+
+- **`undefined`** means a variable has been declared but **not assigned a value**.
+- **Undeclared** means a variable has **never been declared in the current scope at all**.
+
+---
+
+# Detailed Explanation (Interview Perspective)
+
+This is a very common JavaScript interview concept because it tests understanding of **scope, hoisting, and runtime behavior**.
+
+---
+
+# 1. Undefined Variable
+
+A variable is **declared but not assigned a value**.
+
+### Example:
+
+```javascript id="u1"
+let a;
+console.log(a); // undefined
+```
+
+### What is happening:
+
+- Memory is allocated for `a`
+- JavaScript initializes it with `undefined`
+
+---
+
+## Key characteristics of `undefined`
+
+- It is a **primitive value**
+- It is a valid value in JavaScript
+- Type of undefined is:
+
+```javascript id="u2"
+typeof undefined; // "undefined"
+```
+
+---
+
+## Common causes of `undefined`
+
+### 1. Variable declared but not initialized
+
+```javascript id="u3"
+let x;
+console.log(x); // undefined
+```
+
+### 2. Missing return value
+
+```javascript id="u4"
+function test() {}
+console.log(test()); // undefined
+```
+
+### 3. Missing object property
+
+```javascript id="u5"
+const obj = {};
+console.log(obj.name); // undefined
+```
+
+---
+
+# 2. Undeclared Variable
+
+A variable is **never declared using `var`, `let`, or `const`**.
+
+### Example:
+
+```javascript id="u6"
+console.log(b); // ReferenceError: b is not defined
+```
+
+---
+
+## Key characteristics of undeclared variables
+
+- They do **not exist in memory**
+- Accessing them throws a **ReferenceError**
+- They are not part of any scope
+
+---
+
+# 3. Key Difference Table
+
+| Feature           | undefined   | undeclared                 |
+| ----------------- | ----------- | -------------------------- |
+| Declared?         | Yes         | No                         |
+| Memory allocation | Yes         | No                         |
+| Value             | undefined   | Does not exist             |
+| Error on access   | No          | Yes (ReferenceError)       |
+| Typeof result     | "undefined" | "undefined" (special case) |
+
+---
+
+# 4. Important Interview Trick: `typeof`
+
+```javascript id="u7"
+typeof notDeclared; // "undefined"
+```
+
+👉 Even though `notDeclared` does not exist, `typeof` does NOT throw an error.
+
+### Why?
+
+Because `typeof` is designed to be **safe for undeclared variables**.
+
+---
+
+# 5. Hoisting Connection (Very Important)
+
+### `var` example:
+
+```javascript id="u8"
+console.log(a); // undefined
+var a = 10;
+```
+
+Internally:
+
+```javascript
+var a; // hoisted
+console.log(a); // undefined
+a = 10;
+```
+
+👉 This is still **undefined, not undeclared**
+
+---
+
+### `let/const` example:
+
+```javascript id="u9"
+console.log(a); // ReferenceError
+let a = 10;
+```
+
+👉 This is **temporal dead zone (TDZ)**, not undefined
+
+---
+
+# 6. Temporal Dead Zone (Advanced Insight)
+
+For `let` and `const`:
+
+- Variable exists in scope
+- But cannot be accessed before initialization
+
+```javascript id="u10"
+console.log(a); // ReferenceError
+let a = 5;
+```
+
+This is different from both:
+
+- undefined ❌
+- undeclared ❌
+
+---
+
+# 7. Practical Example Comparison
+
+```javascript id="u11"
+let x;
+console.log(x); // undefined (declared but not assigned)
+
+console.log(y); // ReferenceError (undeclared variable)
+```
+
+---
+
+# 8. Best Practices
+
+### ✔ Avoid confusion:
+
+- Always initialize variables
+- Use `strict mode` to catch undeclared variables early
+
+```javascript id="u12"
+"use strict";
+
+z = 10; // ReferenceError (good catch)
+```
+
+---
+
+# Interview Summary Answer
+
+> An `undefined` variable is one that has been declared but not assigned a value, while an undeclared variable has never been defined in the current scope. Accessing an undefined variable returns `undefined`, but accessing an undeclared variable throws a `ReferenceError`. The `typeof` operator is an exception, as it returns `"undefined"` even for undeclared variables without throwing an error.
+
 ## Question 5. What is the difference between primitive and reference data types?
 
 ## Question 6. How does Infinity work in JavaScript?
