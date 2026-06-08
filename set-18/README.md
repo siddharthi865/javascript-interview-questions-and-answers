@@ -892,6 +892,378 @@ cancelAnimationFrame(id);
 
 ## Question 4. How to implement a promise-based delay function
 
+## ✅ Direct Answer
+
+A promise-based delay function returns a Promise that resolves after a specified amount of time, allowing it to be used with `.then()` or `async/await`.
+
+```javascript
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+```
+
+---
+
+# 🧠 Interview Explanation
+
+The idea is simple:
+
+1. Create a Promise.
+2. Use `setTimeout`.
+3. Resolve the Promise when the timer expires.
+
+This converts a callback-based API (`setTimeout`) into a Promise-based API.
+
+```javascript
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+```
+
+---
+
+# Using with `.then()`
+
+```javascript
+console.log("Start");
+
+delay(2000).then(() => {
+  console.log("2 seconds later");
+});
+
+console.log("End");
+```
+
+### Output
+
+```javascript
+Start
+End
+2 seconds later
+```
+
+Explanation:
+
+- `delay(2000)` creates a pending Promise.
+- `setTimeout` schedules the resolution after 2 seconds.
+- Synchronous code finishes first.
+- Promise resolves later.
+
+---
+
+# Using with `async/await`
+
+This is the most common usage.
+
+```javascript
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function run() {
+  console.log("Start");
+
+  await delay(2000);
+
+  console.log("After 2 seconds");
+}
+
+run();
+```
+
+### Output
+
+```javascript
+Start
+After 2 seconds
+```
+
+---
+
+# Returning a Value After Delay
+
+Sometimes interviewers ask:
+
+> Can delay resolve with a value?
+
+Yes.
+
+```javascript
+function delay(ms, value) {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(value), ms);
+  });
+}
+```
+
+Usage:
+
+```javascript
+delay(1000, "Hello").then(console.log);
+```
+
+Output:
+
+```javascript
+Hello;
+```
+
+---
+
+# Async/Await Example with Returned Value
+
+```javascript
+async function main() {
+  const result = await delay(1000, 42);
+
+  console.log(result);
+}
+
+main();
+```
+
+Output:
+
+```javascript
+42;
+```
+
+---
+
+# Delay Inside Sequential Async Operations
+
+```javascript
+async function process() {
+  console.log("Step 1");
+
+  await delay(1000);
+
+  console.log("Step 2");
+
+  await delay(1000);
+
+  console.log("Step 3");
+}
+
+process();
+```
+
+Output:
+
+```javascript
+Step 1
+(wait 1s)
+Step 2
+(wait 1s)
+Step 3
+```
+
+---
+
+# Real-World Use Cases
+
+### Retry Logic
+
+```javascript
+async function retry() {
+  try {
+    return await fetchData();
+  } catch {
+    await delay(1000);
+    return retry();
+  }
+}
+```
+
+---
+
+### Rate Limiting
+
+```javascript
+for (const user of users) {
+  await processUser(user);
+  await delay(500);
+}
+```
+
+---
+
+### Simulating Network Latency
+
+```javascript
+async function fakeApi() {
+  await delay(1500);
+
+  return { success: true };
+}
+```
+
+---
+
+# Advanced Version: Reject After Delay
+
+Sometimes you want a Promise that fails after a timeout.
+
+```javascript
+function timeout(ms) {
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error("Timeout"));
+    }, ms);
+  });
+}
+```
+
+Usage:
+
+```javascript
+timeout(2000).catch((err) => console.log(err.message));
+```
+
+Output:
+
+```javascript
+Timeout;
+```
+
+---
+
+# Combining Delay with Promise.race
+
+A very common senior-level interview pattern:
+
+```javascript
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithTimeout(fetchPromise, ms) {
+  return Promise.race([
+    fetchPromise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Timeout")), ms),
+    ),
+  ]);
+}
+```
+
+This prevents operations from hanging indefinitely.
+
+---
+
+# Event Loop Explanation
+
+Consider:
+
+```javascript
+delay(1000).then(() => {
+  console.log("Done");
+});
+```
+
+What happens?
+
+1. Promise is created.
+2. `setTimeout` is registered in Web APIs.
+3. After 1 second, timer callback enters the task queue.
+4. Callback executes and calls `resolve()`.
+5. Promise resolution queues a microtask.
+6. Microtask runs before the next macrotask.
+7. `"Done"` is printed.
+
+This demonstrates the interaction between:
+
+- `setTimeout` (macrotask)
+- Promise resolution (microtask)
+- Event Loop
+
+---
+
+# Common Interview Pitfalls
+
+### ❌ Forgetting to return the Promise
+
+```javascript
+function delay(ms) {
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+```
+
+Returns `undefined`.
+
+---
+
+### ❌ Calling resolve immediately
+
+```javascript
+setTimeout(resolve(), ms);
+```
+
+This executes `resolve()` instantly.
+
+Correct:
+
+```javascript
+setTimeout(resolve, ms);
+```
+
+or
+
+```javascript
+setTimeout(() => resolve(), ms);
+```
+
+---
+
+### ❌ Blocking Sleep
+
+JavaScript has no true synchronous sleep in normal execution.
+
+Bad idea:
+
+```javascript
+while (Date.now() < target) {}
+```
+
+This blocks the event loop.
+
+Use Promise-based delay instead.
+
+---
+
+# Time & Space Complexity
+
+For each call:
+
+- Time Complexity: **O(1)**
+- Space Complexity: **O(1)**
+
+(The timer itself is managed by the runtime.)
+
+---
+
+# Interview-Ready Summary
+
+A promise-based delay function wraps `setTimeout` inside a Promise:
+
+```javascript
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+```
+
+It is commonly used with `async/await` to pause asynchronous workflows without blocking the event loop. The implementation demonstrates understanding of Promises, `setTimeout`, asynchronous programming, and the JavaScript event loop.
+
 ## Question 5. How to chain promises sequentially
 
 ## Question 6. How to handle errors in promise chains
