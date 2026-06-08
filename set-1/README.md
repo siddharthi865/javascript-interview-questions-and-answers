@@ -635,6 +635,256 @@ let a = 5; // ReferenceError
 
 ## Question 4. What are data types in JavaScript?
 
+**Short answer:**
+JavaScript has two main categories of data types: **Primitive types** and **Reference (Non-primitive) types**. Primitives store single values, while reference types store complex objects and are accessed by reference.
+
+---
+
+# 🔍 Detailed Interview Explanation
+
+JavaScript is a **dynamically typed language**, meaning variables are not bound to a specific type at compile time. The type is determined at runtime based on the value assigned.
+
+---
+
+# 1. 🧱 Primitive Data Types
+
+Primitive types are **immutable (cannot be changed directly)** and stored by **value**.
+
+## 📌 Types of Primitive Data Types:
+
+### 1. Number
+
+Represents both integers and floating-point numbers.
+
+```js id="num1"
+let age = 25;
+let price = 99.99;
+```
+
+👉 Special cases:
+
+```js id="num2"
+console.log(10 / 0); // Infinity
+console.log("abc" * 2); // NaN
+```
+
+---
+
+### 2. String
+
+Represents text data.
+
+```js id="str1"
+let name = "John";
+let greeting = `Hello ${name}`;
+```
+
+---
+
+### 3. Boolean
+
+Represents true or false.
+
+```js id="bool1"
+let isLoggedIn = true;
+```
+
+---
+
+### 4. Undefined
+
+A variable declared but not assigned a value.
+
+```js id="undef1"
+let a;
+console.log(a); // undefined
+```
+
+---
+
+### 5. Null
+
+Represents intentional absence of value.
+
+```js id="null1"
+let data = null;
+```
+
+⚠️ Important:
+
+```js id="null2"
+console.log(typeof null); // "object" ❗ (historical bug)
+```
+
+---
+
+### 6. Symbol (ES6)
+
+Used to create unique identifiers.
+
+```js id="sym1"
+let id = Symbol("id");
+let id2 = Symbol("id");
+
+console.log(id === id2); // false
+```
+
+👉 Use case: Avoid property name collisions in objects.
+
+---
+
+### 7. BigInt (ES2020)
+
+Used for very large integers beyond Number limit.
+
+```js id="big1"
+let big = 123456789012345678901234567890n;
+```
+
+---
+
+# 2. 🧩 Non-Primitive (Reference) Data Types
+
+These store **references to memory locations**, not actual values.
+
+---
+
+## 📌 Object
+
+Collection of key-value pairs.
+
+```js id="obj1"
+let user = {
+  name: "John",
+  age: 30,
+};
+```
+
+---
+
+## 📌 Array (special type of object)
+
+Ordered list of values.
+
+```js id="arr1"
+let numbers = [1, 2, 3, 4];
+```
+
+---
+
+## 📌 Function (first-class object)
+
+Functions are also objects in JavaScript.
+
+```js id="fn1"
+function greet() {
+  return "Hello";
+}
+```
+
+---
+
+# 🧠 Key Concept: Value vs Reference
+
+## Primitive (copied by value)
+
+```js id="val1"
+let a = 10;
+let b = a;
+
+b = 20;
+
+console.log(a); // 10
+console.log(b); // 20
+```
+
+---
+
+## Reference type (copied by reference)
+
+```js id="ref1"
+let obj1 = { name: "Alice" };
+let obj2 = obj1;
+
+obj2.name = "Bob";
+
+console.log(obj1.name); // Bob ❗
+```
+
+👉 Both variables point to the same memory location.
+
+---
+
+# 📊 Data Types Summary Table
+
+| Category  | Type      | Example   | Mutability |
+| --------- | --------- | --------- | ---------- |
+| Primitive | Number    | 10        | Immutable  |
+| Primitive | String    | "hello"   | Immutable  |
+| Primitive | Boolean   | true      | Immutable  |
+| Primitive | Undefined | undefined | Immutable  |
+| Primitive | Null      | null      | Immutable  |
+| Primitive | Symbol    | Symbol()  | Immutable  |
+| Primitive | BigInt    | 10n       | Immutable  |
+| Reference | Object    | {a:1}     | Mutable    |
+| Reference | Array     | [1,2,3]   | Mutable    |
+| Reference | Function  | fn()      | Mutable    |
+
+---
+
+# ⚠️ Common Interview Pitfalls
+
+## 1. typeof null bug
+
+```js id="pit1"
+typeof null; // "object" ❗
+```
+
+---
+
+## 2. Arrays are objects
+
+```js id="pit2"
+typeof []; // "object"
+```
+
+---
+
+## 3. Reference confusion
+
+```js id="pit3"
+let a = { x: 1 };
+let b = a;
+
+b.x = 99;
+console.log(a.x); // 99
+```
+
+---
+
+# 🚀 Best Practices
+
+- Use primitives for simple values
+- Use objects for structured data
+- Be careful with reference copying (use spread operator for cloning)
+
+```js id="bp1"
+let obj1 = { a: 1 };
+let obj2 = { ...obj1 }; // shallow copy
+```
+
+---
+
+# 🎯 Final Summary
+
+- JavaScript has **two categories of data types**
+  - **Primitive** → number, string, boolean, null, undefined, symbol, bigint
+  - **Reference** → object, array, function
+
+- Primitives are **value-based and immutable**
+- Reference types are **reference-based and mutable**
+- Understanding this difference is critical for avoiding bugs in JavaScript
+
 ## Question 5. Difference between null and undefined
 
 ## Question 6. Explain type coercion in JavaScript
