@@ -1492,6 +1492,477 @@ A strong interview answer should also discuss:
 
 ## Question 4. How to implement singleton pattern in Node.js modules
 
+In Node.js, the Singleton pattern is commonly implemented using the module system itself because Node caches modules after the first `require()` or `import()`.
+
+That means every subsequent import receives the same instance automatically.
+
+This makes Node.js modules a natural fit for singleton behavior.
+
+---
+
+# What Is the Singleton Pattern?
+
+Singleton ensures:
+
+- only one instance of an object exists
+- a global access point to that instance is provided
+
+Typical use cases:
+
+- database connections
+- loggers
+- configuration managers
+- cache managers
+- event buses
+- connection pools
+
+---
+
+# Why Node.js Modules Behave Like Singletons
+
+Node.js caches modules internally.
+
+When a module is loaded:
+
+1. module executes once
+2. exports are cached
+3. future imports reuse cached version
+
+---
+
+# Basic Singleton Example
+
+---
+
+# logger.js
+
+```js id="4rq2g3"
+class Logger {
+  constructor() {
+    this.logs = [];
+    console.log("Logger initialized");
+  }
+
+  log(message) {
+    this.logs.push(message);
+    console.log(message);
+  }
+}
+
+module.exports = new Logger();
+```
+
+---
+
+# app.js
+
+```js id="0w2p5s"
+const logger1 = require("./logger");
+const logger2 = require("./logger");
+
+console.log(logger1 === logger2);
+```
+
+Output:
+
+```txt id="6i7hq0"
+Logger initialized
+true
+```
+
+The constructor runs only once.
+
+---
+
+# How Node Module Caching Works
+
+Internally:
+
+```txt id="ihhm5m"
+require()
+   ↓
+Check require.cache
+   ↓
+If cached → return same exports
+Else → execute module + cache it
+```
+
+This is why singleton implementation is very easy in Node.js.
+
+---
+
+# Singleton Using a Static Instance
+
+More explicit classical implementation.
+
+---
+
+# database.js
+
+```js id="mly5jc"
+class Database {
+  constructor() {
+    if (Database.instance) {
+      return Database.instance;
+    }
+
+    console.log("Connecting to database...");
+
+    this.connection = "DB_CONNECTION";
+
+    Database.instance = this;
+  }
+
+  query(sql) {
+    console.log(`Executing: ${sql}`);
+  }
+}
+
+module.exports = Database;
+```
+
+Usage:
+
+```js id="uux3zh"
+const Database = require("./database");
+
+const db1 = new Database();
+const db2 = new Database();
+
+console.log(db1 === db2);
+```
+
+Output:
+
+```txt id="n4xrw8"
+Connecting to database...
+true
+```
+
+---
+
+# Modern Singleton with ES Modules
+
+---
+
+# logger.js
+
+```js id="s4vvk0"
+class Logger {
+  constructor() {
+    console.log("Logger created");
+  }
+
+  log(msg) {
+    console.log(msg);
+  }
+}
+
+const logger = new Logger();
+
+export default logger;
+```
+
+Usage:
+
+```js id="wqzbry"
+import logger1 from "./logger.js";
+import logger2 from "./logger.js";
+
+console.log(logger1 === logger2);
+```
+
+Still singleton because ES modules are cached too.
+
+---
+
+# Singleton Database Connection Example
+
+Very common interview example.
+
+---
+
+# db.js
+
+```js id="lrpl6h"
+const mongoose = require("mongoose");
+
+class Database {
+  constructor() {
+    if (!Database.instance) {
+      this.connect();
+      Database.instance = this;
+    }
+
+    return Database.instance;
+  }
+
+  connect() {
+    console.log("Connecting to MongoDB...");
+  }
+}
+
+module.exports = new Database();
+```
+
+Why useful?
+
+Avoids:
+
+- multiple DB connections
+- connection duplication
+- resource waste
+
+---
+
+# Closure-Based Singleton
+
+JavaScript closures make elegant singleton implementations possible.
+
+```js id="4ewb2l"
+const Database = (function () {
+  let instance;
+
+  function createInstance() {
+    return {
+      connect() {
+        console.log("Connected");
+      },
+    };
+  }
+
+  return {
+    getInstance() {
+      if (!instance) {
+        instance = createInstance();
+      }
+
+      return instance;
+    },
+  };
+})();
+```
+
+Usage:
+
+```js id="y81b3g"
+const db1 = Database.getInstance();
+const db2 = Database.getInstance();
+
+console.log(db1 === db2);
+```
+
+---
+
+# Real-World Singleton Examples in Node.js
+
+---
+
+# 1. Database Pools
+
+```js id="1r3l9t"
+module.exports = mysql.createPool(config);
+```
+
+Single shared pool.
+
+---
+
+# 2. Winston/Pino Loggers
+
+```js id="fq0m31"
+module.exports = createLogger({...});
+```
+
+Single logger instance.
+
+---
+
+# 3. Redis Clients
+
+```js id="xajxsn"
+module.exports = redis.createClient();
+```
+
+Shared connection.
+
+---
+
+# 4. Config Managers
+
+```js id="p0rzv4"
+module.exports = {
+  port: process.env.PORT,
+};
+```
+
+Single configuration source.
+
+---
+
+# Common Pitfalls
+
+---
+
+# 1. Shared Mutable State
+
+Singletons are globally shared.
+
+Bad:
+
+```js id="8w57sj"
+singleton.user = "John";
+```
+
+Can create hidden side effects.
+
+---
+
+# 2. Harder Unit Testing
+
+Global state complicates test isolation.
+
+Solution:
+
+- reset singleton
+- dependency injection
+- mocks/stubs
+
+---
+
+# 3. Memory Retention
+
+Singletons live entire process lifetime.
+
+Large cached objects may cause leaks.
+
+---
+
+# 4. Concurrency Misunderstanding
+
+Node.js is single-threaded per process, but:
+
+- clusters
+- worker threads
+- serverless environments
+
+may create multiple instances.
+
+Singleton is usually process-scoped, not system-wide.
+
+---
+
+# Singleton vs Module Pattern
+
+Interview nuance.
+
+---
+
+# Module Pattern
+
+Encapsulation + private state.
+
+```js id="st8tx6"
+const counter = (() => {
+  let count = 0;
+
+  return {
+    increment() {
+      count++;
+    },
+  };
+})();
+```
+
+---
+
+# Singleton Pattern
+
+Ensures single instance.
+
+Node modules often combine both.
+
+---
+
+# Best Practices
+
+---
+
+# Prefer Module-Level Singleton
+
+Simplest and idiomatic Node.js approach:
+
+```js id="d9gch0"
+module.exports = new Service();
+```
+
+Usually sufficient.
+
+---
+
+# Avoid Excessive Global State
+
+Keep singleton responsibilities focused.
+
+---
+
+# Combine with Dependency Injection
+
+For testability:
+
+```js id="6kq6h5"
+function createService(logger) {
+  return new Service(logger);
+}
+```
+
+---
+
+# Use Lazy Initialization When Expensive
+
+Initialize only when needed.
+
+```js id="vzt1qh"
+if (!instance) {
+  instance = create();
+}
+```
+
+---
+
+# Interview Summary
+
+In Node.js, singleton pattern is commonly implemented using the built-in module cache system.
+
+Key points:
+
+- modules execute once
+- exports are cached
+- subsequent imports reuse same instance
+
+Common implementations:
+
+- exporting instantiated object
+- static instance class
+- closure-based singleton
+
+Common real-world uses:
+
+- database connections
+- loggers
+- Redis clients
+- config managers
+- connection pools
+
+Important interview discussion areas:
+
+- module caching
+- ES modules vs CommonJS
+- shared mutable state
+- testing challenges
+- process-level limitations
+- singleton vs module pattern
+
 ## Question 5. How to implement a strategy pattern in JavaScript
 
 ## Question 6. How to implement command pattern in JavaScript
