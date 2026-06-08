@@ -1207,6 +1207,547 @@ To observe object property changes:
 
 ## Question 4. Difference between WeakMap and Map
 
+# Difference Between WeakMap and Map in JavaScript
+
+## Short Answer
+
+Both **Map** and **WeakMap** store key-value pairs, but the key difference is:
+
+- **Map** can use **any value** as a key and holds **strong references** to keys.
+- **WeakMap** only allows **objects as keys** and holds **weak references**, allowing garbage collection when no other references exist.
+
+A `WeakMap` is mainly used for **private data, metadata storage, and memory-leak prevention**.
+
+---
+
+## Basic Syntax
+
+### Map
+
+```js
+const map = new Map();
+
+map.set("name", "John");
+map.set(1, "number");
+map.set(true, "boolean");
+
+console.log(map.get("name"));
+```
+
+### WeakMap
+
+```js
+const weakMap = new WeakMap();
+
+const user = {};
+
+weakMap.set(user, "John");
+
+console.log(weakMap.get(user));
+```
+
+---
+
+# Key Differences
+
+| Feature                    | Map                        | WeakMap                 |
+| -------------------------- | -------------------------- | ----------------------- |
+| Key types                  | Any value                  | Objects only            |
+| Primitive keys             | ✅                         | ❌                      |
+| Iterable                   | ✅                         | ❌                      |
+| size property              | ✅                         | ❌                      |
+| keys()                     | ✅                         | ❌                      |
+| values()                   | ✅                         | ❌                      |
+| entries()                  | ✅                         | ❌                      |
+| forEach()                  | ✅                         | ❌                      |
+| Garbage collection of keys | No (strong refs)           | Yes (weak refs)         |
+| Use case                   | General-purpose collection | Private data / metadata |
+
+---
+
+# 1. Key Types
+
+## Map
+
+Any value can be a key.
+
+```js
+const map = new Map();
+
+map.set("name", "John");
+map.set(42, "number");
+map.set(true, "boolean");
+
+console.log(map.size); // 3
+```
+
+---
+
+## WeakMap
+
+Only objects are allowed.
+
+```js
+const weakMap = new WeakMap();
+
+const obj = {};
+
+weakMap.set(obj, "value");
+```
+
+Primitive keys throw an error:
+
+```js
+weakMap.set("name", "John");
+```
+
+Output:
+
+```txt
+TypeError: Invalid value used as weak map key
+```
+
+---
+
+# 2. Garbage Collection
+
+This is the most important interview point.
+
+## Map Holds Strong References
+
+```js
+let user = {
+  name: "John",
+};
+
+const map = new Map();
+
+map.set(user, "data");
+
+user = null;
+```
+
+The object still exists because Map maintains a reference.
+
+```js
+console.log(map.size); // 1
+```
+
+The key cannot be garbage collected.
+
+---
+
+## WeakMap Holds Weak References
+
+```js
+let user = {
+  name: "John",
+};
+
+const weakMap = new WeakMap();
+
+weakMap.set(user, "data");
+
+user = null;
+```
+
+Now the object can be garbage collected.
+
+Because the key is weakly referenced, WeakMap does not keep it alive.
+
+---
+
+# Why Is This Useful?
+
+Suppose you're attaching metadata to DOM elements:
+
+```js
+const metadata = new WeakMap();
+
+function attachData(element) {
+  metadata.set(element, {
+    clicked: false,
+  });
+}
+```
+
+When the DOM element is removed:
+
+```js
+element = null;
+```
+
+The metadata automatically becomes collectible.
+
+No manual cleanup required.
+
+This prevents memory leaks.
+
+---
+
+# 3. Iteration
+
+## Map Is Iterable
+
+```js
+const map = new Map([
+  ["a", 1],
+  ["b", 2],
+]);
+
+for (const [key, value] of map) {
+  console.log(key, value);
+}
+```
+
+Output:
+
+```txt
+a 1
+b 2
+```
+
+---
+
+## WeakMap Is Not Iterable
+
+```js
+const wm = new WeakMap();
+
+for (const item of wm) {
+}
+```
+
+Output:
+
+```txt
+TypeError
+```
+
+---
+
+# Why Can't WeakMap Be Iterated?
+
+Imagine:
+
+```js
+const obj = {};
+
+wm.set(obj, "data");
+```
+
+The engine may garbage collect `obj` at any moment.
+
+Therefore:
+
+```js
+wm.keys();
+```
+
+would be unpredictable.
+
+Because keys can disappear at any time, iteration is forbidden.
+
+---
+
+# 4. Size Property
+
+## Map
+
+```js
+const map = new Map();
+
+map.set("a", 1);
+map.set("b", 2);
+
+console.log(map.size);
+```
+
+Output:
+
+```txt
+2
+```
+
+---
+
+## WeakMap
+
+```js
+const wm = new WeakMap();
+
+console.log(wm.size);
+```
+
+Output:
+
+```txt
+undefined
+```
+
+No size tracking exists.
+
+---
+
+# 5. Available Methods
+
+## Map
+
+```js
+map.set();
+map.get();
+map.has();
+map.delete();
+map.clear();
+
+map.keys();
+map.values();
+map.entries();
+map.forEach();
+```
+
+---
+
+## WeakMap
+
+```js
+wm.set();
+wm.get();
+wm.has();
+wm.delete();
+```
+
+Only four methods.
+
+---
+
+# Common Interview Use Case: Private Data
+
+Before private fields (`#`) existed, WeakMap was commonly used to simulate private members.
+
+```js
+const privateData = new WeakMap();
+
+class User {
+  constructor(name) {
+    privateData.set(this, {
+      name,
+    });
+  }
+
+  getName() {
+    return privateData.get(this).name;
+  }
+}
+
+const user = new User("John");
+
+console.log(user.getName());
+```
+
+Outside access:
+
+```js
+console.log(user.name);
+```
+
+Output:
+
+```txt
+undefined
+```
+
+---
+
+# Modern Alternative: Private Fields
+
+Today we usually write:
+
+```js
+class User {
+  #name;
+
+  constructor(name) {
+    this.#name = name;
+  }
+
+  getName() {
+    return this.#name;
+  }
+}
+```
+
+But WeakMap remains useful for attaching metadata to external objects.
+
+---
+
+# Memory Leak Example
+
+### Problem
+
+```js
+const cache = new Map();
+
+function process(obj) {
+  cache.set(obj, expensiveResult(obj));
+}
+```
+
+Thousands of objects enter the cache.
+
+Even after objects are no longer used:
+
+```js
+obj = null;
+```
+
+Map still retains them.
+
+Memory grows indefinitely.
+
+---
+
+### Solution
+
+```js
+const cache = new WeakMap();
+
+function process(obj) {
+  cache.set(obj, expensiveResult(obj));
+}
+```
+
+Unused keys can now be collected automatically.
+
+---
+
+# Tricky Interview Questions
+
+## Q1
+
+```js
+const wm = new WeakMap();
+
+wm.set({}, "A");
+
+console.log(wm);
+```
+
+Can you retrieve the value later?
+
+**No.**
+
+The key object reference is lost.
+
+```js
+wm.get({});
+```
+
+returns:
+
+```txt
+undefined
+```
+
+because it's a different object.
+
+---
+
+## Q2
+
+```js
+const map = new Map();
+
+map.set({}, "A");
+
+console.log(map.get({}));
+```
+
+Output?
+
+```txt
+undefined
+```
+
+Objects are compared by reference, not structure.
+
+---
+
+## Q3
+
+```js
+const obj = {};
+
+const wm = new WeakMap();
+
+wm.set(obj, 123);
+
+console.log(wm.has(obj));
+```
+
+Output:
+
+```txt
+true
+```
+
+---
+
+## Q4
+
+```js
+const wm = new WeakMap();
+
+wm.set("name", "John");
+```
+
+Output?
+
+```txt
+TypeError
+```
+
+WeakMap keys must be objects.
+
+---
+
+# Map vs WeakMap Use Cases
+
+### Use Map When
+
+- Need iteration
+- Need size
+- Need primitive keys
+- Need a general collection
+
+```js
+const cache = new Map();
+```
+
+---
+
+### Use WeakMap When
+
+- Keys are objects
+- Metadata attached to objects
+- Need automatic cleanup
+- Want to avoid memory leaks
+
+```js
+const metadata = new WeakMap();
+```
+
+---
+
+# Interview Summary
+
+> A `Map` stores key-value pairs with strong references and supports any key type, iteration, and size tracking. A `WeakMap` only allows object keys and holds weak references, enabling automatic garbage collection when the key object becomes unreachable. Because keys can disappear at any time, WeakMaps are not iterable and do not expose size information.
+
+### Remember This Interview One-Liner
+
+> **Map = iterable + any key type + strong references.**
+> **WeakMap = object keys only + non-iterable + automatic garbage collection.**
+
 ## Question 5. How to implement private variables using closures?
 
 ## Question 6. Explain JavaScript memory model: stack vs heap
