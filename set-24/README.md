@@ -1750,6 +1750,647 @@ That demonstrates understanding of both JavaScript async internals and scalable 
 
 ## Question 4. How to handle backpressure with streams in Node.js
 
+Backpressure in Node.js streams is the mechanism that prevents a **fast producer** from overwhelming a **slow consumer**.
+
+In simple terms:
+
+- If data is produced faster than it can be processed,
+- memory usage grows uncontrollably,
+- eventually causing performance degradation or crashes.
+
+Node.js streams solve this using built-in backpressure handling.
+
+---
+
+# What Is Backpressure?
+
+Imagine:
+
+```txt id="d2h5w4"
+Fast source  --->  Slow destination
+```
+
+Example:
+
+- Reading a huge file quickly
+- Writing to a slow database/network/socket
+
+Without backpressure:
+
+- Buffers grow indefinitely
+- RAM usage spikes
+- Event loop becomes overloaded
+
+With backpressure:
+
+- Producer pauses automatically
+- Consumer catches up
+- Memory remains stable
+
+---
+
+# Real-World Example
+
+```txt id="wkm18o"
+Read stream -> gzip -> HTTP response
+```
+
+If the client internet connection is slow:
+
+- Node.js slows file reading automatically.
+
+---
+
+# Streams in Node.js
+
+Main stream types:
+
+| Type      | Purpose       |
+| --------- | ------------- |
+| Readable  | Produces data |
+| Writable  | Consumes data |
+| Duplex    | Read + write  |
+| Transform | Modify data   |
+
+Backpressure mainly involves:
+
+- Readable → Writable
+
+---
+
+# Core Backpressure Mechanism
+
+The key signal is:
+
+```js id="8pntw0"
+writable.write(chunk);
+```
+
+It returns:
+
+```js id="0v0kr0"
+true;
+```
+
+or:
+
+```js id="mjlwm7"
+false;
+```
+
+---
+
+# Meaning of Return Value
+
+| Return  | Meaning                  |
+| ------- | ------------------------ |
+| `true`  | Continue writing         |
+| `false` | Stop writing temporarily |
+
+When `false` is returned:
+
+- Internal buffer is full
+- Producer should pause
+
+Resume only after:
+
+```js id="0xtzfa"
+"drain";
+```
+
+event fires.
+
+---
+
+# Manual Backpressure Handling
+
+---
+
+# Example Without Backpressure
+
+BAD:
+
+```js id="2mwy5g"
+readable.on("data", (chunk) => {
+  writable.write(chunk);
+});
+```
+
+Problem:
+
+- Producer ignores writable capacity
+- Memory can explode
+
+---
+
+# Proper Backpressure Handling
+
+```js id="k1mduz"
+readable.on("data", (chunk) => {
+  const canContinue = writable.write(chunk);
+
+  if (!canContinue) {
+    readable.pause();
+
+    writable.once("drain", () => {
+      readable.resume();
+    });
+  }
+});
+```
+
+---
+
+# How This Works
+
+## Step-by-step
+
+1. Readable emits chunk
+2. Write to writable
+3. If buffer full:
+   - `write()` returns `false`
+
+4. Pause readable stream
+5. Wait for `'drain'`
+6. Resume readable
+
+This keeps memory stable.
+
+---
+
+# Why Backpressure Matters
+
+Without it:
+
+```txt id="7nynxh"
+Producer speed > Consumer speed
+```
+
+Results:
+
+- Huge buffers
+- High RAM usage
+- GC pressure
+- Event loop lag
+- Possible OOM crash
+
+With proper backpressure:
+
+- Constant memory usage
+- Smooth throughput
+- Better scalability
+
+---
+
+# Using `pipe()` (Recommended)
+
+The easiest solution:
+
+```js id="cb0k5u"
+readable.pipe(writable);
+```
+
+Node.js automatically handles:
+
+- Backpressure
+- Pause/resume
+- Drain events
+
+---
+
+# Example
+
+```js id="zl3g0s"
+const fs = require("fs");
+
+const readStream = fs.createReadStream("large.txt");
+
+const writeStream = fs.createWriteStream("copy.txt");
+
+readStream.pipe(writeStream);
+```
+
+This is memory-efficient even for huge files.
+
+---
+
+# How `pipe()` Internally Handles Backpressure
+
+Internally equivalent to:
+
+```txt id="btm62t"
+if write() returns false:
+    pause readable
+
+when drain fires:
+    resume readable
+```
+
+---
+
+# Using `pipeline()` (Best Practice)
+
+Modern Node.js recommends:
+
+```js id="nux4k5"
+const { pipeline } = require("stream");
+```
+
+Benefits:
+
+- Automatic cleanup
+- Proper error propagation
+- Safer resource handling
+
+---
+
+# Example
+
+```js id="s7s98e"
+const fs = require("fs");
+const { pipeline } = require("stream");
+
+pipeline(
+  fs.createReadStream("large.txt"),
+  fs.createWriteStream("copy.txt"),
+  (err) => {
+    if (err) {
+      console.error(err);
+    } else {
+      console.log("Done");
+    }
+  },
+);
+```
+
+---
+
+# Backpressure with Async Iterators
+
+Modern Node.js streams support async iteration.
+
+---
+
+# Example
+
+```js id="lq4jfc"
+for await (const chunk of readable) {
+  const canWrite = writable.write(chunk);
+
+  if (!canWrite) {
+    await once(writable, "drain");
+  }
+}
+```
+
+This provides elegant flow control.
+
+---
+
+# `highWaterMark`
+
+Controls internal buffer size.
+
+Example:
+
+```js id="jlwm7s"
+fs.createReadStream("file.txt", {
+  highWaterMark: 64 * 1024,
+});
+```
+
+---
+
+# What It Means
+
+- Threshold for buffering
+- Not a strict limit
+- Impacts memory and throughput
+
+---
+
+# Tuning `highWaterMark`
+
+## Smaller Buffer
+
+Pros:
+
+- Lower memory usage
+
+Cons:
+
+- More I/O operations
+
+---
+
+## Larger Buffer
+
+Pros:
+
+- Better throughput
+
+Cons:
+
+- Higher RAM usage
+
+---
+
+# Transform Streams and Backpressure
+
+Transform streams automatically propagate backpressure.
+
+Example:
+
+```js id="yv5oqn"
+readable.pipe(transform).pipe(writable);
+```
+
+If writable slows:
+
+- transform slows
+- readable slows
+
+Entire pipeline becomes flow-controlled.
+
+---
+
+# Example: Compression Pipeline
+
+```js id="bpr5lf"
+const fs = require("fs");
+const zlib = require("zlib");
+const { pipeline } = require("stream");
+
+pipeline(
+  fs.createReadStream("large.txt"),
+  zlib.createGzip(),
+  fs.createWriteStream("large.txt.gz"),
+  (err) => {
+    if (err) console.error(err);
+  },
+);
+```
+
+Efficient even for GB-scale files.
+
+---
+
+# Backpressure in HTTP Servers
+
+Very important in production.
+
+---
+
+# Example
+
+```js id="1gbv17"
+app.get("/download", (req, res) => {
+  fs.createReadStream("huge.zip").pipe(res);
+});
+```
+
+If the client is slow:
+
+- Node.js automatically slows disk reading.
+
+Without streams:
+
+- Entire file might load into memory.
+
+---
+
+# Backpressure with TCP Sockets
+
+Sockets are writable streams.
+
+```js id="vrr9gb"
+socket.write(data);
+```
+
+If returns `false`:
+
+- Wait for `'drain'`
+
+Same principle applies.
+
+---
+
+# Common Mistakes
+
+---
+
+# 1. Ignoring `write()` Return Value
+
+Bad:
+
+```js id="4dujlwm"
+while (hasMoreData()) {
+  writable.write(generateData());
+}
+```
+
+Can crash memory.
+
+---
+
+# 2. Reading Entire Files into Memory
+
+Bad:
+
+```js id="5e5x7o"
+const data = fs.readFileSync("huge.txt");
+```
+
+Better:
+
+```js id="f1dv3g"
+fs.createReadStream("huge.txt");
+```
+
+---
+
+# 3. Using Streams Without Error Handling
+
+Always handle errors:
+
+```js id="c6uwns"
+stream.on("error", handler);
+```
+
+Or use `pipeline()`.
+
+---
+
+# Memory Usage Example
+
+---
+
+# Bad Approach
+
+```js id="ij13mc"
+const chunks = [];
+
+readable.on("data", (chunk) => {
+  chunks.push(chunk);
+});
+```
+
+Problem:
+
+- Entire dataset stored in RAM
+
+---
+
+# Good Approach
+
+```js id="lrw6up"
+readable.pipe(writable);
+```
+
+Processes incrementally.
+
+---
+
+# Internal Node.js Behavior
+
+Node.js streams internally maintain:
+
+- Buffer queues
+- Read state
+- Write state
+- Flow control flags
+
+Backpressure works through:
+
+- Event loop coordination
+- Internal buffering
+- Pause/resume semantics
+
+---
+
+# Event Loop Relationship
+
+Streams integrate tightly with:
+
+- Non-blocking I/O
+- libuv
+- Event loop phases
+
+Backpressure ensures:
+
+- Event loop stays responsive
+- I/O throughput remains stable
+
+---
+
+# Production Best Practices
+
+---
+
+# Use `pipeline()`
+
+Preferred over manual piping.
+
+---
+
+# Stream Large Data
+
+Avoid loading:
+
+- Huge files
+- Massive JSON payloads
+- Large DB exports
+
+Into memory entirely.
+
+---
+
+# Tune `highWaterMark`
+
+For:
+
+- Performance
+- Memory constraints
+
+---
+
+# Handle Errors Properly
+
+Streams can fail due to:
+
+- Network errors
+- Disk errors
+- Permission issues
+
+---
+
+# Avoid Unbounded Buffers
+
+Always respect:
+
+- `write()` return value
+- `'drain'` events
+
+---
+
+# Interview-Level Insights
+
+Senior-level discussion points:
+
+## 1. Backpressure Is Flow Control
+
+It prevents:
+
+- Producer overflow
+- Memory exhaustion
+
+---
+
+## 2. Streams Are Pull-Based Under Pressure
+
+Writable stream capacity influences readable flow.
+
+---
+
+## 3. `pipe()` Automates Backpressure
+
+Most production code should use:
+
+- `pipe()`
+- `pipeline()`
+
+---
+
+## 4. Critical for Scalability
+
+Streams enable:
+
+- GB-scale file processing
+- Efficient HTTP streaming
+- Low-memory applications
+
+---
+
+# Interview Summary
+
+A strong interview answer should mention:
+
+- Backpressure occurs when producers outpace consumers
+- `write()` returning `false` signals pressure
+- Use `'drain'` to resume writes
+- `pipe()` automatically manages backpressure
+- `pipeline()` is the safest modern API
+- Streams prevent excessive memory usage
+- `highWaterMark` controls buffering behavior
+- Essential for scalable Node.js applications
+
+That demonstrates understanding of:
+
+- Node.js streams
+- Event loop behavior
+- Memory management
+- Production backend engineering.
+
 ## Question 5. How to implement throttling and debouncing in backend APIs
 
 ## Question 6. How to use EventEmitter for pub/sub in Node.js
