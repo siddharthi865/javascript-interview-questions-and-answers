@@ -792,6 +792,296 @@ They are fundamentally different:
 
 ## Question 4. How to find the type of an object in JavaScript?
 
+## Short Answer
+
+There are multiple ways to determine the type of a value in JavaScript:
+
+```js
+typeof value;
+```
+
+However, `typeof` has limitations for objects. For accurately identifying object types, common approaches are:
+
+```js
+Object.prototype.toString.call(value);
+```
+
+or
+
+```js
+value instanceof Constructor;
+```
+
+depending on the use case.
+
+---
+
+# 1. Using `typeof`
+
+`typeof` is the most commonly used operator.
+
+```js
+console.log(typeof "hello"); // string
+console.log(typeof 123); // number
+console.log(typeof true); // boolean
+console.log(typeof undefined); // undefined
+console.log(typeof Symbol()); // symbol
+console.log(typeof 10n); // bigint
+console.log(typeof function () {}); // function
+console.log(typeof {}); // object
+```
+
+### Interview Pitfall
+
+```js
+console.log(typeof null);
+```
+
+Output:
+
+```js
+"object";
+```
+
+This is a historical JavaScript bug that has been preserved for backward compatibility.
+
+---
+
+# 2. Using `Object.prototype.toString.call()`
+
+This is one of the most reliable ways to identify built-in object types.
+
+```js
+console.log(Object.prototype.toString.call({}));
+```
+
+Output:
+
+```js
+"[object Object]";
+```
+
+Examples:
+
+```js
+console.log(Object.prototype.toString.call([]));
+```
+
+```js
+"[object Array]";
+```
+
+```js
+console.log(Object.prototype.toString.call(new Date()));
+```
+
+```js
+"[object Date]";
+```
+
+```js
+console.log(Object.prototype.toString.call(/abc/));
+```
+
+```js
+"[object RegExp]";
+```
+
+```js
+console.log(Object.prototype.toString.call(null));
+```
+
+```js
+"[object Null]";
+```
+
+```js
+console.log(Object.prototype.toString.call(undefined));
+```
+
+```js
+"[object Undefined]";
+```
+
+### Utility Function
+
+```js
+function getType(value) {
+  return Object.prototype.toString.call(value).slice(8, -1);
+}
+
+console.log(getType([])); // Array
+console.log(getType({})); // Object
+console.log(getType(null)); // Null
+console.log(getType(new Date())); // Date
+```
+
+---
+
+# 3. Using `instanceof`
+
+Checks whether an object was created from a particular constructor.
+
+```js
+const arr = [];
+
+console.log(arr instanceof Array);
+```
+
+Output:
+
+```js
+true;
+```
+
+More examples:
+
+```js
+console.log(new Date() instanceof Date); // true
+console.log([] instanceof Object); // true
+console.log([] instanceof Array); // true
+```
+
+### How it Works
+
+`instanceof` checks the prototype chain.
+
+```js
+arr.__proto__ === Array.prototype;
+```
+
+(or somewhere higher in the chain)
+
+---
+
+# 4. Detecting Arrays
+
+### Recommended
+
+```js
+Array.isArray(value);
+```
+
+Example:
+
+```js
+console.log(Array.isArray([])); // true
+console.log(Array.isArray({})); // false
+```
+
+### Why Not `typeof`?
+
+```js
+typeof [];
+```
+
+returns:
+
+```js
+"object";
+```
+
+which is not very useful.
+
+---
+
+# 5. Detecting Functions
+
+```js
+typeof fn === "function";
+```
+
+Example:
+
+```js
+function greet() {}
+
+console.log(typeof greet);
+```
+
+Output:
+
+```js
+"function";
+```
+
+---
+
+# 6. Detecting Plain Objects
+
+Sometimes interviewers ask:
+
+> How do you check if something is a plain object?
+
+```js
+function isPlainObject(value) {
+  return Object.prototype.toString.call(value) === "[object Object]";
+}
+```
+
+Example:
+
+```js
+console.log(isPlainObject({})); // true
+console.log(isPlainObject([])); // false
+console.log(isPlainObject(new Date())); // false
+```
+
+---
+
+# Comparison of Techniques
+
+| Method                             | Best For                         | Limitations                                |
+| ---------------------------------- | -------------------------------- | ------------------------------------------ |
+| `typeof`                           | Primitive types                  | Arrays, Date, RegExp all return `"object"` |
+| `instanceof`                       | Constructor checks               | Can fail across different realms/iframes   |
+| `Array.isArray()`                  | Arrays                           | Arrays only                                |
+| `Object.prototype.toString.call()` | Accurate built-in type detection | More verbose                               |
+
+---
+
+# Common Interview Questions
+
+### Q1: Why does `typeof null` return `"object"`?
+
+Because of a historical implementation bug in early JavaScript. The behavior was standardized and cannot be changed now due to backward compatibility.
+
+```js
+typeof null; // "object"
+```
+
+---
+
+### Q2: How do you distinguish an Array from an Object?
+
+```js
+Array.isArray(value);
+```
+
+or
+
+```js
+Object.prototype.toString.call(value);
+```
+
+---
+
+### Q3: Which is the most reliable way to detect object types?
+
+For built-in types:
+
+```js
+Object.prototype.toString.call(value);
+```
+
+is generally the most reliable.
+
+---
+
+# Interview-Friendly Summary
+
+> `typeof` is useful for detecting primitive types and functions, but it returns `"object"` for arrays, dates, and even `null`. For accurate object type detection, `Object.prototype.toString.call(value)` is the most reliable built-in approach. `instanceof` checks whether an object inherits from a specific constructor, while `Array.isArray()` is the preferred way to detect arrays. Understanding the strengths and limitations of each method is a common JavaScript interview topic.
+
 ## Question 5. What is the difference between primitive and non-primitive types?
 
 ## Question 6. Difference between mutable and immutable data types
