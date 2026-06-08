@@ -978,6 +978,399 @@ try {
 
 ## Question 4. How to remove duplicates from an array without using Set
 
+### Direct Answer
+
+You can remove duplicates from an array **without using `Set`** by using:
+
+1. `filter()` + `indexOf()`
+2. `reduce()`
+3. An object/hash map lookup
+4. `Map`
+5. Nested loops (least efficient)
+
+The most common interview solution is:
+
+```js
+const arr = [1, 2, 2, 3, 4, 4, 5];
+
+const unique = arr.filter((item, index) => {
+  return arr.indexOf(item) === index;
+});
+
+console.log(unique);
+```
+
+Output:
+
+```js
+[1, 2, 3, 4, 5];
+```
+
+---
+
+# 1. Using `filter()` + `indexOf()`
+
+### Interview Favorite
+
+```js
+const arr = [1, 2, 2, 3, 4, 4, 5];
+
+const unique = arr.filter((item, index) => arr.indexOf(item) === index);
+
+console.log(unique);
+```
+
+### How It Works
+
+For each element:
+
+```js
+arr.indexOf(item);
+```
+
+returns the first occurrence index.
+
+Example:
+
+```js
+[1, 2, 2, 3];
+```
+
+For second `2`:
+
+```js
+index = 2
+indexOf(2) = 1
+```
+
+Since:
+
+```js
+2 !== 1;
+```
+
+it gets removed.
+
+---
+
+## Time Complexity
+
+```text
+filter -> O(n)
+indexOf -> O(n)
+
+Total = O(n²)
+```
+
+### Interview Note
+
+Good for small arrays but inefficient for large datasets.
+
+---
+
+# 2. Using `reduce()`
+
+```js
+const arr = [1, 2, 2, 3, 4, 4];
+
+const unique = arr.reduce((acc, curr) => {
+  if (!acc.includes(curr)) {
+    acc.push(curr);
+  }
+  return acc;
+}, []);
+
+console.log(unique);
+```
+
+Output:
+
+```js
+[1, 2, 3, 4];
+```
+
+---
+
+## Complexity
+
+```text
+reduce -> O(n)
+includes -> O(n)
+
+Total = O(n²)
+```
+
+---
+
+# 3. Using an Object as a Lookup Table
+
+### Best Interview Solution
+
+```js
+const arr = [1, 2, 2, 3, 4, 4, 5];
+
+const seen = {};
+const unique = [];
+
+for (const item of arr) {
+  if (!seen[item]) {
+    seen[item] = true;
+    unique.push(item);
+  }
+}
+
+console.log(unique);
+```
+
+Output:
+
+```js
+[1, 2, 3, 4, 5];
+```
+
+---
+
+## Complexity
+
+```text
+Lookup = O(1)
+
+Overall = O(n)
+```
+
+This is usually what interviewers want when they say:
+
+> "Remove duplicates without Set and optimize."
+
+---
+
+# 4. Using `Map`
+
+```js
+const arr = [1, 2, 2, 3, 4, 4];
+
+const map = new Map();
+
+for (const item of arr) {
+  map.set(item, true);
+}
+
+const unique = [...map.keys()];
+
+console.log(unique);
+```
+
+Output:
+
+```js
+[1, 2, 3, 4];
+```
+
+---
+
+## Complexity
+
+```text
+O(n)
+```
+
+---
+
+# 5. Using Nested Loops
+
+### Traditional Approach
+
+```js
+const arr = [1, 2, 2, 3, 4, 4];
+
+const unique = [];
+
+for (let i = 0; i < arr.length; i++) {
+  let found = false;
+
+  for (let j = 0; j < unique.length; j++) {
+    if (arr[i] === unique[j]) {
+      found = true;
+      break;
+    }
+  }
+
+  if (!found) {
+    unique.push(arr[i]);
+  }
+}
+
+console.log(unique);
+```
+
+Output:
+
+```js
+[1, 2, 3, 4];
+```
+
+---
+
+## Complexity
+
+```text
+O(n²)
+```
+
+Usually asked in DSA-style interviews.
+
+---
+
+# 6. Removing Duplicate Objects
+
+### Problem
+
+```js
+const users = [
+  { id: 1, name: "John" },
+  { id: 1, name: "John" },
+  { id: 2, name: "Alice" },
+];
+```
+
+`indexOf()` won't work because objects are compared by reference.
+
+---
+
+### Solution Using Lookup
+
+```js
+const seen = {};
+const unique = [];
+
+for (const user of users) {
+  if (!seen[user.id]) {
+    seen[user.id] = true;
+    unique.push(user);
+  }
+}
+
+console.log(unique);
+```
+
+Output:
+
+```js
+[
+  { id: 1, name: "John" },
+  { id: 2, name: "Alice" },
+];
+```
+
+---
+
+# Common Interview Pitfalls
+
+## Pitfall 1: `indexOf()` with Objects
+
+```js
+const arr = [{ a: 1 }, { a: 1 }];
+
+console.log(arr.indexOf({ a: 1 }));
+```
+
+Output:
+
+```js
+-1;
+```
+
+Because objects are reference types.
+
+---
+
+## Pitfall 2: Object Lookup with Falsy Values
+
+```js
+if (!seen[item])
+```
+
+Can be problematic if keys are `"0"`, `false`, etc.
+
+Safer:
+
+```js
+if (!(item in seen))
+```
+
+Example:
+
+```js
+const seen = {};
+
+for (const item of arr) {
+  if (!(item in seen)) {
+    seen[item] = true;
+    unique.push(item);
+  }
+}
+```
+
+---
+
+# Best Practice (Interview Answer)
+
+### Simple Solution
+
+```js
+const unique = arr.filter((item, index) => arr.indexOf(item) === index);
+```
+
+### Optimized Solution (No Set)
+
+```js
+const seen = Object.create(null);
+const unique = [];
+
+for (const item of arr) {
+  if (!(item in seen)) {
+    seen[item] = true;
+    unique.push(item);
+  }
+}
+```
+
+### Complexity
+
+| Approach            | Time  | Space |
+| ------------------- | ----- | ----- |
+| `filter + indexOf`  | O(n²) | O(n)  |
+| `reduce + includes` | O(n²) | O(n)  |
+| Object lookup       | O(n)  | O(n)  |
+| `Map` lookup        | O(n)  | O(n)  |
+| Nested loops        | O(n²) | O(n)  |
+
+---
+
+# Interview Summary
+
+If asked:
+
+> **"Remove duplicates from an array without using Set and make it efficient."**
+
+Use a hash lookup:
+
+```js
+const seen = Object.create(null);
+
+const unique = arr.filter((item) => {
+  if (item in seen) return false;
+  seen[item] = true;
+  return true;
+});
+```
+
+- No `Set`
+- Preserves order
+- Time Complexity: **O(n)**
+- Space Complexity: **O(n)**
+- Works well in real-world interviews and production code.
+
 ## Question 5. Difference between `find()` and `filter()` in arrays
 
 ## Question 6. Difference between `some()` and `every()` in arrays
