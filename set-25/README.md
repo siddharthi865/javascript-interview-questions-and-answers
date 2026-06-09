@@ -934,6 +934,562 @@ A strong interview answer should connect observer pattern to:
 
 ## Question 3. How to implement factory pattern in JavaScript
 
+The Factory Pattern is a creational design pattern that provides a centralized way to create objects without exposing the exact instantiation logic to the client.
+
+Instead of using `new` directly everywhere, object creation is delegated to a factory function or factory class.
+
+It helps with:
+
+- encapsulating object creation
+- reducing coupling
+- improving maintainability
+- supporting polymorphism
+- simplifying complex initialization logic
+
+---
+
+# Basic Idea
+
+Without factory:
+
+```js id="vqsy2m"
+const car = new Car();
+const bike = new Bike();
+```
+
+With factory:
+
+```js id="v8fby4"
+const vehicle = VehicleFactory.create("car");
+```
+
+The caller does not need to know how objects are created internally.
+
+---
+
+# Simple Factory Pattern
+
+---
+
+# 1. Basic Factory Function
+
+```js id="oijc2j"
+class Car {
+  drive() {
+    console.log("Driving a car");
+  }
+}
+
+class Bike {
+  ride() {
+    console.log("Riding a bike");
+  }
+}
+
+function vehicleFactory(type) {
+  switch (type) {
+    case "car":
+      return new Car();
+
+    case "bike":
+      return new Bike();
+
+    default:
+      throw new Error("Unknown vehicle type");
+  }
+}
+```
+
+Usage:
+
+```js id="tz9kgw"
+const car = vehicleFactory("car");
+car.drive();
+
+const bike = vehicleFactory("bike");
+bike.ride();
+```
+
+---
+
+# Why Use a Factory?
+
+Without factory:
+
+```js id="r4n6go"
+const user = new AdminUser();
+```
+
+Application code becomes tightly coupled to concrete classes.
+
+With factory:
+
+```js id="vjlwm0"
+const user = UserFactory.create(role);
+```
+
+Benefits:
+
+- centralized creation logic
+- easier maintenance
+- easier extension
+- abstraction layer
+
+---
+
+# Real-World Example
+
+---
+
+# Notification Factory
+
+```js id="40cxkl"
+class EmailNotification {
+  send(message) {
+    console.log("Sending Email:", message);
+  }
+}
+
+class SMSNotification {
+  send(message) {
+    console.log("Sending SMS:", message);
+  }
+}
+
+class PushNotification {
+  send(message) {
+    console.log("Sending Push:", message);
+  }
+}
+```
+
+Factory:
+
+```js id="q2bhgo"
+class NotificationFactory {
+  static create(type) {
+    switch (type) {
+      case "email":
+        return new EmailNotification();
+
+      case "sms":
+        return new SMSNotification();
+
+      case "push":
+        return new PushNotification();
+
+      default:
+        throw new Error("Invalid notification type");
+    }
+  }
+}
+```
+
+Usage:
+
+```js id="r7gbtl"
+const notifier = NotificationFactory.create("sms");
+
+notifier.send("Hello");
+```
+
+---
+
+# Factory Using Object Mapping
+
+A cleaner modern approach:
+
+```js id="bnnvls"
+const factories = {
+  car: () => new Car(),
+  bike: () => new Bike(),
+};
+
+function vehicleFactory(type) {
+  const factory = factories[type];
+
+  if (!factory) {
+    throw new Error("Unknown type");
+  }
+
+  return factory();
+}
+```
+
+Advantages:
+
+- scalable
+- cleaner than switch
+- easy extension
+
+---
+
+# Factory with Configuration
+
+Factories can encapsulate complex initialization.
+
+```js id="mfrf6x"
+class Database {
+  constructor(connectionString) {
+    this.connectionString = connectionString;
+  }
+}
+```
+
+Factory:
+
+```js id="qcdjsj"
+function createDatabase(env) {
+  const configs = {
+    development: "localhost:3000",
+    production: "prod-db-server",
+  };
+
+  return new Database(configs[env]);
+}
+```
+
+Usage:
+
+```js id="0v8lr9"
+const db = createDatabase("production");
+```
+
+---
+
+# Factory vs Constructor
+
+---
+
+# Constructor
+
+```js id="5a1c3t"
+const user = new User();
+```
+
+Direct instantiation.
+
+---
+
+# Factory
+
+```js id="p7d9k7"
+const user = UserFactory.create();
+```
+
+Creation logic abstracted away.
+
+Factories are better when:
+
+- object creation is complex
+- conditional creation exists
+- caching/singletons needed
+- setup logic required
+
+---
+
+# Factory Pattern with Prototypes
+
+Factories work well with prototype-based JS.
+
+```js id="b9v1n2"
+function createUser(name) {
+  return {
+    name,
+    greet() {
+      console.log(`Hello ${name}`);
+    },
+  };
+}
+```
+
+Usage:
+
+```js id="zc56xg"
+const user = createUser("John");
+```
+
+This is also considered a factory function.
+
+---
+
+# Factory + Closures
+
+Factories can create private state.
+
+```js id="zsluxl"
+function createCounter() {
+  let count = 0;
+
+  return {
+    increment() {
+      count++;
+      return count;
+    },
+
+    decrement() {
+      count--;
+      return count;
+    },
+  };
+}
+```
+
+Usage:
+
+```js id="ln01rl"
+const counter = createCounter();
+
+console.log(counter.increment());
+```
+
+This is a powerful JavaScript-specific use case.
+
+---
+
+# Abstract Factory Pattern
+
+A more advanced variation.
+
+Creates families of related objects.
+
+---
+
+# Example
+
+```js id="t7kprm"
+class MacButton {}
+class WindowsButton {}
+
+class MacCheckbox {}
+class WindowsCheckbox {}
+```
+
+Factory:
+
+```js id="8wcmw5"
+class GUIFactory {
+  static createFactory(os) {
+    if (os === "mac") {
+      return {
+        createButton: () => new MacButton(),
+        createCheckbox: () => new MacCheckbox(),
+      };
+    }
+
+    return {
+      createButton: () => new WindowsButton(),
+      createCheckbox: () => new WindowsCheckbox(),
+    };
+  }
+}
+```
+
+Usage:
+
+```js id="h7gplj"
+const factory = GUIFactory.createFactory("mac");
+
+const button = factory.createButton();
+```
+
+Useful in:
+
+- UI frameworks
+- theme systems
+- cross-platform apps
+
+---
+
+# Factory Pattern in Modern Frameworks
+
+---
+
+# React
+
+React components themselves behave somewhat like factories.
+
+```jsx id="7nupxj"
+function Button(props) {
+  return <button>{props.label}</button>;
+}
+```
+
+---
+
+# Redux
+
+Reducers often use factories for store setup.
+
+---
+
+# Node.js
+
+Express middleware factories:
+
+```js id="7w4yga"
+function logger(options) {
+  return function (req, res, next) {
+    console.log(options.prefix);
+    next();
+  };
+}
+```
+
+Usage:
+
+```js id="c0uyol"
+app.use(logger({ prefix: "[API]" }));
+```
+
+---
+
+# Common Pitfalls
+
+---
+
+# 1. Overusing Factories
+
+Factories add abstraction.
+
+For simple objects:
+
+```js id="s7m8me"
+const user = { name: "John" };
+```
+
+No factory needed.
+
+---
+
+# 2. Large Switch Statements
+
+Bad:
+
+```js id="yx0uxm"
+switch (
+  type
+  // 50 cases
+) {
+}
+```
+
+Prefer registry/object mapping.
+
+---
+
+# 3. Hidden Complexity
+
+Factories can hide expensive operations.
+
+Document behavior clearly.
+
+---
+
+# 4. Returning Inconsistent Interfaces
+
+Bad:
+
+```js id="k4ctzf"
+factory("car").drive();
+factory("bike").ride();
+```
+
+Better:
+
+```js id="4o9gsp"
+vehicle.move();
+```
+
+Consistent APIs improve polymorphism.
+
+---
+
+# Factory vs Other Patterns
+
+| Pattern              | Purpose                                |
+| -------------------- | -------------------------------------- |
+| Factory              | Create objects                         |
+| Singleton            | Ensure single instance                 |
+| Builder              | Construct complex objects step-by-step |
+| Prototype            | Clone existing objects                 |
+| Dependency Injection | Provide dependencies externally        |
+
+---
+
+# Best Practices
+
+---
+
+# Prefer Factory Functions for Simplicity
+
+Modern JS often prefers:
+
+```js id="lzj5xr"
+function createUser() {}
+```
+
+over complex class factories.
+
+---
+
+# Use Factories for:
+
+- polymorphic objects
+- environment-based creation
+- plugin systems
+- caching
+- encapsulated setup logic
+
+---
+
+# Keep Interfaces Consistent
+
+All produced objects should behave similarly.
+
+---
+
+# Combine with Dependency Injection
+
+Factories + DI work very well together.
+
+---
+
+# Interview Summary
+
+The Factory Pattern centralizes object creation logic and hides implementation details from consumers.
+
+Key points:
+
+- abstracts instantiation
+- reduces coupling
+- improves scalability
+- supports polymorphism
+- encapsulates complex setup logic
+
+Common implementations in JavaScript:
+
+- factory functions
+- static factory classes
+- abstract factories
+- closure-based factories
+
+Widely used in:
+
+- React ecosystems
+- Node.js middleware
+- UI systems
+- plugin architectures
+- service creation layers
+
+A strong interview answer should also discuss:
+
+- factory vs constructor
+- factory vs builder
+- closure-based factories
+- dependency injection integration
+- real-world framework usage
+
 ## Question 4. How to implement singleton pattern in Node.js modules
 
 ## Question 5. How to implement a strategy pattern in JavaScript
