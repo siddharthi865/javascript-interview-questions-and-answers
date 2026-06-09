@@ -427,6 +427,257 @@ const name = "John";
 
 ## Question 3. Difference between alert(), prompt(), and confirm()
 
+## Short Answer
+
+- **`alert()`** → Shows a message with an **OK button only**
+- **`prompt()`** → Takes **user input** and returns it
+- **`confirm()`** → Asks a **yes/no question (OK/Cancel)** and returns a boolean
+
+All three are **blocking (synchronous)** browser dialogs used for simple user interaction.
+
+---
+
+# 1. `alert()`
+
+### What it does:
+
+Displays a simple message popup to the user.
+
+### Syntax:
+
+```js id="a1b2c3"
+alert("Hello World");
+```
+
+### Behavior:
+
+- Shows message
+- Only **OK button**
+- No return value (`undefined`)
+- Execution pauses until user clicks OK
+
+### Example:
+
+```js id="d4e5f6"
+console.log("Start");
+
+alert("This is an alert!");
+
+console.log("End");
+```
+
+### Output order:
+
+```
+Start
+(alert popup)
+End
+```
+
+---
+
+# 2. `prompt()`
+
+### What it does:
+
+Asks the user for input and returns the value.
+
+### Syntax:
+
+```js id="g7h8i9"
+const name = prompt("Enter your name:");
+```
+
+### Behavior:
+
+- Takes user input as string
+- Returns:
+  - entered string
+  - `null` if user clicks Cancel
+
+- Execution pauses until input is given
+
+---
+
+### Example:
+
+```js id="j1k2l3"
+const age = prompt("Enter your age:");
+
+console.log(age);
+```
+
+### Possible outputs:
+
+```
+"25"   (string)
+null   (if Cancel clicked)
+```
+
+---
+
+### Important Interview Point:
+
+Even numbers are returned as strings:
+
+```js id="m4n5o6"
+const num = prompt("Enter number:");
+console.log(typeof num); // "string"
+```
+
+To convert:
+
+```js id="p7q8r9"
+const num = Number(prompt("Enter number:"));
+```
+
+---
+
+# 3. `confirm()`
+
+### What it does:
+
+Asks user to confirm an action.
+
+### Syntax:
+
+```js id="s1t2u3"
+const result = confirm("Are you sure?");
+```
+
+### Behavior:
+
+- Shows OK and Cancel buttons
+- Returns:
+  - `true` → OK clicked
+  - `false` → Cancel clicked
+
+---
+
+### Example:
+
+```js id="v4w5x6"
+const isDeleted = confirm("Do you want to delete this file?");
+
+console.log(isDeleted);
+```
+
+### Output:
+
+```
+true  → OK clicked
+false → Cancel clicked
+```
+
+---
+
+# 🔥 Key Differences (Interview Table)
+
+| Feature       | alert()      | prompt()       | confirm()        |
+| ------------- | ------------ | -------------- | ---------------- |
+| Purpose       | Show message | Get input      | Ask confirmation |
+| Buttons       | OK           | OK + Cancel    | OK + Cancel      |
+| Return value  | undefined    | string or null | boolean          |
+| Input support | ❌           | ✅             | ❌               |
+| Blocking      | Yes          | Yes            | Yes              |
+
+---
+
+# 🔥 Execution Behavior (Important Concept)
+
+All three are:
+
+- **Synchronous**
+- **Blocking UI**
+- Pause JavaScript execution until closed
+
+Example:
+
+```js id="y7z8a9"
+console.log("A");
+
+alert("Hello");
+
+console.log("B");
+```
+
+Execution order:
+
+```
+A → alert blocks → B
+```
+
+---
+
+# Common Interview Traps
+
+---
+
+## ❓ 1. What does prompt return?
+
+```js id="b1c2d3"
+prompt("Enter value");
+```
+
+### Answer:
+
+- Always returns **string or null**
+
+---
+
+## ❓ 2. What happens if Cancel is clicked?
+
+```js id="e4f5g6"
+const value = prompt("Enter name:");
+```
+
+### Answer:
+
+```js id="h7i8j9"
+null;
+```
+
+---
+
+## ❓ 3. Is confirm() type boolean?
+
+Yes:
+
+```js id="k1l2m3"
+true; // OK
+false; // Cancel
+```
+
+---
+
+## ❓ 4. Why are these not used in modern apps?
+
+### Reasons:
+
+- Blocking UI (bad UX)
+- Not customizable
+- Not mobile-friendly
+- Breaks async flow
+
+### Modern alternatives:
+
+- Custom modal components
+- UI libraries (React modals, Bootstrap modals)
+
+---
+
+# Best Practice (Interview Answer)
+
+> `alert()`, `prompt()`, and `confirm()` are built-in browser dialog methods used for simple interactions. However, they are synchronous and block the main thread, which makes them unsuitable for modern production UI. Today, developers prefer custom modal components for better UX and control.
+
+---
+
+# Final Summary
+
+- `alert()` → message only
+- `prompt()` → input → string/null
+- `confirm()` → decision → boolean
+
 ## Question 4. What is the difference between innerHTML and textContent?
 
 ## Question 5. How to change the style of an element using JavaScript?
