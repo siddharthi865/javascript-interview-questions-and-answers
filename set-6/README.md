@@ -309,6 +309,209 @@ A common interview answer is:
 
 ## Question 3. How does typeof operator work? Give examples
 
+**Direct answer:**
+The `typeof` operator in JavaScript returns a **string indicating the type of a value or variable at runtime**. It is mainly used for type checking.
+
+---
+
+# Detailed Explanation (Interview Perspective)
+
+The `typeof` operator is a **unary operator** that evaluates its operand and returns a string representing its type.
+
+### Syntax:
+
+```javascript
+typeof value;
+typeof variable;
+```
+
+---
+
+# How `typeof` Works Internally
+
+JavaScript is a **dynamically typed language**, meaning types are determined at runtime. `typeof` helps inspect the runtime type.
+
+It checks:
+
+- Primitive types (string, number, boolean, etc.)
+- Functions
+- Objects (arrays, null, etc.)
+
+---
+
+# Return Values of `typeof`
+
+| Value           | Result                         |
+| --------------- | ------------------------------ |
+| `"hello"`       | `"string"`                     |
+| `123`           | `"number"`                     |
+| `true`          | `"boolean"`                    |
+| `undefined`     | `"undefined"`                  |
+| `function() {}` | `"function"`                   |
+| `{}`            | `"object"`                     |
+| `null`          | `"object"` ⚠️ (historical bug) |
+
+---
+
+# Examples
+
+## 1. Primitive types
+
+```javascript
+typeof "hello"; // "string"
+typeof 42; // "number"
+typeof true; // "boolean"
+typeof undefined; // "undefined"
+```
+
+---
+
+## 2. Objects
+
+```javascript
+typeof { name: "John" }; // "object"
+typeof [1, 2, 3]; // "object"
+typeof null; // "object" ❗
+```
+
+### Important pitfall:
+
+```javascript
+typeof null === "object"; // true
+```
+
+👉 This is a **well-known bug in JavaScript since its early days** and cannot be fixed due to backward compatibility.
+
+To properly check null:
+
+```javascript
+value === null;
+```
+
+---
+
+## 3. Functions
+
+```javascript
+function greet() {}
+typeof greet; // "function"
+```
+
+Even though functions are objects in JavaScript, `typeof` treats them specially.
+
+---
+
+## 4. Arrays (important interview point)
+
+```javascript
+const arr = [1, 2, 3];
+
+typeof arr; // "object"
+```
+
+To properly check arrays:
+
+```javascript
+Array.isArray(arr); // true
+```
+
+---
+
+## 5. Undefined variable
+
+```javascript
+let x;
+typeof x; // "undefined"
+```
+
+Even if a variable exists but has no value, it returns `"undefined"`.
+
+---
+
+## 6. Undeclared variables (special behavior)
+
+```javascript
+typeof notDeclared; // "undefined"
+```
+
+👉 Unlike normal access, this does NOT throw a ReferenceError.
+
+This makes `typeof` useful for safe checks.
+
+---
+
+# Edge Cases & Pitfalls
+
+## 1. `null` bug
+
+```javascript
+typeof null; // "object"
+```
+
+Reason: legacy JavaScript implementation error.
+
+---
+
+## 2. Arrays are objects
+
+```javascript
+typeof []; // "object"
+```
+
+Use:
+
+```javascript
+Array.isArray([]);
+```
+
+---
+
+## 3. NaN is a number
+
+```javascript
+typeof NaN; // "number"
+```
+
+Even though NaN means "Not a Number", its type is number.
+
+Check:
+
+```javascript
+Number.isNaN(value);
+```
+
+---
+
+# Best Practices
+
+### ✔ Use `typeof` for:
+
+- Primitive type checks
+- Function checks
+- Safe access to possibly undefined variables
+
+### ❌ Avoid using it for:
+
+- Arrays → use `Array.isArray()`
+- null → use strict equality
+- Complex object type detection → use `Object.prototype.toString.call()`
+
+---
+
+# Advanced Interview Insight
+
+Internally:
+
+- `typeof` is not a function but an **operator**
+- It operates at the engine level (e.g., V8 engine in V8)
+- It performs **type tag inspection of values in memory**
+
+---
+
+# Summary (Interview-ready answer)
+
+> The `typeof` operator returns a string representing the type of a value at runtime. It works for primitive types, functions, and objects. However, it has known quirks such as returning `"object"` for `null` and arrays. Therefore, while `typeof` is useful for basic type checking, additional methods like `Array.isArray()` and strict equality checks are often required for accurate type detection.
+
 ## Question 4. Explain the difference between undefined and undeclared variables
 
 ## Question 5. What is the difference between primitive and reference data types?
