@@ -742,6 +742,257 @@ setImmediate
 
 ## Question 3. How to implement clustering in Node.js
 
+## ✅ Short Answer
+
+Clustering in Node.js is implemented using the built-in **`cluster` module**, which allows you to spawn multiple **worker processes** that share the same server port. This enables Node.js to fully utilize multi-core CPUs and improve concurrency.
+
+Each worker is an independent process, and a **master process (primary)** manages them.
+
+---
+
+# 🧠 Interview-Grade Explanation
+
+Node.js is single-threaded at the JavaScript level, but the runtime (Node.js) supports scaling via the **cluster model**, built on top of OS-level process forking.
+
+Clustering uses:
+
+- The **master process (primary)**
+- Multiple **worker processes**
+- Shared server port via load balancing
+
+Internally, it leverages OS capabilities (not libuv threads) and spreads incoming connections across workers.
+
+---
+
+# 🏗️ How Node.js Clustering Works
+
+When you create a cluster:
+
+1. Master process starts
+2. It forks multiple worker processes
+3. Each worker runs a copy of your app
+4. Incoming requests are distributed among workers
+5. If a worker crashes, master can restart it
+
+---
+
+# ⚙️ Basic Cluster Implementation
+
+```js id="c1k8xq"
+const cluster = require("cluster");
+const http = require("http");
+const os = require("os");
+
+const numCPUs = os.cpus().length;
+
+if (cluster.isPrimary) {
+  console.log(`Master ${process.pid} is running`);
+
+  // Fork workers
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
+
+  // Restart worker if it dies
+  cluster.on("exit", (worker) => {
+    console.log(`Worker ${worker.process.pid} died. Restarting...`);
+    cluster.fork();
+  });
+} else {
+  // Worker processes share same server port
+  http
+    .createServer((req, res) => {
+      res.writeHead(200);
+      res.end(`Handled by worker ${process.pid}`);
+    })
+    .listen(3000);
+
+  console.log(`Worker ${process.pid} started`);
+}
+```
+
+---
+
+# 🧠 Key Concepts
+
+## 1. Primary (Master) Process
+
+- Does NOT handle requests
+- Manages workers
+- Handles lifecycle (fork, restart, monitoring)
+
+---
+
+## 2. Worker Process
+
+- Independent Node.js process
+- Runs full app instance
+- Handles HTTP requests
+
+---
+
+## 3. Load Distribution
+
+Node uses OS-level load balancing:
+
+- Round-robin (default on most systems)
+- Or OS kernel-level scheduling
+
+---
+
+# ⚡ Why Clustering Improves Performance
+
+Without cluster:
+
+- Single CPU core used
+- One event loop
+- Limited throughput
+
+With cluster:
+
+- Multiple processes
+- Multiple event loops
+- Parallel request handling
+- Better CPU utilization
+
+---
+
+# 🧵 Important Distinction (Interview Favorite)
+
+| Feature         | Cluster               | Worker Threads            |
+| --------------- | --------------------- | ------------------------- |
+| Unit            | Process               | Thread                    |
+| Memory          | Separate              | Shared memory possible    |
+| Use case        | HTTP scaling          | CPU-heavy tasks           |
+| Communication   | IPC (message passing) | Shared memory / messaging |
+| Crash isolation | High                  | Medium                    |
+
+---
+
+# 🔁 Inter-Process Communication (IPC)
+
+Workers can communicate with master:
+
+```js id="k8m2px"
+if (cluster.isPrimary) {
+  const worker = cluster.fork();
+
+  worker.on("message", (msg) => {
+    console.log("From worker:", msg);
+  });
+} else {
+  process.send("Hello from worker");
+}
+```
+
+---
+
+# ⚠️ Common Pitfalls
+
+## 1. Not sharing state properly
+
+Each worker has its own memory:
+
+- No shared variables
+- No shared cache
+
+👉 Solution: Use Redis / external store
+
+---
+
+## 2. Sticky sessions problem
+
+If using sessions stored in memory:
+
+- Requests may hit different workers
+- Session inconsistency occurs
+
+👉 Fix:
+
+- Use Redis session store
+- Or sticky session load balancer (NGINX)
+
+---
+
+## 3. Over-forking workers
+
+Too many workers cause:
+
+- High memory usage
+- Context switching overhead
+
+Rule of thumb:
+
+```txt id="m2x9qf"
+Number of workers ≈ number of CPU cores
+```
+
+---
+
+## 4. Not handling worker crashes
+
+Always listen for:
+
+```js id="r8k3dd"
+cluster.on("exit", (worker) => {
+  cluster.fork();
+});
+```
+
+---
+
+# 🚀 Modern Alternative (Important in Interviews)
+
+In real production systems, clustering is often replaced by:
+
+- PM2 process manager
+- Docker containers
+- Kubernetes scaling
+
+Example with PM2:
+
+```bash id="p0m3x1"
+pm2 start app.js -i max
+```
+
+This automatically:
+
+- Clusters app
+- Restarts crashed processes
+- Balances load
+
+---
+
+# 🧠 When to Use Cluster
+
+Use clustering when:
+
+✔ CPU cores are underutilized
+✔ Building HTTP API servers
+✔ High concurrency traffic apps
+
+Avoid when:
+
+❌ Heavy shared state required
+❌ Already using container orchestration
+❌ CPU-bound tasks (use Worker Threads instead)
+
+---
+
+# ⚡ Mental Model (Interview Ready)
+
+Think of clustering as:
+
+```txt id="x1c9aa"
+One app → multiple independent Node.js processes → same port → OS distributes traffic
+```
+
+---
+
+# 🎯 Interview Summary
+
+> Node.js clustering is implemented using the built-in cluster module, which allows a master process to fork multiple worker processes. Each worker runs its own event loop and handles incoming requests independently while sharing the same server port. This enables Node.js to utilize multi-core systems efficiently. Communication between workers and the master happens via IPC. Clustering improves scalability for I/O-heavy applications, but state management must be externalized since each worker has isolated memory.
+
 ## Question 4. Difference between cluster and worker threads in Node.js
 
 ## Question 5. How to handle file uploads in Node.js efficiently
