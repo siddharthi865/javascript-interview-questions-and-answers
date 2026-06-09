@@ -389,11 +389,249 @@ const add = (a, b) => a + b;
 - **JavaScript** → Dynamic, prototype-based scripting language for web and server-side development.
 - **ECMAScript** → The official specification that defines how JavaScript should work.
 
+## Question 3. Explain var, let, and const with examples
+
+**Short answer:**
+`var`, `let`, and `const` are used to declare variables in JavaScript, but they differ in **scope, hoisting behavior, and reassignability**.
+
+- `var` → function-scoped, hoisted, can be redeclared and reassigned
+- `let` → block-scoped, hoisted but in Temporal Dead Zone, can be reassigned but not redeclared
+- `const` → block-scoped, hoisted but in Temporal Dead Zone, cannot be reassigned or redeclared
+
 ---
 
-If you want, I can next explain **how JavaScript engines (like V8) implement ECMAScript step by step**, which is a very common senior-level interview question.
+# 🔍 Detailed Interview Explanation
 
-## Question 3. Explain var, let, and const with examples
+To understand `var`, `let`, and `const`, you must understand three key concepts:
+
+- **Scope (function vs block)**
+- **Hoisting**
+- **Reassignment & redeclaration rules**
+
+---
+
+# 1. 🟢 var
+
+## Key characteristics:
+
+- Function-scoped
+- Hoisted (initialized as `undefined`)
+- Can be redeclared and reassigned
+
+---
+
+## Example:
+
+```js
+function test() {
+  console.log(a); // undefined (hoisting)
+  var a = 10;
+  console.log(a); // 10
+}
+test();
+```
+
+### What actually happens (hoisting):
+
+```js
+var a; // hoisted
+console.log(a); // undefined
+a = 10;
+```
+
+---
+
+## Scope example:
+
+```js
+if (true) {
+  var x = 100;
+}
+console.log(x); // 100 ❗ (not block scoped)
+```
+
+---
+
+## Problems with var:
+
+- Leaks outside block scope
+- Can be redeclared accidentally
+
+```js
+var y = 10;
+var y = 20; // allowed ❗
+console.log(y); // 20
+```
+
+---
+
+# 2. 🟡 let
+
+## Key characteristics:
+
+- Block-scoped (`{}`)
+- Hoisted but not initialized (Temporal Dead Zone)
+- Cannot be redeclared in same scope
+- Can be reassigned
+
+---
+
+## Example:
+
+```js
+let a = 10;
+a = 20; // allowed
+console.log(a); // 20
+```
+
+---
+
+## Block scope example:
+
+```js
+if (true) {
+  let x = 100;
+}
+console.log(x); // ReferenceError ❗
+```
+
+---
+
+## Temporal Dead Zone (TDZ):
+
+```js
+console.log(a); // ReferenceError
+let a = 10;
+```
+
+👉 Even though `let` is hoisted, it cannot be accessed before initialization.
+
+---
+
+## No redeclaration:
+
+```js
+let b = 10;
+let b = 20; // SyntaxError ❗
+```
+
+---
+
+# 3. 🔵 const
+
+## Key characteristics:
+
+- Block-scoped
+- Must be initialized at declaration
+- Cannot be reassigned or redeclared
+- Also has TDZ
+
+---
+
+## Example:
+
+```js
+const PI = 3.14;
+console.log(PI);
+```
+
+---
+
+## Reassignment not allowed:
+
+```js
+const a = 10;
+a = 20; // TypeError ❗
+```
+
+---
+
+## Must initialize:
+
+```js
+const b; // SyntaxError ❗
+b = 10;
+```
+
+---
+
+## ⚠️ Important: Objects & arrays with const
+
+`const` prevents reassignment, not mutation.
+
+```js
+const user = { name: "John" };
+
+user.name = "Doe"; // allowed ✅
+console.log(user); // { name: "Doe" }
+
+user = {}; // ❌ not allowed
+```
+
+Same with arrays:
+
+```js
+const arr = [1, 2, 3];
+arr.push(4); // allowed
+console.log(arr); // [1, 2, 3, 4]
+```
+
+---
+
+# 📊 Comparison Table
+
+| Feature         | var             | let          | const        |
+| --------------- | --------------- | ------------ | ------------ |
+| Scope           | Function        | Block        | Block        |
+| Hoisting        | Yes (undefined) | Yes (TDZ)    | Yes (TDZ)    |
+| Redeclare       | Yes             | No           | No           |
+| Reassign        | Yes             | Yes          | No           |
+| Must initialize | No              | No           | Yes          |
+| Modern usage    | ❌ avoid        | ✅ preferred | ✅ preferred |
+
+---
+
+# ⚠️ Common Pitfalls
+
+## 1. Hoisting confusion
+
+```js
+console.log(a);
+var a = 5; // undefined, not error
+```
+
+---
+
+## 2. TDZ with let/const
+
+```js
+console.log(a);
+let a = 5; // ReferenceError
+```
+
+---
+
+## 3. const misconception
+
+- Many think `const` means immutable ❌
+- It only means **binding is constant**, not object content
+
+---
+
+# 🚀 Best Practices (Interview-ready)
+
+- Avoid `var` in modern JavaScript
+- Use `const` by default
+- Use `let` only when reassignment is needed
+- Never rely on hoisting behavior in production code
+
+---
+
+# 🎯 Final Summary
+
+- **var** → old, function-scoped, hoisted with `undefined`, avoid using
+- **let** → modern, block-scoped, safe for variables that change
+- **const** → modern, block-scoped, safest default choice
 
 ## Question 4. What are data types in JavaScript?
 
