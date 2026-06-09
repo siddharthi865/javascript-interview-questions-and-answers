@@ -516,6 +516,210 @@ Arrays use positions, not names.
 
 ## Question 3. Difference between nullish coalescing operator ?? and logical OR ||
 
+### Short Answer
+
+The **nullish coalescing operator (`??`)** returns the right-hand value only when the left-hand side is `null` or `undefined`, whereas the **logical OR (`||`)** returns the right-hand value when the left-hand side is any _falsy value_ (`false`, `0`, `""`, `NaN`, `null`, `undefined`).
+
+---
+
+# 1. Core Difference
+
+| Operator                  | Fallback condition         | Treats as “empty”        |                 |                                                |
+| ------------------------- | -------------------------- | ------------------------ | --------------- | ---------------------------------------------- |
+| `                         |                            | ` (OR)                   | Any falsy value | `false`, `0`, `""`, `NaN`, `null`, `undefined` |
+| `??` (Nullish coalescing) | Only `null` or `undefined` | Only `null`, `undefined` |                 |                                                |
+
+---
+
+# 2. Logical OR (`||`)
+
+Returns the first **truthy** value.
+
+```javascript id="or1"
+const value = 0 || 100;
+
+console.log(value); // 100
+```
+
+### Why?
+
+- `0` is falsy → so fallback is used
+
+---
+
+### More examples
+
+```javascript id="or2"
+"" || "default"; // "default"
+false || "yes"; // "yes"
+NaN || 42; // 42
+```
+
+---
+
+## ⚠️ Problem with `||`
+
+It may override **valid values like `0` or empty string**
+
+```javascript id="or3"
+const quantity = 0;
+
+console.log(quantity || 10); // 10 ❌ incorrect in many cases
+```
+
+Here, `0` is a valid value but gets replaced.
+
+---
+
+# 3. Nullish Coalescing (`??`)
+
+Returns right-hand value only if left is `null` or `undefined`.
+
+```javascript id="n1"
+const value = 0 ?? 100;
+
+console.log(value); // 0 ✅
+```
+
+---
+
+### More examples
+
+```javascript id="n2"
+"" ?? "default"; // ""
+false ?? true; // false
+0 ?? 100; // 0
+null ?? "fallback"; // "fallback"
+undefined ?? 50; // 50
+```
+
+---
+
+# 4. Real-world Example (Important for Interviews)
+
+### User settings / configuration
+
+```javascript id="rw1"
+const userSettings = {
+  theme: "",
+  fontSize: 0,
+};
+```
+
+---
+
+### Using `||` (problematic)
+
+```javascript id="rw2"
+const theme = userSettings.theme || "dark";
+console.log(theme); // "dark" ❌ overrides empty string
+```
+
+---
+
+### Using `??` (correct)
+
+```javascript id="rw3"
+const theme = userSettings.theme ?? "dark";
+console.log(theme); // "" ✅ preserved
+```
+
+---
+
+# 5. API response handling example
+
+```javascript id="api1"
+const response = {
+  data: 0,
+};
+```
+
+### Using `||`
+
+```javascript id="api2"
+const value = response.data || 100;
+console.log(value); // 100 ❌ wrong if 0 is valid
+```
+
+### Using `??`
+
+```javascript id="api3"
+const value = response.data ?? 100;
+console.log(value); // 0 ✅ correct
+```
+
+---
+
+# 6. Key Interview Insight
+
+### Falsy values in JavaScript:
+
+```javascript id="falsy"
+false;
+0;
+("");
+null;
+undefined;
+NaN;
+```
+
+- `||` treats ALL of them as fallback triggers
+- `??` only treats `null` and `undefined`
+
+---
+
+# 7. Operator Precedence Gotcha
+
+You **cannot mix `&&` or `||` directly with `??` without parentheses**
+
+### ❌ Invalid
+
+```javascript id="bad"
+null || undefined ?? "default"
+```
+
+### ❌ Error:
+
+> SyntaxError
+
+---
+
+### ✅ Correct
+
+```javascript id="good"
+(null || undefined) ?? "default";
+```
+
+---
+
+# 8. When to use what?
+
+## Use `||` when:
+
+- You want fallback for _any falsy value_
+- Example: UI toggles, boolean defaults
+
+```javascript id="u1"
+const isLoggedIn = user.status || false;
+```
+
+---
+
+## Use `??` when:
+
+- You only want fallback for missing values (`null` or `undefined`)
+- Preserving valid falsy values like `0`, `""`, `false`
+
+```javascript id="u2"
+const pageSize = config.pageSize ?? 10;
+```
+
+---
+
+# 9. Interview One-liner
+
+> `||` returns the first truthy value and treats all falsy values as fallback triggers, while `??` only falls back when the value is `null` or `undefined`, making it safer for preserving valid falsy values like 0 or empty strings.
+
 ## Question 4. Difference between optional chaining ?. and normal property access
 
 ## Question 5. Explain Map vs Object
