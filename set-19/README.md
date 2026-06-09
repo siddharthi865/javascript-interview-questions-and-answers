@@ -727,6 +727,242 @@ The Module Pattern in JavaScript uses IIFEs and closures to create private state
 
 ## Question 3. How to create a proxy to validate object properties
 
+## Direct answer
+
+You can create a **Proxy** in JavaScript and use the `set` (and optionally `get`) trap to validate property assignments before they are written to the target object.
+
+---
+
+# 1. Basic Proxy for Property Validation
+
+A Proxy lets you intercept operations on an object. For validation, the key trap is:
+
+- `set(target, property, value)` → runs whenever a property is assigned
+
+### Example: simple validation proxy
+
+```js
+const user = {
+  name: "John",
+  age: 25,
+};
+
+const validator = {
+  set(target, prop, value) {
+    if (prop === "age") {
+      if (typeof value !== "number" || value < 0) {
+        throw new TypeError("Age must be a positive number");
+      }
+    }
+
+    if (prop === "name") {
+      if (typeof value !== "string" || value.length < 2) {
+        throw new TypeError("Name must be a valid string");
+      }
+    }
+
+    target[prop] = value;
+    return true; // required for successful assignment
+  },
+};
+
+const proxiedUser = new Proxy(user, validator);
+
+// Valid
+proxiedUser.age = 30;
+proxiedUser.name = "Alice";
+
+console.log(proxiedUser);
+
+// Invalid
+proxiedUser.age = -5; // throws error
+```
+
+---
+
+# 2. How It Works (Interview Explanation)
+
+A Proxy wraps an object and intercepts fundamental operations like:
+
+- Property access (`get`)
+- Property assignment (`set`)
+- Property deletion (`deleteProperty`)
+- Function calls (`apply`)
+- Construction (`construct`)
+
+For validation, we primarily use:
+
+### `set(target, prop, value, receiver)`
+
+When you do:
+
+```js
+proxiedUser.age = 40;
+```
+
+Internally:
+
+1. Proxy intercepts assignment
+2. `set()` trap runs
+3. Validation logic executes
+4. If valid → assign to target
+5. If invalid → throw error or reject
+
+---
+
+# 3. Advanced Validation Proxy (Schema-Based)
+
+A more realistic interview-level approach is schema validation.
+
+```js
+const schema = {
+  name: (v) => typeof v === "string" && v.length > 2,
+  age: (v) => typeof v === "number" && v >= 0 && v <= 120,
+};
+
+function createValidatedObject(target, schema) {
+  return new Proxy(target, {
+    set(obj, prop, value) {
+      if (schema[prop]) {
+        const isValid = schema[prop](value);
+
+        if (!isValid) {
+          throw new Error(`Invalid value for ${prop}: ${value}`);
+        }
+      }
+
+      obj[prop] = value;
+      return true;
+    },
+  });
+}
+
+const user = createValidatedObject({}, schema);
+
+user.name = "John"; // OK
+user.age = 30; // OK
+
+user.age = -10; // Error
+```
+
+---
+
+# 4. Adding Get Validation / Defaults
+
+You can also control reads using `get`.
+
+```js
+const safeUser = new Proxy(
+  {},
+  {
+    set(target, prop, value) {
+      if (prop === "age" && value < 0) {
+        throw new Error("Invalid age");
+      }
+      target[prop] = value;
+      return true;
+    },
+
+    get(target, prop) {
+      return prop in target ? target[prop] : "NOT FOUND";
+    },
+  },
+);
+
+safeUser.name = "Alice";
+
+console.log(safeUser.name); // Alice
+console.log(safeUser.age); // NOT FOUND
+```
+
+---
+
+# 5. Real-World Use Cases
+
+Proxies are commonly used for:
+
+### 1. Validation layers
+
+- Form input validation
+- API payload validation
+
+### 2. State management (Vue 3 uses Proxy)
+
+- Reactivity tracking
+
+### 3. Security restrictions
+
+- Prevent invalid mutations
+
+### 4. Logging / debugging
+
+```js
+const debugProxy = new Proxy(
+  {},
+  {
+    set(target, prop, value) {
+      console.log(`Setting ${prop} = ${value}`);
+      target[prop] = value;
+      return true;
+    },
+  },
+);
+```
+
+---
+
+# 6. Important Edge Cases (Interview Traps)
+
+## ❌ Forgetting `return true`
+
+```js
+set(target, prop, value) {
+  target[prop] = value;
+}
+```
+
+### Problem:
+
+In strict mode, this may fail silently or throw.
+
+### ✔ Correct:
+
+```js
+return true;
+```
+
+---
+
+## ❌ Not handling inherited properties
+
+Proxy only affects the wrapped object, not prototypes.
+
+---
+
+## ❌ Performance overhead
+
+Proxies are powerful but:
+
+- Slight runtime cost
+- Not ideal for hot loops or high-frequency updates
+
+---
+
+# 7. Proxy vs Object.defineProperty
+
+| Feature              | Proxy     | Object.defineProperty |
+| -------------------- | --------- | --------------------- |
+| Intercepts all props | ✔         | ❌ (must define each) |
+| Dynamic properties   | ✔         | ❌                    |
+| Array handling       | Easy      | Complex               |
+| Modern usage         | Preferred | Legacy (Vue 2 style)  |
+
+---
+
+# 8. Senior-Level Summary
+
+A Proxy in JavaScript allows you to intercept and redefine fundamental operations on an object. By using the `set` trap, you can enforce validation rules before properties are assigned. This makes Proxy a powerful mechanism for building reactive systems, validation layers, and controlled state management. Unlike `Object.defineProperty`, Proxy works dynamically for all properties, making it more flexible and scalable for modern JavaScript architectures.
+
 ## Question 4. How to use Reflect API to manipulate objects
 
 ## Question 5. How to implement a reactive object (like Vue.js reactivity system)
