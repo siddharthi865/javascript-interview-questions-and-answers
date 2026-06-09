@@ -885,6 +885,326 @@ They are commonly used for **temporary access, session management, plugin isolat
 
 ## Question 3. How to observe object property changes using Proxy?
 
+## Short Answer
+
+You observe object property changes using a **Proxy with the `set` trap**, which intercepts every property assignment. By comparing old and new values inside this trap, you can detect and react to changes.
+
+---
+
+## Interview-Ready Explanation
+
+In JavaScript, there is no built-in “object observer” API for plain objects. However, **Proxy** provides a powerful way to intercept and track mutations. The key mechanism is the **`set` trap**, which runs whenever a property is written.
+
+A Proxy allows you to:
+
+- Detect when a property is added
+- Detect when a property is updated
+- Detect when a property is deleted (via `deleteProperty` trap)
+- React to changes in real time (logging, UI updates, reactivity systems)
+
+This is the foundation of modern reactivity systems like **Vue 3**.
+
+---
+
+# Core Idea: Using the `set` Trap
+
+```js
+const target = {
+  name: "John",
+  age: 25,
+};
+
+const observer = new Proxy(target, {
+  set(target, property, value, receiver) {
+    console.log(`Property "${property}" changed to`, value);
+
+    return Reflect.set(target, property, value, receiver);
+  },
+});
+
+observer.name = "Alice";
+observer.age = 30;
+```
+
+### Output:
+
+```
+Property "name" changed to Alice
+Property "age" changed to 30
+```
+
+---
+
+# Detecting Old vs New Values (Important in Interviews)
+
+A common requirement is to compare previous and new values.
+
+```js
+const target = {
+  count: 0,
+};
+
+const proxy = new Proxy(target, {
+  set(target, prop, value) {
+    const oldValue = target[prop];
+
+    if (oldValue !== value) {
+      console.log(`${prop} changed: ${oldValue} → ${value}`);
+    }
+
+    return Reflect.set(target, prop, value);
+  },
+});
+
+proxy.count = 1;
+proxy.count = 2;
+```
+
+---
+
+# Detecting Add vs Update
+
+You can distinguish between **new properties** and **existing updates**:
+
+```js
+const obj = {};
+
+const proxy = new Proxy(obj, {
+  set(target, prop, value) {
+    const isNew = !(prop in target);
+
+    console.log(isNew ? `New property: ${prop}` : `Updated property: ${prop}`);
+
+    return Reflect.set(target, prop, value);
+  },
+});
+
+proxy.name = "John"; // New property
+proxy.name = "Alice"; // Updated property
+```
+
+---
+
+# Detecting Deletions
+
+To fully observe object mutations, you also need `deleteProperty`:
+
+```js
+const obj = { name: "John" };
+
+const proxy = new Proxy(obj, {
+  set(target, prop, value) {
+    console.log(`Set ${prop}`);
+    return Reflect.set(target, prop, value);
+  },
+
+  deleteProperty(target, prop) {
+    console.log(`Deleted ${prop}`);
+    return Reflect.deleteProperty(target, prop);
+  },
+});
+
+proxy.name = "Alice";
+delete proxy.name;
+```
+
+---
+
+# Real-World Pattern: Observer System
+
+A reusable observer function:
+
+```js
+function createObserver(target, callback) {
+  return new Proxy(target, {
+    set(obj, prop, value) {
+      const oldValue = obj[prop];
+
+      obj[prop] = value;
+
+      callback({
+        type: "set",
+        property: prop,
+        oldValue,
+        newValue: value,
+      });
+
+      return true;
+    },
+
+    deleteProperty(obj, prop) {
+      const oldValue = obj[prop];
+
+      delete obj[prop];
+
+      callback({
+        type: "delete",
+        property: prop,
+        oldValue,
+      });
+
+      return true;
+    },
+  });
+}
+```
+
+### Usage:
+
+```js
+const state = createObserver({ count: 0 }, (change) => console.log(change));
+
+state.count = 10;
+delete state.count;
+```
+
+---
+
+# Deep Observation (Nested Objects)
+
+A key interview follow-up: Proxy does NOT automatically observe nested objects.
+
+### Problem:
+
+```js
+const obj = {
+  user: {
+    name: "John",
+  },
+};
+```
+
+Changing `obj.user.name` will NOT trigger outer proxy unless nested proxies are created.
+
+---
+
+## Solution: Recursive Proxy (Deep Observe)
+
+```js
+function deepProxy(obj, callback) {
+  if (typeof obj !== "object" || obj === null) {
+    return obj;
+  }
+
+  return new Proxy(obj, {
+    set(target, prop, value) {
+      const oldValue = target[prop];
+
+      target[prop] = deepProxy(value, callback);
+
+      callback(prop, oldValue, value);
+
+      return true;
+    },
+
+    get(target, prop) {
+      return deepProxy(target[prop], callback);
+    },
+  });
+}
+```
+
+---
+
+# Vue-like Reactivity Example
+
+```js
+const state = deepProxy({ user: { name: "John" } }, (prop, oldVal, newVal) => {
+  console.log(`${prop} changed`);
+});
+
+state.user.name = "Alice";
+```
+
+---
+
+# Important Edge Cases (Interview Gold)
+
+### 1. Assignment must return `true`
+
+If `set` returns `false`, strict mode throws.
+
+```js
+set() {
+  return true; // required
+}
+```
+
+---
+
+### 2. Use `Reflect` for correctness
+
+Preferred approach:
+
+```js
+Reflect.set(target, prop, value);
+```
+
+It preserves default JS semantics.
+
+---
+
+### 3. Non-configurable properties
+
+You cannot violate invariants:
+
+- cannot change writability rules incorrectly
+- cannot lie about property existence
+
+---
+
+### 4. Performance cost
+
+Proxies add overhead:
+
+- each property access is intercepted
+- deep proxies increase memory usage
+
+---
+
+# Proxy Observation vs Alternatives
+
+| Approach              | Pros                      | Cons                     |
+| --------------------- | ------------------------- | ------------------------ |
+| Proxy                 | Powerful, dynamic, modern | Performance overhead     |
+| Object.defineProperty | Works in old browsers     | Limited, manual setup    |
+| MutationObserver      | DOM only                  | Not for objects          |
+| Immutable patterns    | Predictable               | Requires rewriting logic |
+
+---
+
+# Real-World Usage
+
+Proxy-based observation is used in:
+
+- Vue 3 reactivity system
+- MobX (optional proxy mode)
+- state management libraries
+- form validation systems
+- logging/debugging tools
+- sandboxing environments
+
+---
+
+# Interview Summary
+
+To observe object property changes:
+
+- Use a **Proxy**
+- Implement the **`set` trap**
+- Optionally use:
+  - `deleteProperty` for deletions
+  - `get` for lazy tracking
+
+- Compare old vs new values using `target[prop]`
+- Use `Reflect.set` for correctness
+
+---
+
+## One-Line Answer (Interview Version)
+
+> You can observe object property changes in JavaScript by wrapping the object in a Proxy and using the `set` trap to intercept and react to property assignments, optionally comparing old and new values and handling deletions via `deleteProperty`.
+
 ## Question 4. Difference between WeakMap and Map
 
 ## Question 5. How to implement private variables using closures?
