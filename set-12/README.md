@@ -420,6 +420,198 @@ Math.max(...[1, 2, 3]);
 
 ## Question 3. How to merge multiple arrays into one?
 
+## Short Answer
+
+You can merge multiple arrays in JavaScript using:
+
+- **Spread operator (`...`)** → modern and preferred
+- **`concat()`** → classic approach
+- **`Array.prototype.push(...arrays)`** → mutation-based
+- **Loops / `reduce()`** → for dynamic or custom merging
+
+---
+
+# 1. Using Spread Operator (Best Practice)
+
+## Example
+
+```js id="k2p8xq"
+const arr1 = [1, 2];
+const arr2 = [3, 4];
+const arr3 = [5, 6];
+
+const merged = [...arr1, ...arr2, ...arr3];
+
+console.log(merged);
+// [1, 2, 3, 4, 5, 6]
+```
+
+### Why this is preferred
+
+- Clean and readable
+- ES6 standard
+- Does not mutate original arrays
+- Works with any number of arrays
+
+---
+
+# 2. Using `concat()`
+
+## Example
+
+```js id="v9m1lz"
+const arr1 = [1, 2];
+const arr2 = [3, 4];
+const arr3 = [5, 6];
+
+const merged = arr1.concat(arr2, arr3);
+
+console.log(merged);
+// [1, 2, 3, 4, 5, 6]
+```
+
+### Key points
+
+- Returns a new array (non-mutating)
+- Older but still widely used
+- Slightly less flexible than spread syntax
+
+---
+
+# 3. Using `push()` with Spread (Mutating Approach)
+
+## Example
+
+```js id="q8r2bc"
+const arr1 = [1, 2];
+const arr2 = [3, 4];
+const arr3 = [5, 6];
+
+const result = [];
+result.push(...arr1, ...arr2, ...arr3);
+
+console.log(result);
+// [1, 2, 3, 4, 5, 6]
+```
+
+### Important
+
+- This modifies `result`
+- Useful when building arrays incrementally
+
+---
+
+# 4. Using `reduce()` (Dynamic Merging)
+
+Useful when arrays are in a collection.
+
+## Example
+
+```js id="x1t7mn"
+const arrays = [
+  [1, 2],
+  [3, 4],
+  [5, 6],
+];
+
+const merged = arrays.reduce((acc, curr) => {
+  return acc.concat(curr);
+}, []);
+
+console.log(merged);
+// [1, 2, 3, 4, 5, 6]
+```
+
+### Or using spread inside reduce
+
+```js id="p6w8zk"
+const merged = arrays.reduce((acc, curr) => [...acc, ...curr], []);
+```
+
+---
+
+# 5. Using `flat()` (Modern & Elegant)
+
+If you have nested arrays:
+
+```js id="d3k9qp"
+const arrays = [
+  [1, 2],
+  [3, 4],
+  [5, 6],
+];
+
+const merged = arrays.flat();
+
+console.log(merged);
+// [1, 2, 3, 4, 5, 6]
+```
+
+### Deeper nesting
+
+```js id="z7n2vc"
+const arr = [[1, [2]], [[3, 4]]];
+
+arr.flat(2);
+// [1, 2, 3, 4]
+```
+
+---
+
+# Comparison
+
+| Method            | Mutates? | Readability | Use Case                      |
+| ----------------- | -------- | ----------- | ----------------------------- |
+| `[...a, ...b]`    | ❌ No    | ⭐⭐⭐⭐⭐  | Best general approach         |
+| `concat()`        | ❌ No    | ⭐⭐⭐⭐    | Legacy + safe                 |
+| `push(...arrays)` | ✅ Yes   | ⭐⭐⭐      | When modifying existing array |
+| `reduce()`        | ❌ No    | ⭐⭐⭐      | Dynamic array list            |
+| `flat()`          | ❌ No    | ⭐⭐⭐⭐⭐  | Nested arrays                 |
+
+---
+
+# Edge Cases & Interview Notes
+
+## 1. Sparse arrays
+
+```js id="f4nq9k"
+const arr = [1, , 3];
+
+[...arr]; // preserves empty slots as undefined
+```
+
+---
+
+## 2. Large arrays
+
+Spread and `apply`-like behavior can hit argument limits:
+
+```js id="t5qk2v"
+Math.max(...new Array(1e6)); // may crash
+```
+
+Same caution applies to:
+
+```js id="j8m1wp"
+[...bigArray1, ...bigArray2];
+```
+
+For extremely large datasets, prefer iterative merging.
+
+---
+
+## 3. Performance note
+
+- Spread and `concat()` are both O(n)
+- Spread may have slightly better engine optimization in modern JS engines
+- `reduce([...acc, ...curr])` can be less efficient due to repeated allocations
+
+---
+
+# Interview-Ready Answer
+
+> The most modern and preferred way to merge multiple arrays in JavaScript is using the spread operator: `[...arr1, ...arr2]`, which is clean, readable, and non-mutating. Alternatively, `concat()` can be used in older codebases. For nested arrays, `flat()` is a very elegant solution. If mutation is acceptable, `push(...arrays)` can be used. For dynamic or unknown number of arrays, `reduce()` works well.
+
 ## Question 4. Difference between shallow copy and reference copy of arrays
 
 ## Question 5. How to empty an array in JavaScript?
