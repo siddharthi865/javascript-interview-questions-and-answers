@@ -580,6 +580,282 @@ const routes = menus.flatMap((menu) => menu.links);
 
 ## Question 3. How to implement a stack and queue using arrays
 
+## Short Answer (Interview-ready)
+
+You can implement both **Stack** and **Queue** using JavaScript arrays because arrays already support the required operations:
+
+- **Stack (LIFO)** → use `push()` and `pop()`
+- **Queue (FIFO)** → use `push()` and `shift()` (or better `push()` + `head pointer` for performance)
+
+---
+
+# 1. Stack Implementation Using Array
+
+## Concept
+
+A **Stack** follows:
+
+> Last In First Out (LIFO)
+
+Think: browser back button, undo feature, function call stack.
+
+---
+
+## Using Array Methods
+
+### Implementation
+
+```js id="stk1"
+class Stack {
+  constructor() {
+    this.items = [];
+  }
+
+  push(element) {
+    this.items.push(element);
+  }
+
+  pop() {
+    if (this.isEmpty()) return "Stack Underflow";
+    return this.items.pop();
+  }
+
+  peek() {
+    return this.items[this.items.length - 1];
+  }
+
+  isEmpty() {
+    return this.items.length === 0;
+  }
+
+  size() {
+    return this.items.length;
+  }
+}
+```
+
+---
+
+## Example Usage
+
+```js id="stk2"
+const stack = new Stack();
+
+stack.push(10);
+stack.push(20);
+stack.push(30);
+
+console.log(stack.pop()); // 30
+console.log(stack.peek()); // 20
+```
+
+---
+
+## Complexity
+
+| Operation | Time Complexity |
+| --------- | --------------- |
+| push      | O(1)            |
+| pop       | O(1)            |
+| peek      | O(1)            |
+
+---
+
+## Why Stack is Efficient in Arrays
+
+Because `push` and `pop` operate at the **end of the array**, no shifting is needed.
+
+---
+
+# 2. Queue Implementation Using Array
+
+## Concept
+
+A **Queue** follows:
+
+> First In First Out (FIFO)
+
+Think: printer queue, ticket line, task scheduling.
+
+---
+
+## Naive Implementation (Not Optimal)
+
+```js id="q1"
+class Queue {
+  constructor() {
+    this.items = [];
+  }
+
+  enqueue(element) {
+    this.items.push(element);
+  }
+
+  dequeue() {
+    if (this.isEmpty()) return "Queue Underflow";
+    return this.items.shift();
+  }
+
+  front() {
+    return this.items[0];
+  }
+
+  isEmpty() {
+    return this.items.length === 0;
+  }
+
+  size() {
+    return this.items.length;
+  }
+}
+```
+
+---
+
+## Example Usage
+
+```js id="q2"
+const queue = new Queue();
+
+queue.enqueue(10);
+queue.enqueue(20);
+queue.enqueue(30);
+
+console.log(queue.dequeue()); // 10
+console.log(queue.front()); // 20
+```
+
+---
+
+## Problem with This Approach
+
+### `shift()` is expensive
+
+```txt id="q3"
+shift() → O(n)
+```
+
+Because every element is re-indexed after removal.
+
+So repeated dequeue operations become inefficient.
+
+---
+
+# 3. Optimized Queue (Best Interview Answer)
+
+Instead of shifting, use a **head pointer**.
+
+## Implementation
+
+```js id="q4"
+class Queue {
+  constructor() {
+    this.items = [];
+    this.head = 0;
+  }
+
+  enqueue(element) {
+    this.items.push(element);
+  }
+
+  dequeue() {
+    if (this.isEmpty()) return "Queue Underflow";
+
+    const item = this.items[this.head];
+    this.head++;
+
+    // Optional cleanup to avoid memory leak
+    if (this.head * 2 >= this.items.length) {
+      this.items = this.items.slice(this.head);
+      this.head = 0;
+    }
+
+    return item;
+  }
+
+  front() {
+    return this.items[this.head];
+  }
+
+  isEmpty() {
+    return this.items.length - this.head === 0;
+  }
+
+  size() {
+    return this.items.length - this.head;
+  }
+}
+```
+
+---
+
+## Complexity (Optimized)
+
+| Operation | Time Complexity |
+| --------- | --------------- |
+| enqueue   | O(1)            |
+| dequeue   | O(1) amortized  |
+| front     | O(1)            |
+
+---
+
+# 4. Stack vs Queue (Quick Comparison)
+
+| Feature | Stack           | Queue                      |
+| ------- | --------------- | -------------------------- |
+| Order   | LIFO            | FIFO                       |
+| Insert  | push            | enqueue (push)             |
+| Remove  | pop             | shift / head pointer       |
+| Example | undo, recursion | task scheduling, buffering |
+
+---
+
+# 5. Alternative: Using Linked List (Advanced Mention)
+
+In real systems, stacks and queues are often implemented using linked lists for guaranteed O(1) operations without resizing issues.
+
+---
+
+# 6. Common Interview Pitfalls
+
+## ❌ Using shift in high-performance systems
+
+```js id="q5"
+arr.shift(); // O(n) - avoid in heavy queues
+```
+
+---
+
+## ❌ Confusing stack and queue order
+
+Stack:
+
+```txt id="q6"
+1 → 2 → 3 → pop → 3
+```
+
+Queue:
+
+```txt id="q7"
+1 → 2 → 3 → dequeue → 1
+```
+
+---
+
+## ❌ Not handling empty structure
+
+Always guard:
+
+```js id="q8"
+if (this.isEmpty()) return null;
+```
+
+---
+
+# 7. Senior-Level Interview Answer
+
+> “A stack can be implemented using an array with `push` and `pop`, giving O(1) operations since both act on the end of the array. A queue can be implemented using `push` and `shift`, but `shift` is O(n), so for better performance we use a head pointer or a linked list approach. In production systems, queues are often optimized to avoid array re-indexing overhead and ensure amortized O(1) dequeue operations.”
+
 ## Question 4. Difference between event.target and event.currentTarget
 
 ## Question 5. What are the differences between classical object-oriented programming and JS prototypal inheritance?
