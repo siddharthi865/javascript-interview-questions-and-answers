@@ -531,6 +531,265 @@ This avoids the problems of `||`.
 
 ## Question 3. Difference between for...in and for...of loops
 
+## Short Answer
+
+- **`for...in`** iterates over **object keys (property names)**.
+- **`for...of`** iterates over **values of iterable objects** (like arrays, strings, maps, sets).
+
+In short:
+
+> `for...in` → keys / indexes
+> `for...of` → values
+
+---
+
+# Detailed Explanation
+
+## 1. `for...in` Loop
+
+The `for...in` loop is used to iterate over the **enumerable properties (keys)** of an object.
+
+### Example with Object
+
+```js id="a1b2c3"
+const user = {
+  name: "John",
+  age: 30,
+  role: "admin",
+};
+
+for (let key in user) {
+  console.log(key, user[key]);
+}
+```
+
+### Output
+
+```
+name John
+age 30
+role admin
+```
+
+### Key Characteristics
+
+- Iterates over **keys (property names)**
+- Works on objects (and arrays, but not recommended)
+- Includes inherited enumerable properties (important pitfall)
+
+---
+
+## 2. `for...of` Loop
+
+The `for...of` loop iterates over **values of iterable objects**.
+
+### Example with Array
+
+```js id="d4e5f6"
+const numbers = [10, 20, 30];
+
+for (let value of numbers) {
+  console.log(value);
+}
+```
+
+### Output
+
+```
+10
+20
+30
+```
+
+---
+
+### Example with String
+
+```js id="g7h8i9"
+for (let char of "hello") {
+  console.log(char);
+}
+```
+
+### Output
+
+```
+h
+e
+l
+l
+o
+```
+
+---
+
+# Key Differences
+
+| Feature                       | `for...in`            | `for...of`                              |
+| ----------------------------- | --------------------- | --------------------------------------- |
+| Iterates over                 | Keys (property names) | Values                                  |
+| Works on                      | Objects (and arrays)  | Iterables (arrays, strings, maps, sets) |
+| Array usage                   | Not recommended       | Recommended                             |
+| Includes inherited properties | Yes                   | No                                      |
+| Use case                      | Object traversal      | Data iteration                          |
+
+---
+
+# Important Interview Insight
+
+## Arrays: Why `for...in` is problematic
+
+```js id="j1k2l3"
+const arr = [10, 20, 30];
+
+for (let i in arr) {
+  console.log(i, arr[i]);
+}
+```
+
+### Output
+
+```
+0 10
+1 20
+2 30
+```
+
+It looks fine—but there’s a problem.
+
+### Problem: It iterates over keys, not values
+
+Also:
+
+```js id="m4n5o6"
+Array.prototype.custom = "hello";
+
+for (let i in arr) {
+  console.log(i);
+}
+```
+
+### Output
+
+```
+0
+1
+2
+custom   ❌ unexpected
+```
+
+👉 This happens because `for...in` includes **enumerable prototype properties**
+
+---
+
+## Correct way for arrays
+
+```js id="p7q8r9"
+for (let value of arr) {
+  console.log(value);
+}
+```
+
+### Output
+
+```
+10
+20
+30
+```
+
+---
+
+# How They Work Internally
+
+## `for...in`
+
+- Iterates over object keys using internal property enumeration
+- Includes prototype chain (unless filtered manually)
+
+---
+
+## `for...of`
+
+- Uses the **iterator protocol**
+- Works with any object implementing `Symbol.iterator`
+
+Example:
+
+```js id="s1t2u3"
+const iterable = [1, 2, 3];
+
+const iterator = iterable[Symbol.iterator]();
+
+console.log(iterator.next()); // { value: 1, done: false }
+```
+
+---
+
+# When to Use What
+
+## Use `for...in` when:
+
+- You need to loop through object properties
+- You are inspecting keys
+
+```js id="v4w5x6"
+const obj = { a: 1, b: 2 };
+
+for (let key in obj) {
+  console.log(key);
+}
+```
+
+---
+
+## Use `for...of` when:
+
+- You are working with arrays, strings, maps, sets
+- You need values directly
+
+```js id="y7z8a9"
+for (let val of new Set([1, 2, 3])) {
+  console.log(val);
+}
+```
+
+---
+
+# Common Pitfalls
+
+## 1. Using `for...in` with arrays
+
+❌ Wrong (can include prototype keys):
+
+```js id="b1c2d3"
+for (let i in [1, 2, 3]) {
+}
+```
+
+✔ Prefer:
+
+```js id="e4f5g6"
+for (let v of [1, 2, 3]) {
+}
+```
+
+---
+
+## 2. Assuming both behave the same
+
+They are fundamentally different:
+
+- `for...in` → property enumeration
+- `for...of` → iterator consumption
+
+---
+
+# Interview-Friendly Summary
+
+> `for...in` iterates over the keys of an object and is mainly used for object property enumeration. It can also iterate over arrays but is not recommended due to prototype chain issues.
+> `for...of` iterates over values of iterable objects like arrays, strings, maps, and sets using the iterator protocol. It is the preferred way to loop over data collections in modern JavaScript.
+
 ## Question 4. How to find the type of an object in JavaScript?
 
 ## Question 5. What is the difference between primitive and non-primitive types?
