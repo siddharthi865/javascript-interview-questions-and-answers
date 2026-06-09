@@ -563,6 +563,246 @@ A strong answer:
 
 ## Question 3. How to validate object property access using Proxy
 
+## Concise Answer
+
+You validate object property access using a `Proxy` by intercepting the **`get`** (and often `set`) traps and applying rules before allowing access or modification. If validation fails, you can **throw an error**, **return a default value**, or **block the operation**.
+
+---
+
+# Detailed Explanation (Interview-Ready)
+
+## 1. Core Idea
+
+A `Proxy` lets you intercept property access like:
+
+- reading (`get`)
+- writing (`set`)
+- checking existence (`has`)
+- deleting (`deleteProperty`)
+
+For validation, the most important traps are:
+
+- `get` → validate read access
+- `set` → validate writes
+
+---
+
+# 2. Basic Validation Using `get`
+
+### Example: Restrict access to sensitive properties
+
+```js id="v1g3z8"
+const user = {
+  name: "Alice",
+  password: "12345",
+};
+
+const proxy = new Proxy(user, {
+  get(target, prop) {
+    if (prop === "password") {
+      throw new Error("Access denied to password");
+    }
+    return target[prop];
+  },
+});
+
+console.log(proxy.name);
+console.log(proxy.password); // Error
+```
+
+---
+
+### Output
+
+```
+Alice
+Error: Access denied to password
+```
+
+---
+
+## 3. Validation Using `set` (Most Common in Real Apps)
+
+### Example: Type + business rule validation
+
+```js id="k8x2q1"
+const user = {};
+
+const proxy = new Proxy(user, {
+  set(target, prop, value) {
+    if (prop === "age") {
+      if (typeof value !== "number") {
+        throw new TypeError("Age must be a number");
+      }
+      if (value < 0 || value > 120) {
+        throw new RangeError("Invalid age range");
+      }
+    }
+
+    target[prop] = value;
+    return true;
+  },
+});
+
+proxy.age = 25; // OK
+proxy.age = -5; // Error
+```
+
+---
+
+## 4. Best Practice: Use `Reflect`
+
+Instead of directly mutating the object, use `Reflect` to preserve native behavior:
+
+```js id="y3qv9m"
+const proxy = new Proxy(user, {
+  set(target, prop, value, receiver) {
+    if (prop === "age" && value < 0) {
+      throw new Error("Invalid age");
+    }
+
+    return Reflect.set(target, prop, value, receiver);
+  },
+});
+```
+
+### Why this is better:
+
+- handles prototype chain correctly
+- respects getters/setters
+- consistent with JS internal semantics
+
+---
+
+## 5. Advanced Validation: Whitelisting Properties
+
+### Only allow predefined keys
+
+```js id="w7r0p2"
+const allowedKeys = ["name", "age"];
+
+const user = {};
+
+const proxy = new Proxy(user, {
+  set(target, prop, value) {
+    if (!allowedKeys.includes(prop)) {
+      throw new Error(`Property "${prop}" is not allowed`);
+    }
+
+    return Reflect.set(target, prop, value);
+  },
+});
+
+proxy.name = "John"; // OK
+proxy.age = 30; // OK
+proxy.password = "x"; // Error
+```
+
+---
+
+## 6. Validation on Property Existence (`has` trap)
+
+Used when you want to control `in` operator:
+
+```js id="c9p2k4"
+const user = { name: "Alice" };
+
+const proxy = new Proxy(user, {
+  has(target, prop) {
+    if (prop === "password") return false;
+    return prop in target;
+  },
+});
+
+console.log("name" in proxy); // true
+console.log("password" in proxy); // false
+```
+
+---
+
+## 7. Read + Write Protection Together (Real-world pattern)
+
+```js id="t6m8z1"
+function createSecureObject(obj) {
+  return new Proxy(obj, {
+    get(target, prop) {
+      if (prop.startsWith("_")) {
+        throw new Error("Private property access denied");
+      }
+      return Reflect.get(target, prop);
+    },
+
+    set(target, prop, value) {
+      if (prop.startsWith("_")) {
+        throw new Error("Cannot modify private property");
+      }
+      return Reflect.set(target, prop, value);
+    },
+  });
+}
+
+const user = createSecureObject({
+  name: "Alice",
+  _secret: "hidden",
+});
+
+console.log(user.name); // Alice
+// user._secret ❌ error
+```
+
+---
+
+## 8. Common Pitfalls (Interview Favorites)
+
+### ❌ Forgetting return in `set`
+
+```js
+set(target, prop, value) {
+  target[prop] = value;
+  // missing return true ❌
+}
+```
+
+👉 Can break strict mode behavior.
+
+---
+
+### ❌ Using Proxy for heavy validation everywhere
+
+Proxies are powerful but:
+
+- add runtime overhead
+- harder to debug
+- can break performance-sensitive loops
+
+---
+
+### ❌ Not using `Reflect`
+
+Without `Reflect`, you may break:
+
+- prototype chain
+- setters/getters
+- inheritance behavior
+
+---
+
+## 9. When to Use Proxy Validation
+
+### Good use cases:
+
+- form validation (React/Vue state)
+- API response sanitization
+- secure object wrappers
+- logging/debugging access
+- enforcing schema rules dynamically
+
+---
+
+## 10. Interview Summary (Strong Answer)
+
+> “We validate object property access using a Proxy by intercepting `get` and `set` traps. In the `get` trap, we can restrict or transform property reads, and in the `set` trap, we enforce rules like type checking, whitelisting, or range validation. Using `Reflect` ensures default JavaScript behavior is preserved, especially with inheritance and property descriptors.”
+
 ## Question 4. Difference between WeakMap and Map in garbage collection
 
 ## Question 5. How to implement memoization for expensive function calls
