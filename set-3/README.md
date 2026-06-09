@@ -435,6 +435,406 @@ Many candidates expect `"John"`, but spread syntax performs only a **shallow cop
 
 ## Question 3. Explain prototypes and prototype chain
 
+## Short Answer
+
+A **prototype** is an object from which other objects inherit properties and methods. The **prototype chain** is JavaScript's mechanism for looking up properties by traversing linked prototype objects until the property is found or the chain ends.
+
+JavaScript uses **prototypal inheritance**, not classical inheritance.
+
+---
+
+# Detailed Explanation
+
+In JavaScript, every object has an internal link to another object called its **prototype** (`[[Prototype]]`).
+
+When you try to access a property:
+
+1. JavaScript checks the object itself.
+2. If not found, it checks the object's prototype.
+3. Then the prototype's prototype.
+4. This continues until `null` is reached.
+
+This lookup path is called the **prototype chain**.
+
+---
+
+# Basic Example
+
+```javascript
+const person = {
+  greet() {
+    console.log("Hello");
+  },
+};
+
+const user = Object.create(person);
+
+user.name = "John";
+
+console.log(user.name); // John
+user.greet(); // Hello
+```
+
+### What Happens?
+
+```text
+user
+ └── prototype → person
+                    └── prototype → Object.prototype
+                                          └── null
+```
+
+When `user.greet()` is called:
+
+- JavaScript checks `user`
+- Doesn't find `greet`
+- Looks in `person`
+- Finds `greet`
+- Executes it
+
+---
+
+# Constructor Functions and Prototypes
+
+Before ES6 classes, constructor functions were commonly used.
+
+```javascript
+function Person(name) {
+  this.name = name;
+}
+
+Person.prototype.sayHello = function () {
+  console.log(`Hello, I'm ${this.name}`);
+};
+
+const john = new Person("John");
+
+john.sayHello();
+```
+
+Output:
+
+```javascript
+Hello, I'm John
+```
+
+---
+
+# Why Use Prototypes?
+
+Without prototypes:
+
+```javascript
+function Person(name) {
+  this.name = name;
+
+  this.sayHello = function () {
+    console.log("Hello");
+  };
+}
+```
+
+Every object gets its own copy of `sayHello`.
+
+```javascript
+const p1 = new Person("A");
+const p2 = new Person("B");
+
+console.log(p1.sayHello === p2.sayHello);
+// false
+```
+
+Using prototypes:
+
+```javascript
+function Person(name) {
+  this.name = name;
+}
+
+Person.prototype.sayHello = function () {
+  console.log("Hello");
+};
+```
+
+```javascript
+const p1 = new Person("A");
+const p2 = new Person("B");
+
+console.log(p1.sayHello === p2.sayHello);
+// true
+```
+
+Now all instances share a single method.
+
+---
+
+# Understanding the Prototype Chain
+
+```javascript
+const arr = [1, 2, 3];
+```
+
+Prototype chain:
+
+```text
+arr
+ ↓
+Array.prototype
+ ↓
+Object.prototype
+ ↓
+null
+```
+
+Therefore:
+
+```javascript
+arr.push(4);
+```
+
+works because `push()` exists on `Array.prototype`.
+
+Similarly:
+
+```javascript
+arr.toString();
+```
+
+works because `toString()` exists higher up in the chain.
+
+---
+
+# Visual Example
+
+```javascript
+const animal = {
+  eats: true,
+};
+
+const dog = Object.create(animal);
+
+dog.barks = true;
+
+console.log(dog.eats);
+```
+
+Lookup process:
+
+```text
+dog.eats
+
+1. Check dog → not found
+2. Check animal → found (true)
+```
+
+Result:
+
+```javascript
+true;
+```
+
+---
+
+# Prototype vs **proto** vs prototype
+
+This is a very common interview question.
+
+### 1. prototype
+
+Exists on constructor functions.
+
+```javascript
+function Person() {}
+
+console.log(Person.prototype);
+```
+
+Used when creating instances with `new`.
+
+---
+
+### 2. **proto**
+
+Exists on object instances.
+
+```javascript
+const obj = {};
+
+console.log(obj.__proto__);
+```
+
+Points to the object's prototype.
+
+---
+
+### Relationship
+
+```javascript
+function Person() {}
+
+const p = new Person();
+
+console.log(p.__proto__ === Person.prototype);
+```
+
+Output:
+
+```javascript
+true;
+```
+
+---
+
+# ES6 Classes and Prototypes
+
+Classes are syntactic sugar over prototypes.
+
+```javascript
+class Person {
+  constructor(name) {
+    this.name = name;
+  }
+
+  greet() {
+    console.log(`Hello ${this.name}`);
+  }
+}
+```
+
+Internally, JavaScript does something similar to:
+
+```javascript
+function Person(name) {
+  this.name = name;
+}
+
+Person.prototype.greet = function () {
+  console.log(`Hello ${this.name}`);
+};
+```
+
+The inheritance mechanism is still prototype-based.
+
+---
+
+# Method Overriding Through Prototype Chain
+
+```javascript
+const animal = {
+  speak() {
+    console.log("Animal sound");
+  },
+};
+
+const dog = Object.create(animal);
+
+dog.speak = function () {
+  console.log("Bark");
+};
+
+dog.speak();
+```
+
+Output:
+
+```javascript
+Bark;
+```
+
+JavaScript finds `speak` on `dog` first and stops searching.
+
+---
+
+# Common Interview Pitfalls
+
+### Pitfall 1: Changing Prototype After Instances Exist
+
+```javascript
+function Person() {}
+
+const p1 = new Person();
+
+Person.prototype.sayHi = function () {
+  console.log("Hi");
+};
+
+p1.sayHi();
+```
+
+This works because instances reference the prototype object dynamically.
+
+---
+
+### Pitfall 2: Property Shadowing
+
+```javascript
+const parent = {
+  value: 10,
+};
+
+const child = Object.create(parent);
+
+child.value = 20;
+
+console.log(child.value); // 20
+```
+
+The child's property shadows the parent's property.
+
+---
+
+# Performance Considerations
+
+Prototype methods are:
+
+- Shared across instances
+- More memory efficient
+- Faster than recreating methods for every object
+
+Good:
+
+```javascript
+Person.prototype.sayHello = function () {};
+```
+
+Less efficient:
+
+```javascript
+function Person() {
+  this.sayHello = function () {};
+}
+```
+
+---
+
+# Interview Summary
+
+### Prototype
+
+An object that provides inherited properties and methods to other objects.
+
+### Prototype Chain
+
+A linked series of prototype objects that JavaScript traverses during property lookup.
+
+### Lookup Rule
+
+```text
+Object
+   ↓
+Prototype
+   ↓
+Prototype's Prototype
+   ↓
+...
+   ↓
+null
+```
+
+### Key Fact
+
+**"JavaScript implements inheritance through prototypes. When a property or method is not found on an object, JavaScript searches up the prototype chain until it finds the property or reaches `null`."**
+
 ## Question 4. Difference between classical inheritance and prototypal inheritance
 
 ## Question 5. What are JavaScript classes? How are they different from functions?
