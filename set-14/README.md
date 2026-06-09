@@ -552,6 +552,269 @@ async function run() {
 
 ## Question 3. Difference between `Promise.all`, `Promise.race`, and `Promise.allSettled`
 
+## Concise Answer
+
+- **`Promise.all`** → waits for **all promises to fulfill**, fails fast if any one rejects.
+- **`Promise.race`** → returns the **first settled promise** (fulfilled or rejected).
+- **`Promise.allSettled`** → waits for **all promises to finish**, always returns results (no failure short-circuit).
+
+---
+
+# 1. `Promise.all`
+
+### What it does:
+
+Runs multiple promises in parallel and **resolves when all succeed**. If any one fails, it **immediately rejects**.
+
+---
+
+### Example:
+
+```js id="pall1"
+Promise.all([Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)]).then(
+  console.log,
+);
+```
+
+### Output:
+
+```
+[1, 2, 3]
+```
+
+---
+
+### Failure case (FAANG favorite):
+
+```js id="pall2"
+Promise.all([Promise.resolve(1), Promise.reject("Error"), Promise.resolve(3)])
+  .then(console.log)
+  .catch(console.log);
+```
+
+### Output:
+
+```
+Error
+```
+
+---
+
+### Key behavior:
+
+- Fails fast (short-circuit)
+- Order of results is preserved (important!)
+
+---
+
+### Use case:
+
+- Load multiple API calls where all are required
+- Parallel data fetching with dependency on full success
+
+---
+
+# 2. `Promise.race`
+
+### What it does:
+
+Returns the **first promise to settle** (resolve OR reject).
+
+---
+
+### Example:
+
+```js id="prace1"
+Promise.race([
+  new Promise((res) => setTimeout(() => res("A"), 100)),
+  new Promise((res) => setTimeout(() => res("B"), 50)),
+]).then(console.log);
+```
+
+### Output:
+
+```
+B
+```
+
+---
+
+### Rejection example:
+
+```js id="prace2"
+Promise.race([
+  new Promise((_, rej) => setTimeout(() => rej("Error"), 50)),
+  new Promise((res) => setTimeout(() => res("Success"), 100)),
+])
+  .then(console.log)
+  .catch(console.log);
+```
+
+### Output:
+
+```
+Error
+```
+
+---
+
+### Key behavior:
+
+- First settled wins
+- Doesn’t wait for others
+- Can resolve or reject first
+
+---
+
+### Use case:
+
+- Timeout handling
+- Fastest API response
+- Competing requests (fallback systems)
+
+---
+
+### Example: timeout pattern
+
+```js id="timeout1"
+Promise.race([
+  fetch("/api/data"),
+  new Promise((_, reject) => setTimeout(() => reject("Timeout"), 5000)),
+]);
+```
+
+---
+
+# 3. `Promise.allSettled`
+
+### What it does:
+
+Waits for **all promises to finish**, regardless of success or failure.
+
+Never rejects.
+
+---
+
+### Example:
+
+```js id="psettled1"
+Promise.allSettled([
+  Promise.resolve(1),
+  Promise.reject("Error"),
+  Promise.resolve(3),
+]).then(console.log);
+```
+
+### Output:
+
+```js
+[
+  { status: "fulfilled", value: 1 },
+  { status: "rejected", reason: "Error" },
+  { status: "fulfilled", value: 3 },
+];
+```
+
+---
+
+### Key behavior:
+
+- Always resolves
+- Gives full report of outcomes
+- Does NOT short-circuit
+
+---
+
+### Use case:
+
+- Batch processing where partial failure is OK
+- Logging results of multiple API calls
+- UI dashboards showing mixed results
+
+---
+
+# 4. Quick Comparison Table
+
+| Feature          | Promise.all               | Promise.race         | Promise.allSettled      |
+| ---------------- | ------------------------- | -------------------- | ----------------------- |
+| Waits for all?   | Yes                       | No                   | Yes                     |
+| Fails fast?      | Yes                       | No                   | No                      |
+| Reject behavior  | Any rejection fails whole | First rejection wins | Never rejects           |
+| Result format    | Array of values           | Single value         | Array of status objects |
+| Order preserved? | Yes                       | N/A                  | Yes                     |
+
+---
+
+# 5. Mental Model (Interview Gold)
+
+### Think like this:
+
+### 🔵 `Promise.all`
+
+> “I need EVERYTHING to succeed or I fail.”
+
+---
+
+### 🟡 `Promise.race`
+
+> “Give me the FIRST result, I don’t care about others.”
+
+---
+
+### 🟢 `Promise.allSettled`
+
+> “Give me EVERYTHING, success or failure, I’ll decide later.”
+
+---
+
+# 6. Common Pitfalls (FAANG traps)
+
+## ❌ Using `Promise.all` when partial failure is acceptable
+
+Bad:
+
+```js
+Promise.all([api1(), api2(), api3()]);
+```
+
+If `api2` fails → everything fails.
+
+---
+
+## ❌ Misusing `race` thinking it waits for all
+
+It does NOT wait.
+
+---
+
+## ❌ Assuming `allSettled` gives values directly
+
+Wrong:
+
+```js
+.then(results => results[0]) // still needs status check
+```
+
+Correct:
+
+```js
+results.filter((r) => r.status === "fulfilled");
+```
+
+---
+
+# 7. Modern Usage Tip
+
+- Use `Promise.all` → strict dependency
+- Use `Promise.allSettled` → dashboards, reporting
+- Use `Promise.race` → timeout, fallback, performance optimization
+
+---
+
+# 8. Interview One-Liner
+
+> `Promise.all` waits for all promises and fails fast on error, `Promise.race` returns the first settled promise, and `Promise.allSettled` waits for all promises and returns their final status regardless of success or failure.
+
 ## Question 4. How to handle errors in `async/await`
 
 ## Question 5. Difference between event delegation and direct event listener
