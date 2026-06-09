@@ -542,6 +542,267 @@ function Person(name) {
 
 ## Question 3. What are default parameters in functions?
 
+## Direct Answer
+
+**Default parameters** in JavaScript allow you to assign a default value to a function parameter if no argument (or `undefined`) is passed.
+
+```js
+function greet(name = "Guest") {
+  return `Hello, ${name}`;
+}
+
+greet(); // "Hello, Guest"
+greet("John"); // "Hello, John"
+```
+
+---
+
+# Detailed Interview Explanation
+
+Before ES6, JavaScript did not have built-in default parameters. Developers had to manually handle missing arguments.
+
+Default parameters solve this cleanly by allowing parameter initialization directly in the function signature.
+
+---
+
+## 1. Basic Syntax
+
+```js
+function multiply(a = 1, b = 1) {
+  return a * b;
+}
+
+console.log(multiply()); // 1
+console.log(multiply(5)); // 5
+console.log(multiply(5, 2)); // 10
+```
+
+If a value is not provided, the default is used.
+
+---
+
+## 2. Important Behavior Rules
+
+### Rule 1: Only `undefined` triggers default value
+
+```js
+function test(a = 10) {
+  return a;
+}
+
+test(undefined); // 10
+test(null); // null (NOT defaulted)
+test(0); // 0
+test(""); // ""
+```
+
+👉 Only `undefined` activates the default.
+
+---
+
+### Rule 2: Default parameters can be expressions
+
+```js
+function getId() {
+  return 100;
+}
+
+function user(id = getId()) {
+  return id;
+}
+
+console.log(user()); // 100
+```
+
+The expression is evaluated only when needed.
+
+---
+
+### Rule 3: Parameters are evaluated left to right
+
+```js
+function example(a = 1, b = a + 1) {
+  return [a, b];
+}
+
+console.log(example()); // [1, 2]
+```
+
+But reverse reference is NOT allowed:
+
+```js
+function example(a = b, b = 2) {
+  return [a, b];
+}
+
+// ReferenceError: Cannot access 'b' before initialization
+```
+
+---
+
+## 3. Default Parameters vs Old Pattern
+
+### Before ES6
+
+```js
+function greet(name) {
+  name = name || "Guest";
+  return `Hello, ${name}`;
+}
+```
+
+### Problem with old approach:
+
+```js
+greet(""); // "Hello, Guest" ❌ wrong behavior
+```
+
+Because `""` is falsy.
+
+---
+
+### With default parameters (correct)
+
+```js
+function greet(name = "Guest") {
+  return `Hello, ${name}`;
+}
+
+greet(""); // "Hello, " ✅ correct
+```
+
+---
+
+## 4. Using Objects and Destructuring Defaults
+
+Very common in real-world APIs.
+
+```js
+function createUser({ name = "Anonymous", age = 18 } = {}) {
+  return { name, age };
+}
+
+console.log(createUser({ name: "John" }));
+// { name: "John", age: 18 }
+
+console.log(createUser());
+// { name: "Anonymous", age: 18 }
+```
+
+👉 `= {}` ensures function doesn’t break when no argument is passed.
+
+---
+
+## 5. Default Parameters + Function Scope
+
+Default parameters create their own scope.
+
+```js
+let x = 10;
+
+function test(y = x + 1) {
+  let x = 50;
+  return y;
+}
+
+console.log(test()); // 11
+```
+
+👉 Default values do NOT use inner function scope.
+
+---
+
+## 6. Common Pitfalls
+
+### Pitfall 1: Using `||` incorrectly
+
+```js
+function count(n) {
+  n = n || 10;
+  return n;
+}
+
+count(0); // 10 ❌ unexpected
+```
+
+Fixed:
+
+```js
+function count(n = 10) {
+  return n;
+}
+```
+
+---
+
+### Pitfall 2: Reference errors in ordering
+
+```js
+function test(a = b, b = 2) {
+  return a + b;
+}
+```
+
+❌ `b` is not initialized yet.
+
+---
+
+### Pitfall 3: Forgetting default for object parameter
+
+```js
+function print({ name }) {
+  console.log(name);
+}
+
+print(); // ❌ Error
+```
+
+Fix:
+
+```js
+function print({ name } = {}) {
+  console.log(name);
+}
+```
+
+---
+
+## 7. Real-World Use Cases
+
+### API handlers
+
+```js
+function fetchData(url, method = "GET") {
+  console.log(url, method);
+}
+```
+
+---
+
+### Utility functions
+
+```js
+function delay(ms = 1000) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+```
+
+---
+
+### React-style props
+
+```js
+function Button({ label = "Click", disabled = false } = {}) {
+  return { label, disabled };
+}
+```
+
+---
+
+## 8. Interview Summary
+
+> Default parameters in JavaScript allow function parameters to have fallback values when arguments are `undefined`. They improve readability, eliminate the need for manual checks like `||`, support expressions, and are evaluated only when needed. Unlike falsy-based defaults, they correctly distinguish between `undefined`, `null`, `0`, and empty strings, making them safer and more predictable in modern JavaScript development.
+
 ## Question 4. How to swap two variables without using a third variable?
 
 ## Question 5. What is rest parameter vs arguments object?
