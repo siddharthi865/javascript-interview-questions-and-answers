@@ -701,6 +701,238 @@ When a Promise is created, JavaScript stores its internal state (`pending`, `ful
 
 ## Question 3. How to chain promises with error handling
 
+### Short Answer
+
+You chain promises using `.then()` for success flow and `.catch()` for error handling. The best practice is to place a **single `.catch()` at the end of the chain**, so it handles errors from any step in the chain.
+
+---
+
+# How Promise Chaining Works with Error Handling
+
+Promise chaining works because **each `.then()` returns a new Promise**, allowing sequential execution.
+
+If any step throws an error or returns a rejected promise, the control automatically jumps to the nearest `.catch()`.
+
+---
+
+## 1. Basic Promise Chain
+
+```javascript
+fetchUser()
+  .then((user) => {
+    return fetchUserPosts(user.id);
+  })
+  .then((posts) => {
+    return processPosts(posts);
+  })
+  .then((result) => {
+    console.log("Final result:", result);
+  })
+  .catch((error) => {
+    console.error("Something went wrong:", error);
+  });
+```
+
+### Flow:
+
+- Each `.then()` runs on success
+- If any step fails → `.catch()` runs immediately
+
+---
+
+## 2. How Error Propagation Works
+
+Example:
+
+```javascript
+Promise.resolve()
+  .then(() => {
+    console.log("Step 1");
+    throw new Error("Failed in Step 1");
+  })
+  .then(() => {
+    console.log("Step 2"); // skipped
+  })
+  .catch((err) => {
+    console.log("Caught:", err.message);
+  });
+```
+
+### Output:
+
+```
+Step 1
+Caught: Failed in Step 1
+```
+
+### Key idea:
+
+Once an error is thrown:
+
+- The chain **skips all subsequent `.then()` handlers**
+- It jumps directly to the nearest `.catch()`
+
+---
+
+## 3. Returning Promises in Chains
+
+Each step can return a promise:
+
+```javascript
+getUser()
+  .then((user) => {
+    return getOrders(user.id); // returns a Promise
+  })
+  .then((orders) => {
+    return getInvoice(orders); // returns another Promise
+  })
+  .catch((err) => {
+    console.log("Error occurred:", err);
+  });
+```
+
+### Important:
+
+If a returned promise rejects → it is automatically caught.
+
+---
+
+## 4. Local Error Handling (Recovering from Errors)
+
+You can also handle errors **inside a specific step**.
+
+```javascript
+fetchData()
+  .then((data) => {
+    return processData(data).catch((err) => {
+      console.log("Processing failed, using fallback");
+      return []; // recovery value
+    });
+  })
+  .then((result) => {
+    console.log("Recovered result:", result);
+  })
+  .catch((err) => {
+    console.log("Unhandled error:", err);
+  });
+```
+
+### Key idea:
+
+- Inner `.catch()` = handle and recover locally
+- Outer `.catch()` = global fallback handler
+
+---
+
+## 5. `finally()` in Promise Chains
+
+Used for cleanup logic (runs always).
+
+```javascript
+fetchData()
+  .then((data) => {
+    console.log("Success:", data);
+  })
+  .catch((err) => {
+    console.log("Error:", err);
+  })
+  .finally(() => {
+    console.log("Cleanup done (loading spinner off, etc.)");
+  });
+```
+
+### Important:
+
+- Runs regardless of success or failure
+- Does NOT receive error or result
+
+---
+
+## 6. Common Pitfalls (Interview Focus)
+
+### ❌ Forgetting to return a promise
+
+```javascript
+fetchUser()
+  .then((user) => {
+    fetchOrders(user.id); // WRONG (not returned)
+  })
+  .then((orders) => {
+    console.log(orders); // undefined
+  });
+```
+
+### ✔ Correct version:
+
+```javascript
+fetchUser().then((user) => {
+  return fetchOrders(user.id);
+});
+```
+
+---
+
+### ❌ Multiple catch blocks causing confusion
+
+```javascript
+fetchData()
+  .catch((err) => {
+    console.log("Handled once");
+  })
+  .catch((err) => {
+    console.log("This will NOT run");
+  });
+```
+
+Only the **first catch in flow order** executes for a given error path.
+
+---
+
+## 7. Best Practices (Interview Answer Points)
+
+✔ Always return promises inside `.then()`
+✔ Use a single `.catch()` at the end for global error handling
+✔ Use inner `.catch()` only for recoverable errors
+✔ Use `.finally()` for cleanup logic
+✔ Avoid deeply nested `.then()` chains (prefer flattening or `async/await`)
+
+---
+
+## 8. Equivalent Using async/await (Modern Approach)
+
+Promise chaining:
+
+```javascript
+fetchUser()
+  .then((user) => fetchOrders(user.id))
+  .then((orders) => processOrders(orders))
+  .catch((err) => console.error(err));
+```
+
+Same logic using async/await:
+
+```javascript
+async function main() {
+  try {
+    const user = await fetchUser();
+    const orders = await fetchOrders(user.id);
+    const result = await processOrders(orders);
+
+    console.log(result);
+  } catch (err) {
+    console.error("Error:", err);
+  } finally {
+    console.log("Done");
+  }
+}
+```
+
+---
+
+## Interview-Ready Summary
+
+Promise chaining works by returning a new promise at each `.then()`, allowing sequential execution. Errors thrown or rejected promises automatically propagate down the chain until a `.catch()` is encountered. A single `.catch()` at the end of the chain is the most common pattern for global error handling, while inner `.catch()` blocks can be used for localized recovery. `.finally()` is used for cleanup logic regardless of outcome. Modern JavaScript often replaces chaining with `async/await`, which uses the same underlying promise mechanism but provides more readable synchronous-style code.
+
 ## Question 4. Explain generator functions in JavaScript
 
 ## Question 5. Difference between generators and async functions
