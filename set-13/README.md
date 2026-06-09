@@ -676,6 +676,306 @@ Object.entries(obj); // [["key1", "value1"], ["key2", "value2"]]
 
 ## Question 3. Difference between `for...of` and `forEach()` for arrays
 
+### Direct Answer
+
+- **`for...of`** is a loop statement that iterates over iterable values and supports `break`, `continue`, and `await`.
+- **`forEach()`** is an array method that executes a callback for each element but **cannot be broken early** and does not work well with async control flow.
+
+---
+
+# 1. `for...of` (Iterable-based loop)
+
+### Syntax
+
+```js
+for (const item of array) {
+  console.log(item);
+}
+```
+
+### Example
+
+```js
+const nums = [1, 2, 3];
+
+for (const num of nums) {
+  console.log(num);
+}
+```
+
+### Output
+
+```
+1
+2
+3
+```
+
+---
+
+## Key Characteristics
+
+### ✅ Works with any iterable
+
+- Arrays
+- Strings
+- Maps
+- Sets
+- NodeLists
+
+```js
+for (const char of "hello") {
+  console.log(char);
+}
+```
+
+---
+
+### ✅ Supports `break` and `continue`
+
+```js
+const nums = [1, 2, 3, 4, 5];
+
+for (const num of nums) {
+  if (num === 3) break;
+  console.log(num);
+}
+```
+
+Output:
+
+```
+1
+2
+```
+
+---
+
+### ✅ Supports `await` (very important in interviews)
+
+```js
+async function process(arr) {
+  for (const item of arr) {
+    await delay(item);
+  }
+}
+```
+
+---
+
+# 2. `forEach()` (Array method)
+
+### Syntax
+
+```js
+array.forEach((item, index, array) => {
+  console.log(item);
+});
+```
+
+### Example
+
+```js
+const nums = [1, 2, 3];
+
+nums.forEach((num) => {
+  console.log(num);
+});
+```
+
+---
+
+## Key Characteristics
+
+### ❌ Cannot break or continue
+
+```js
+nums.forEach((num) => {
+  if (num === 2) {
+    // break ❌ not possible
+  }
+});
+```
+
+To simulate early exit, you'd need exceptions (not recommended).
+
+---
+
+### ❌ Does NOT work well with async/await
+
+```js
+async function test() {
+  [1, 2, 3].forEach(async (num) => {
+    await delay(num);
+  });
+
+  console.log("Done");
+}
+```
+
+### Problem:
+
+- `forEach` does not wait for async callbacks
+- "Done" prints immediately
+
+---
+
+# 3. Key Differences (Interview Table)
+
+| Feature          | `for...of`     | `forEach()`  |
+| ---------------- | -------------- | ------------ |
+| Type             | Loop statement | Array method |
+| Works on         | Any iterable   | Arrays only  |
+| `break/continue` | ✅ Yes         | ❌ No        |
+| `await` support  | ✅ Yes         | ❌ Poor      |
+| Return value     | Not applicable | `undefined`  |
+| Control flow     | Flexible       | Limited      |
+
+---
+
+# 4. Execution Behavior Difference
+
+## `for...of` (synchronous control flow)
+
+```js
+for (const num of [1, 2, 3]) {
+  console.log(num);
+}
+```
+
+Runs like a normal loop — step-by-step execution.
+
+---
+
+## `forEach()` (callback-based execution)
+
+```js
+[1, 2, 3].forEach((num) => {
+  console.log(num);
+});
+```
+
+Internally behaves like:
+
+```js
+for (let i = 0; i < arr.length; i++) {
+  callback(arr[i], i, arr);
+}
+```
+
+But without control over flow interruption.
+
+---
+
+# 5. Async Behavior (Very Important Interview Point)
+
+## ❌ Wrong with `forEach`
+
+```js
+async function run() {
+  [1, 2, 3].forEach(async (num) => {
+    await delay(num);
+    console.log(num);
+  });
+
+  console.log("Finished");
+}
+```
+
+Output order (unexpected):
+
+```
+Finished
+1
+2
+3
+```
+
+---
+
+## ✅ Correct with `for...of`
+
+```js
+async function run() {
+  for (const num of [1, 2, 3]) {
+    await delay(num);
+    console.log(num);
+  }
+
+  console.log("Finished");
+}
+```
+
+Output:
+
+```
+1
+2
+3
+Finished
+```
+
+---
+
+# 6. Performance Considerations
+
+- `forEach()` can be slightly optimized in engine internals for simple iteration
+- `for...of` is more flexible but may be marginally slower in micro-benchmarks
+- In real-world apps: **difference is negligible**
+
+---
+
+# 7. When to Use What?
+
+## Use `for...of` when:
+
+- You need `break` or `continue`
+- You are working with async/await
+- You are iterating over non-array iterables
+- You need full control over flow
+
+## Use `forEach()` when:
+
+- You want simple iteration
+- No early exit needed
+- No async control flow required
+- You prefer functional style for readability
+
+---
+
+# 8. Common Interview Trap
+
+### Question:
+
+> Why doesn’t `forEach` support `await` properly?
+
+### Answer:
+
+Because `forEach` does not return a promise chain and does not await the callback execution. Each callback runs independently in its own microtask, so the loop itself does not pause.
+
+---
+
+# 9. Bonus: Breaking out of `forEach` (Hacky way)
+
+```js
+try {
+  [1, 2, 3].forEach((num) => {
+    if (num === 2) throw new Error("break");
+    console.log(num);
+  });
+} catch (e) {}
+```
+
+👉 Not recommended in production — shows why `for...of` exists.
+
+---
+
+# Final Interview Summary
+
+- `for...of` = modern loop, supports control flow + async, works on iterables.
+- `forEach()` = array utility method, cleaner for simple iteration but limited.
+- For real-world and interview-quality code, **prefer `for...of` when control matters**, and `forEach()` for simple, synchronous iteration.
+
 ## Question 4. How to remove duplicates from an array without using Set
 
 ## Question 5. Difference between `find()` and `filter()` in arrays
