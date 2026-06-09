@@ -496,6 +496,194 @@ To throttle scroll events:
 
 ## Question 3. How to prevent text selection in a webpage using JS
 
+## Short answer
+
+You can prevent text selection in a webpage using JavaScript by disabling the browser’s default selection behavior via event handling (like `selectstart` or `mousedown`) and/or by applying CSS (`user-select: none`). The best practice is to use **CSS for performance and JS only when needed dynamically**.
+
+---
+
+# 1. Best approach (CSS solution — recommended)
+
+Even though you asked “using JS”, the interview-grade answer always starts here because it’s the most efficient.
+
+```css
+.no-select {
+  user-select: none;
+}
+```
+
+```html
+<div class="no-select">You cannot select this text</div>
+```
+
+### Why this is best:
+
+- No JS overhead
+- Works across interactions (mouse, keyboard, touch)
+- Clean and performant
+
+---
+
+# 2. JavaScript approach (blocking selection events)
+
+If you need to dynamically control it via JS:
+
+## Using `selectstart` event (best JS method)
+
+```javascript id="x9k2ab"
+document.addEventListener("selectstart", function (e) {
+  e.preventDefault();
+});
+```
+
+### What happens:
+
+- Browser tries to start text selection
+- Event is canceled → selection never begins
+
+---
+
+## Apply only to a specific element
+
+```javascript id="kq3m8d"
+const box = document.getElementById("box");
+
+box.addEventListener("selectstart", (e) => {
+  e.preventDefault();
+});
+```
+
+---
+
+# 3. Older fallback: `mousedown`
+
+Some older interview answers mention this:
+
+```javascript id="f9s2ld"
+document.addEventListener("mousedown", function (e) {
+  e.preventDefault();
+});
+```
+
+### ⚠️ Problem:
+
+This is too aggressive:
+
+- Prevents clicking buttons
+- Breaks input focus
+- Bad UX
+
+So avoid it in real apps.
+
+---
+
+# 4. Hybrid approach (CSS + JS toggle)
+
+Useful when selection should be disabled conditionally:
+
+```javascript id="p0l7xq"
+function disableSelection(element) {
+  element.style.userSelect = "none";
+
+  element.addEventListener("selectstart", (e) => {
+    e.preventDefault();
+  });
+}
+```
+
+Usage:
+
+```javascript id="t8v2mn"
+const panel = document.getElementById("panel");
+disableSelection(panel);
+```
+
+---
+
+# 5. Re-enabling selection
+
+If toggling dynamically:
+
+```javascript id="r3w8kp"
+function enableSelection(element) {
+  element.style.userSelect = "auto";
+}
+```
+
+Or remove listener:
+
+```javascript id="c2v9ld"
+element.removeEventListener("selectstart", handler);
+```
+
+(You must keep a reference to `handler`.)
+
+---
+
+# 6. Important edge cases
+
+## 1. Keyboard selection still possible
+
+Even if you block mouse selection:
+
+- `Shift + Arrow keys` may still select text in some cases
+- CSS `user-select: none` handles this better than JS
+
+---
+
+## 2. Copy prevention is NOT reliable
+
+Even if selection is disabled:
+
+- DevTools can still copy content
+- `Ctrl + C` might still work depending on context
+
+So this is **UX control, not security**
+
+---
+
+## 3. Touch devices behavior
+
+On mobile:
+
+- Long press triggers selection UI
+- `user-select: none` is essential
+- JS event prevention alone may be inconsistent
+
+---
+
+# 7. Common interview trap
+
+### ❌ Wrong answer:
+
+```javascript
+document.body.onselectstart = () => false;
+```
+
+This works but is:
+
+- Old style
+- Not scalable
+- Hard to manage
+
+---
+
+# 8. Best practice summary (what interviewers expect)
+
+A strong senior-level answer:
+
+> The correct way is to use CSS `user-select: none` for performance and accessibility consistency. JavaScript can be used with `selectstart` event prevention when dynamic control is required, but should be avoided for global blocking due to UX and maintainability concerns.
+
+---
+
+# 9. Final comparison
+
+| Method                     | Recommended | Notes                  |
+| -------------------------- | ----------- | ---------------------- |
+| CSS `user-select: none`    | ✅ Best     | Fast, clean, reliable  |
+| `selectstart` JS event     | ⚠️ Okay     | Use for dynamic cases  |
+| `mousedown preventDefault` | ❌ Avoid    | Breaks UI interactions |
+
 ## Question 4. Difference between keydown, keypress, and keyup
 
 ## Question 5. How to restrict input fields to accept only numbers
