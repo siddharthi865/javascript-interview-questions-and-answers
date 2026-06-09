@@ -1123,6 +1123,631 @@ That demonstrates both Node.js internals knowledge and real production engineeri
 
 ## Question 3. How to implement a task queue with async workers
 
+A task queue with async workers is a system where:
+
+1. Tasks are added to a queue
+2. Multiple workers process tasks concurrently
+3. Workers execute asynchronous operations efficiently
+4. Concurrency and retries can be controlled
+
+This pattern is common in:
+
+- Background job processing
+- Email sending
+- File uploads/transcoding
+- API rate-limited systems
+- Web scraping
+- Microservices
+- Message brokers
+
+In interviews, you should explain:
+
+- Queue structure
+- Worker lifecycle
+- Concurrency management
+- Error handling
+- Retry/backpressure strategies
+
+---
+
+# Basic Concept
+
+```txt
+Producer -> Queue -> Workers -> Results
+```
+
+Example:
+
+- API receives image upload
+- Image processing job added to queue
+- Workers process images asynchronously
+
+---
+
+# Simple In-Memory Async Task Queue
+
+---
+
+# Step 1: Queue Class
+
+```js id="ny8w4u"
+class TaskQueue {
+  constructor(concurrency = 1) {
+    this.queue = [];
+    this.running = 0;
+    this.concurrency = concurrency;
+  }
+
+  push(task) {
+    this.queue.push(task);
+    this.next();
+  }
+
+  async next() {
+    if (this.running >= this.concurrency) {
+      return;
+    }
+
+    const task = this.queue.shift();
+
+    if (!task) {
+      return;
+    }
+
+    this.running++;
+
+    try {
+      await task();
+    } catch (err) {
+      console.error("Task failed:", err);
+    } finally {
+      this.running--;
+      this.next();
+    }
+  }
+}
+```
+
+---
+
+# Usage Example
+
+```js id="vax86n"
+const queue = new TaskQueue(2);
+
+function createTask(id, delay) {
+  return async () => {
+    console.log(`Starting ${id}`);
+
+    await new Promise((resolve) => setTimeout(resolve, delay));
+
+    console.log(`Finished ${id}`);
+  };
+}
+
+queue.push(createTask(1, 2000));
+queue.push(createTask(2, 1000));
+queue.push(createTask(3, 500));
+queue.push(createTask(4, 1500));
+```
+
+---
+
+# Output Behavior
+
+With concurrency = 2:
+
+```txt id="7ktmcr"
+Starting 1
+Starting 2
+Finished 2
+Starting 3
+Finished 3
+Starting 4
+Finished 1
+Finished 4
+```
+
+Only 2 tasks run simultaneously.
+
+---
+
+# Key Concepts
+
+---
+
+# 1. Concurrency Control
+
+This is the heart of worker queues.
+
+```js id="mjlwm1"
+if (this.running >= this.concurrency)
+```
+
+Prevents:
+
+- CPU exhaustion
+- API throttling
+- Memory overload
+
+---
+
+# 2. Async Workers
+
+Workers execute async functions:
+
+```js id="h0dfvv"
+await task();
+```
+
+This allows:
+
+- Parallel I/O
+- Efficient event-loop usage
+- Non-blocking execution
+
+---
+
+# 3. Recursive Scheduling
+
+After a task completes:
+
+```js id="w1hlh2"
+this.next();
+```
+
+Triggers processing of the next queued task.
+
+---
+
+# Improved Worker Pool Implementation
+
+A cleaner production-style pattern.
+
+---
+
+# Worker Pool Example
+
+```js id="0l6h84"
+class WorkerPool {
+  constructor(workerCount) {
+    this.queue = [];
+    this.workerCount = workerCount;
+  }
+
+  addTask(task) {
+    this.queue.push(task);
+  }
+
+  async worker(workerId) {
+    while (this.queue.length > 0) {
+      const task = this.queue.shift();
+
+      if (!task) break;
+
+      console.log(`Worker ${workerId} processing`);
+
+      try {
+        await task();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  }
+
+  async run() {
+    const workers = Array.from({ length: this.workerCount }, (_, i) =>
+      this.worker(i + 1),
+    );
+
+    await Promise.all(workers);
+  }
+}
+```
+
+---
+
+# Usage
+
+```js id="w9o2o4"
+const pool = new WorkerPool(3);
+
+for (let i = 1; i <= 10; i++) {
+  pool.addTask(async () => {
+    console.log(`Task ${i} started`);
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    console.log(`Task ${i} done`);
+  });
+}
+
+pool.run();
+```
+
+---
+
+# Why This Works Well
+
+Workers continuously:
+
+1. Pull tasks
+2. Await completion
+3. Pull next task
+
+This mimics:
+
+- Thread pools
+- Job consumers
+- Distributed workers
+
+---
+
+# Implementing Retries
+
+Production queues need retry support.
+
+---
+
+# Retry Example
+
+```js id="tjlwmz"
+async function executeWithRetry(task, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await task();
+    } catch (err) {
+      console.log(`Retry ${attempt}`);
+
+      if (attempt === retries) {
+        throw err;
+      }
+    }
+  }
+}
+```
+
+Usage:
+
+```js id="j0sg8r"
+await executeWithRetry(task);
+```
+
+---
+
+# Delayed Retry with Backoff
+
+Very common interview topic.
+
+---
+
+# Exponential Backoff
+
+```js id="pqsg3j"
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function retry(task, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await task();
+    } catch (err) {
+      const delay = 2 ** i * 1000;
+
+      console.log(`Retrying in ${delay}ms`);
+
+      await sleep(delay);
+    }
+  }
+}
+```
+
+Useful for:
+
+- APIs
+- DB reconnections
+- Rate limits
+
+---
+
+# Priority Queue Implementation
+
+Tasks may have different priorities.
+
+---
+
+# Simple Priority Queue
+
+```js id="0o64g2"
+push(task, priority = 0) {
+  this.queue.push({ task, priority });
+
+  this.queue.sort(
+    (a, b) => b.priority - a.priority
+  );
+
+  this.next();
+}
+```
+
+Higher priority tasks execute first.
+
+---
+
+# Backpressure Handling
+
+Important for large systems.
+
+Problem:
+
+- Producers add tasks faster than workers consume them
+
+---
+
+# Solution
+
+Limit queue size:
+
+```js id="f61h4z"
+if (this.queue.length > 1000) {
+  throw new Error("Queue overloaded");
+}
+```
+
+Or:
+
+- Pause producers
+- Use message brokers
+- Persist jobs externally
+
+---
+
+# Persistent Queues
+
+In-memory queues lose tasks if the process crashes.
+
+Production systems use:
+
+- Redis
+- RabbitMQ
+- Kafka
+- SQS
+- PostgreSQL
+
+---
+
+# Popular Node.js Queue Libraries
+
+---
+
+# 1. BullMQ
+
+Built on Redis.
+
+Features:
+
+- Retries
+- Delayed jobs
+- Concurrency
+- Rate limiting
+- Persistence
+
+[BullMQ](https://bullmq.io?utm_source=chatgpt.com)
+
+Example:
+
+```js id="jx1r6t"
+const { Queue, Worker } = require("bullmq");
+
+const queue = new Queue("emails");
+
+await queue.add("send-email", {
+  to: "test@example.com",
+});
+
+const worker = new Worker(
+  "emails",
+  async (job) => {
+    console.log(job.data);
+  },
+  { concurrency: 5 },
+);
+```
+
+---
+
+# 2. Bee-Queue
+
+Lightweight Redis queue.
+
+[Bee-Queue](https://github.com/bee-queue/bee-queue?utm_source=chatgpt.com)
+
+---
+
+# 3. Agenda
+
+MongoDB-backed scheduler.
+
+[Agenda](https://agenda.github.io/agenda/agenda/6.x/?utm_source=chatgpt.com)
+
+---
+
+# Real-World Architecture
+
+```txt
+API Server
+   ↓
+Redis Queue
+   ↓
+Worker Processes
+   ↓
+Database / Email / External APIs
+```
+
+Advantages:
+
+- Horizontal scaling
+- Fault tolerance
+- Async processing
+
+---
+
+# Worker Threads vs Async Workers
+
+Important distinction.
+
+---
+
+# Async Workers
+
+Use event loop concurrency.
+
+Best for:
+
+- I/O tasks
+- APIs
+- DB calls
+- Network operations
+
+Example:
+
+- Fetching URLs
+
+---
+
+# Worker Threads
+
+Use actual threads.
+
+Best for:
+
+- CPU-intensive tasks
+- Image processing
+- Compression
+- Cryptography
+
+Node.js provides:
+
+Worker Threads
+
+---
+
+# Graceful Shutdown for Workers
+
+Production queues need cleanup.
+
+Example:
+
+```js id="fnd4l9"
+process.on("SIGTERM", async () => {
+  console.log("Stopping workers");
+
+  await worker.close();
+
+  process.exit(0);
+});
+```
+
+---
+
+# Common Pitfalls
+
+---
+
+# 1. Unbounded Concurrency
+
+Bad:
+
+```js id="k99c8f"
+tasks.forEach(async (task) => {
+  await task();
+});
+```
+
+Can overwhelm:
+
+- Memory
+- APIs
+- DB pools
+
+---
+
+# 2. Queue Starvation
+
+High-priority tasks may block low-priority tasks forever.
+
+Use:
+
+- Fair scheduling
+- Weighted queues
+
+---
+
+# 3. Lost Jobs
+
+In-memory queues lose tasks on crashes.
+
+Use persistent queues in production.
+
+---
+
+# 4. Memory Leaks
+
+Large pending queues consume RAM.
+
+Always:
+
+- Monitor queue length
+- Add backpressure
+- Remove completed jobs
+
+---
+
+# Event Loop Considerations
+
+Async queues rely on:
+
+- Promise microtasks
+- Event loop scheduling
+- Non-blocking I/O
+
+Efficient queues maximize throughput while avoiding blocking operations.
+
+---
+
+# Interview-Level Discussion Points
+
+A senior-level answer should mention:
+
+- Concurrency limits
+- Worker pools
+- Retry/backoff
+- Backpressure
+- Persistence
+- Graceful shutdown
+- Horizontal scaling
+- CPU vs I/O workloads
+- Distributed queue systems
+
+---
+
+# Interview Summary
+
+A strong interview answer should explain:
+
+- A task queue manages async job execution
+- Workers process tasks concurrently
+- Concurrency must be controlled
+- Retries and backoff improve reliability
+- Backpressure prevents overload
+- Persistent queues are needed in production
+- Libraries like [BullMQ](https://bullmq.io?utm_source=chatgpt.com) are commonly used
+- Worker Threads are for CPU-intensive work
+- Async workers are ideal for I/O-bound tasks
+
+That demonstrates understanding of both JavaScript async internals and scalable backend architecture.
+
 ## Question 4. How to handle backpressure with streams in Node.js
 
 ## Question 5. How to implement throttling and debouncing in backend APIs
