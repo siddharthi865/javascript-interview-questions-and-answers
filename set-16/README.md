@@ -561,6 +561,272 @@ Better: event delegation.
 
 ## Question 3. How does `addEventListener` differ from `onClick` or other inline handlers?
 
+## Direct Answer
+
+`addEventListener` is a **modern, flexible way to attach event handlers** that supports multiple listeners, phases (capture/bubble), and better control.
+Inline handlers like `onclick` or HTML `onClick` are **older, less flexible, and allow only one handler per event property**, and are tied directly to the element.
+
+---
+
+# 1. Basic Difference
+
+## `addEventListener`
+
+```javascript
+button.addEventListener("click", () => {
+  console.log("Clicked 1");
+});
+
+button.addEventListener("click", () => {
+  console.log("Clicked 2");
+});
+```
+
+### Output:
+
+```
+Clicked 1
+Clicked 2
+```
+
+✔ Multiple handlers allowed
+✔ Modern standard
+✔ Supports capture/bubble phase
+✔ Can remove listeners
+
+---
+
+## Inline / DOM property (`onclick`)
+
+```javascript
+button.onclick = () => {
+  console.log("Clicked 1");
+};
+
+button.onclick = () => {
+  console.log("Clicked 2");
+};
+```
+
+### Output:
+
+```
+Clicked 2
+```
+
+❌ Only one handler allowed (overwrites previous)
+
+---
+
+# 2. Inline HTML handlers
+
+```html
+<button onclick="handleClick()">Click</button>
+```
+
+```javascript
+function handleClick() {
+  console.log("Clicked");
+}
+```
+
+✔ Easy to write
+❌ Tight coupling of HTML + JS
+❌ Harder to maintain in large apps
+
+---
+
+# 3. Key Differences (Interview Table)
+
+| Feature                       | `addEventListener`             | `onclick` / inline  |
+| ----------------------------- | ------------------------------ | ------------------- |
+| Multiple handlers             | ✅ Yes                         | ❌ No (overwritten) |
+| Event phases (capture/bubble) | ✅ Yes                         | ❌ No               |
+| Remove listener               | ✅ Yes (`removeEventListener`) | ❌ Not cleanly      |
+| Separation of concerns        | ✅ Good                        | ❌ Poor             |
+| Maintainability               | High                           | Low                 |
+| Modern standard               | ✅ Yes                         | ❌ Legacy           |
+
+---
+
+# 4. Event Propagation Control
+
+## `addEventListener` supports capture phase
+
+```javascript
+div.addEventListener(
+  "click",
+  () => {
+    console.log("Capture phase example");
+  },
+  true,
+);
+```
+
+✔ You can control phase
+❌ `onclick` cannot do this
+
+---
+
+# 5. Removing Event Listeners (major advantage)
+
+## Works only with `addEventListener`
+
+```javascript
+function handler() {
+  console.log("clicked");
+}
+
+button.addEventListener("click", handler);
+
+// later
+button.removeEventListener("click", handler);
+```
+
+⚠️ Important: reference must be the same function
+
+---
+
+## Cannot reliably remove inline handler
+
+```javascript
+button.onclick = null;
+```
+
+✔ Works but limited
+❌ No granular control for multiple handlers
+
+---
+
+# 6. `this` behavior difference (important interview point)
+
+## `onclick`
+
+```javascript
+button.onclick = function () {
+  console.log(this); // button element
+};
+```
+
+✔ `this` refers to element
+
+---
+
+## `addEventListener`
+
+```javascript
+button.addEventListener("click", function () {
+  console.log(this); // button element
+});
+```
+
+✔ Same behavior for normal functions
+❌ But arrow functions behave differently:
+
+```javascript
+button.addEventListener("click", () => {
+  console.log(this); // lexical scope (NOT button)
+});
+```
+
+---
+
+# 7. Memory & Architecture Differences
+
+## `addEventListener`
+
+- Uses internal event listener registry
+- Supports multiple independent listeners per event type
+- More scalable in large applications
+
+## `onclick`
+
+- Direct property assignment on DOM object
+- Only one slot per event type
+
+---
+
+# 8. Event Delegation Compatibility
+
+Only `addEventListener` works cleanly with delegation:
+
+```javascript
+document.body.addEventListener("click", (e) => {
+  if (e.target.matches(".btn")) {
+    console.log("Button clicked via delegation");
+  }
+});
+```
+
+Inline handlers cannot support delegation patterns effectively.
+
+---
+
+# 9. Security & Best Practice
+
+Inline handlers:
+
+```html
+<button onclick="alert('hi')">Click</button>
+```
+
+❌ Risk:
+
+- mixes logic with markup
+- harder to sanitize in large apps
+- violates separation of concerns
+
+`addEventListener`:
+
+✔ safer
+✔ cleaner architecture
+✔ preferred in frameworks (React internally abstracts this)
+
+---
+
+# 10. Real-world usage (modern apps)
+
+- React / Angular / Vue → internally use event listener systems
+- DOM-level JS → always uses `addEventListener`
+- Inline handlers → mostly discouraged (except quick prototypes)
+
+---
+
+# 11. Common Interview Traps
+
+## Trap 1: overwriting handlers
+
+```javascript
+button.onclick = fn1;
+button.onclick = fn2;
+```
+
+👉 fn1 is lost
+
+---
+
+## Trap 2: memory leaks
+
+```javascript
+button.addEventListener("click", () => {});
+// cannot remove anonymous function later
+```
+
+---
+
+## Trap 3: multiple listeners vs single handler confusion
+
+Many candidates incorrectly assume both behave the same.
+
+---
+
+# 12. Interview Summary
+
+- `addEventListener` is the modern, scalable, multi-listener event system supporting capture, bubble, and removal.
+- `onclick` / inline handlers are legacy, single-handler, and less flexible.
+- Always prefer `addEventListener` in production JavaScript.
+- Key advanced advantage: event propagation control + delegation support.
+
 ## Question 4. Difference between passive and non-passive event listeners
 
 ## Question 5. How does `stopImmediatePropagation` differ from `stopPropagation`?
