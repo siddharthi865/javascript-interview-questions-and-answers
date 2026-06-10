@@ -420,6 +420,326 @@ Node.js uses libuv to provide asynchronous I/O. Operations like networking rely 
 
 ## Question 2. Difference between `process.nextTick`, `setImmediate`, and `setTimeout` in Node.js
 
+## ✅ Short Answer
+
+In Node.js:
+
+- **`process.nextTick()`** → runs **immediately after текущ call stack**, before the event loop continues (highest priority).
+- **`setTimeout(fn, 0)`** → runs in the **timers phase**, after a minimum delay (not truly “immediate”).
+- **`setImmediate()`** → runs in the **check phase**, after I/O callbacks.
+
+**Priority order (most important):**
+
+```
+process.nextTick → Promise microtasks → setTimeout → setImmediate
+```
+
+---
+
+# 🧠 Deep Interview-Grade Explanation
+
+To understand these properly, you must understand the **Node.js event loop phases**.
+
+Node.js uses libuv to manage its event loop inside Node.js.
+
+---
+
+# 🔁 Event Loop Phases (simplified)
+
+1. **Timers phase** → `setTimeout`, `setInterval`
+2. **Pending callbacks**
+3. **Idle / prepare**
+4. **Poll phase** → I/O callbacks
+5. **Check phase** → `setImmediate`
+6. **Close callbacks**
+
+Between these phases, Node also flushes:
+
+- `process.nextTick()` queue
+- Microtask queue (Promises)
+
+---
+
+# ⚡ 1. `process.nextTick()`
+
+## ✔️ What it does
+
+Executes callbacks **before the event loop continues**, even before Promises.
+
+### Key idea:
+
+👉 It runs **after current function finishes but before any I/O or timers**
+
+---
+
+## Example
+
+```js
+console.log("start");
+
+process.nextTick(() => {
+  console.log("nextTick");
+});
+
+console.log("end");
+```
+
+### Output:
+
+```
+start
+end
+nextTick
+```
+
+---
+
+## 🧠 Why it behaves this way
+
+Node maintains a **special nextTick queue** that is drained:
+
+- AFTER current call stack
+- BEFORE event loop continues
+
+---
+
+## ⚠️ Pitfall (very important in interviews)
+
+You can **starve the event loop**:
+
+```js
+function loop() {
+  process.nextTick(loop);
+}
+
+loop();
+```
+
+❌ This blocks everything else (no I/O, no timers).
+
+---
+
+## Use cases
+
+- Deferring execution until after current function
+- Ensuring async behavior in APIs
+- Error handling in initialization logic
+
+---
+
+# ⏱ 2. `setTimeout(fn, 0)`
+
+## ✔️ What it does
+
+Schedules a callback in the **timers phase** after a minimum delay.
+
+Even `0ms` is NOT immediate.
+
+---
+
+## Example
+
+```js
+console.log("start");
+
+setTimeout(() => {
+  console.log("timeout");
+}, 0);
+
+console.log("end");
+```
+
+### Output:
+
+```
+start
+end
+timeout
+```
+
+---
+
+## 🧠 Important detail
+
+Even with `0ms`:
+
+- Node enforces a **minimum delay (~1ms or more depending on system load)**
+- It executes in the **next timers phase**
+
+---
+
+## Use cases
+
+- Scheduling delayed execution
+- Breaking long synchronous tasks
+- Deferring work to avoid blocking
+
+---
+
+# 🚀 3. `setImmediate()`
+
+## ✔️ What it does
+
+Executes callbacks in the **check phase**, after I/O events.
+
+---
+
+## Example
+
+```js
+console.log("start");
+
+setImmediate(() => {
+  console.log("immediate");
+});
+
+console.log("end");
+```
+
+### Output:
+
+```
+start
+end
+immediate
+```
+
+---
+
+## 🧠 Key behavior
+
+- Runs **after poll phase**
+- Designed for **I/O completion callbacks**
+
+---
+
+## Special case (very important interview trap)
+
+Order depends on context:
+
+```js
+const fs = require("fs");
+
+fs.readFile(__filename, () => {
+  setTimeout(() => console.log("timeout"), 0);
+  setImmediate(() => console.log("immediate"));
+});
+```
+
+### Output:
+
+```
+immediate
+timeout
+```
+
+### Why?
+
+Inside I/O callback:
+
+- Event loop is in **poll phase**
+- Next phase is **check → setImmediate runs first**
+- Then timers phase → setTimeout runs later
+
+---
+
+# ⚖️ Comparison Table
+
+| Feature         | `process.nextTick`          | `setTimeout(fn, 0)` | `setImmediate` |
+| --------------- | --------------------------- | ------------------- | -------------- |
+| Phase           | Before event loop continues | Timers phase        | Check phase    |
+| Priority        | Highest                     | Low                 | Medium         |
+| Delay           | Immediate (after stack)     | Minimum delay       | After I/O      |
+| Starvation risk | Yes                         | No                  | No             |
+| Use case        | Internal deferral           | Scheduling delay    | I/O completion |
+
+---
+
+# 🔥 Execution Order Example (Classic Interview Question)
+
+```js
+console.log("A");
+
+setTimeout(() => console.log("B"), 0);
+
+setImmediate(() => console.log("C"));
+
+process.nextTick(() => console.log("D"));
+
+Promise.resolve().then(() => console.log("E"));
+
+console.log("F");
+```
+
+## ✅ Output:
+
+```
+A
+F
+D
+E
+B
+C
+```
+
+---
+
+## 🧠 Reasoning:
+
+1. Sync code runs first → `A F`
+2. `process.nextTick` → `D`
+3. Microtasks (Promises) → `E`
+4. Timers phase → `B`
+5. Check phase → `C`
+
+---
+
+# ⚠️ Common Interview Pitfalls
+
+## 1. Thinking `setTimeout(0)` is immediate
+
+❌ Wrong
+✔ It is scheduled for next timers phase
+
+---
+
+## 2. Confusing `setImmediate` and `setTimeout`
+
+- `setImmediate` → after I/O
+- `setTimeout` → after timer delay
+
+---
+
+## 3. Overusing `process.nextTick`
+
+Can freeze event loop if abused.
+
+---
+
+# 🧠 Mental Model (Best way to remember)
+
+Think of execution priority like this:
+
+```
+SYNC CODE
+   ↓
+process.nextTick queue
+   ↓
+Promise microtasks
+   ↓
+Timers (setTimeout)
+   ↓
+I/O callbacks
+   ↓
+setImmediate
+```
+
+---
+
+# 🚀 Interview Summary (Strong Answer)
+
+> In Node.js, `process.nextTick` executes immediately after the current call stack and before the event loop continues, making it the highest priority queue. `setTimeout(fn, 0)` schedules a callback in the timers phase after a minimum delay, so it is not truly immediate. `setImmediate` executes in the check phase, typically after I/O callbacks. The execution order depends on the event loop phases managed by libuv, and understanding this ordering is crucial for writing non-blocking and predictable asynchronous code in Node.js.
+
 ## Question 3. How to implement clustering in Node.js
 
 ## Question 4. Difference between cluster and worker threads in Node.js
