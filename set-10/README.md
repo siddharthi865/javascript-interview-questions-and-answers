@@ -565,6 +565,324 @@ Modern frameworks and advanced JavaScript libraries rely heavily on Proxy-based 
 
 ## Question 2. What are revocable proxies?
 
+# What Are Revocable Proxies in JavaScript?
+
+**Revocable proxies** are special Proxy objects that can be **disabled (revoked) later**. Once revoked, any operation on the proxy throws a `TypeError`.
+
+JavaScript provides them through `Proxy.revocable()`.
+
+This is useful when you want to grant temporary access to an object and later invalidate that access.
+
+---
+
+# Syntax
+
+```js
+const { proxy, revoke } = Proxy.revocable(target, handler);
+```
+
+- `proxy` → the Proxy object
+- `revoke()` → function that permanently disables the proxy
+
+---
+
+# Basic Example
+
+```js
+const target = {
+  name: "John",
+};
+
+const { proxy, revoke } = Proxy.revocable(target, {});
+
+console.log(proxy.name); // John
+
+revoke();
+
+console.log(proxy.name); // TypeError
+```
+
+After calling `revoke()`, the proxy becomes unusable.
+
+---
+
+# How It Works
+
+```js
+const user = {
+  name: "Alice",
+};
+
+const { proxy, revoke } = Proxy.revocable(user, {
+  get(target, prop) {
+    console.log(`Accessing ${prop}`);
+    return target[prop];
+  },
+});
+
+console.log(proxy.name);
+
+revoke();
+
+console.log(proxy.name);
+```
+
+Output:
+
+```txt
+Accessing name
+Alice
+
+TypeError: Cannot perform 'get' on a proxy that has been revoked
+```
+
+---
+
+# Why Use Revocable Proxies?
+
+They are useful when access should be temporary.
+
+Common scenarios:
+
+- Security-sensitive applications
+- Session-based access
+- Resource cleanup
+- Plugin systems
+- Sandboxed environments
+- Temporary API exposure
+
+---
+
+# Example: Temporary Access Control
+
+```js
+function createSession(user) {
+  const { proxy, revoke } = Proxy.revocable(user, {});
+
+  return {
+    user: proxy,
+    logout: revoke,
+  };
+}
+
+const session = createSession({
+  name: "John",
+});
+
+console.log(session.user.name);
+
+session.logout();
+
+console.log(session.user.name); // TypeError
+```
+
+Once the user logs out, access is revoked.
+
+---
+
+# Example: Plugin Sandbox
+
+```js
+const config = {
+  apiKey: "secret-key",
+};
+
+const { proxy, revoke } = Proxy.revocable(config, {});
+
+function runPlugin(settings) {
+  console.log(settings.apiKey);
+}
+
+runPlugin(proxy);
+
+revoke();
+
+// Plugin can no longer access config
+```
+
+This prevents plugins from holding permanent references.
+
+---
+
+# Revocation Is Permanent
+
+A revoked proxy cannot be re-enabled.
+
+```js
+const { proxy, revoke } = Proxy.revocable({}, {});
+
+revoke();
+
+// No way to undo this
+```
+
+To regain access, you must create a new proxy.
+
+---
+
+# What Operations Fail After Revocation?
+
+After revoking:
+
+```js
+proxy.name;
+proxy.name = "John";
+delete proxy.name;
+"name" in proxy;
+Object.keys(proxy);
+```
+
+All throw:
+
+```txt
+TypeError
+```
+
+because the proxy is disconnected from its target.
+
+---
+
+# Relationship with Garbage Collection
+
+One common use case is resource management.
+
+```js
+let { proxy, revoke } = Proxy.revocable(largeObject, {});
+```
+
+After revocation and removing references:
+
+```js
+revoke();
+proxy = null;
+```
+
+the proxy and associated resources become eligible for garbage collection (assuming no other references exist).
+
+---
+
+# Revocable Proxy vs Normal Proxy
+
+| Feature                  | Proxy | Revocable Proxy |
+| ------------------------ | ----- | --------------- |
+| Intercepts operations    | ✅    | ✅              |
+| Uses handler traps       | ✅    | ✅              |
+| Can be disabled          | ❌    | ✅              |
+| Has revoke function      | ❌    | ✅              |
+| Temporary access control | ❌    | ✅              |
+
+---
+
+# Practical Interview Example
+
+Imagine a file access system:
+
+```js
+function openFile(file) {
+  const { proxy, revoke } = Proxy.revocable(file, {});
+
+  return {
+    file: proxy,
+    close: revoke,
+  };
+}
+
+const doc = openFile({
+  content: "Hello World",
+});
+
+console.log(doc.file.content);
+
+doc.close();
+
+console.log(doc.file.content);
+```
+
+After `close()`, attempting to access the file throws an error, similar to accessing a closed resource.
+
+---
+
+# Common Interview Questions
+
+### Q1: What is the difference between `new Proxy()` and `Proxy.revocable()`?
+
+```js
+new Proxy(target, handler);
+```
+
+Creates a permanent proxy.
+
+```js
+Proxy.revocable(target, handler);
+```
+
+Creates a proxy that can later be disabled.
+
+---
+
+### Q2: Can a revoked proxy be restored?
+
+No.
+
+Revocation is permanent.
+
+```js
+revoke();
+
+// Cannot undo
+```
+
+You must create a new proxy.
+
+---
+
+### Q3: Does revoking affect the original target object?
+
+No.
+
+```js
+const target = {
+  name: "John",
+};
+
+const { proxy, revoke } = Proxy.revocable(target, {});
+
+revoke();
+
+console.log(target.name); // Works
+```
+
+Only the proxy becomes unusable; the target object remains intact.
+
+---
+
+# Best Practices
+
+- Use revocable proxies when access should be temporary.
+- Revoke access during logout, cleanup, or resource disposal.
+- Combine with Proxy traps for validation and auditing.
+- Do not rely on them as the sole security mechanism; they are primarily an object-access control tool within JavaScript code.
+
+---
+
+# Interview Summary
+
+**Revocable proxies** are proxies created using `Proxy.revocable()` that can be permanently disabled through a `revoke()` function.
+
+```js
+const { proxy, revoke } = Proxy.revocable(target, handler);
+```
+
+After calling:
+
+```js
+revoke();
+```
+
+any operation on the proxy throws a `TypeError`.
+
+They are commonly used for **temporary access, session management, plugin isolation, sandboxing, and resource cleanup**.
+
 ## Question 3. How to observe object property changes using Proxy?
 
 ## Question 4. Difference between WeakMap and Map
