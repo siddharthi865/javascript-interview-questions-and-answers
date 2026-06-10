@@ -239,6 +239,345 @@ because they provide near O(1) lookup time.
 
 ## Question 2. Explain flatMap() method
 
+The `flatMap()` method in JavaScript is used to:
+
+1. **map** each element of an array
+2. then **flatten** the result by one level
+
+It is essentially equivalent to:
+
+```js
+array.map(...).flat(1)
+```
+
+but more efficient and cleaner.
+
+---
+
+# Syntax
+
+```js
+array.flatMap(callback(currentValue, index, array));
+```
+
+---
+
+# Basic Example
+
+```js
+const arr = [1, 2, 3];
+
+const result = arr.flatMap((num) => [num, num * 2]);
+
+console.log(result);
+```
+
+Output:
+
+```js
+[1, 2, 2, 4, 3, 6];
+```
+
+---
+
+# What Happens Internally
+
+Step 1 — `map()`:
+
+```js
+[
+  [1, 2],
+  [2, 4],
+  [3, 6],
+];
+```
+
+Step 2 — flatten one level:
+
+```js
+[1, 2, 2, 4, 3, 6];
+```
+
+---
+
+# Equivalent Without `flatMap()`
+
+```js
+const result = arr.map((num) => [num, num * 2]).flat();
+```
+
+`flatMap()` combines both operations into one.
+
+---
+
+# Why `flatMap()` is Useful
+
+It is commonly used when:
+
+- one input item produces multiple output items
+- some items should produce no output
+- transforming nested arrays
+- data normalization
+- parsing APIs
+
+---
+
+# Example: Splitting Words
+
+```js
+const sentences = ["Hello world", "JavaScript is awesome"];
+
+const words = sentences.flatMap((sentence) => sentence.split(" "));
+
+console.log(words);
+```
+
+Output:
+
+```js
+["Hello", "world", "JavaScript", "is", "awesome"];
+```
+
+---
+
+# Example: Removing Items While Mapping
+
+You can return:
+
+- empty array → remove item
+- single item → keep one
+- multiple items → expand
+
+```js
+const numbers = [1, 2, 3, 4];
+
+const result = numbers.flatMap((num) => {
+  if (num % 2 === 0) {
+    return []; // remove even numbers
+  }
+
+  return [num, num * 10];
+});
+
+console.log(result);
+```
+
+Output:
+
+```js
+[1, 10, 3, 30];
+```
+
+This is harder to do cleanly with just `map()`.
+
+---
+
+# Difference Between `map()` and `flatMap()`
+
+| Method      | Output                           |
+| ----------- | -------------------------------- |
+| `map()`     | Nested array possible            |
+| `flatMap()` | Automatically flattens one level |
+
+Example:
+
+```js
+const arr = [1, 2, 3];
+
+console.log(arr.map((x) => [x * 2]));
+```
+
+Output:
+
+```js
+[[2], [4], [6]];
+```
+
+Using `flatMap()`:
+
+```js
+console.log(arr.flatMap((x) => [x * 2]));
+```
+
+Output:
+
+```js
+[2, 4, 6];
+```
+
+---
+
+# Important Limitation: Only Flattens One Level
+
+```js
+const arr = [1, 2];
+
+const result = arr.flatMap((x) => [[x * 2]]);
+
+console.log(result);
+```
+
+Output:
+
+```js
+[[2], [4]];
+```
+
+Only one nesting level is flattened.
+
+---
+
+# `flatMap()` with Objects
+
+```js
+const users = [
+  { name: "A", skills: ["JS", "React"] },
+  { name: "B", skills: ["Node"] },
+];
+
+const skills = users.flatMap((user) => user.skills);
+
+console.log(skills);
+```
+
+Output:
+
+```js
+["JS", "React", "Node"];
+```
+
+Very common in API/data transformation tasks.
+
+---
+
+# Sparse Arrays Behavior
+
+`flatMap()` skips empty slots like `map()` does.
+
+```js
+const arr = [1, , 3];
+
+const result = arr.flatMap((x) => [x]);
+
+console.log(result);
+```
+
+Output:
+
+```js
+[1, 3];
+```
+
+---
+
+# Time Complexity
+
+Typically:
+
+```txt
+O(n)
+```
+
+But actual cost depends on:
+
+- callback complexity
+- flattening size
+- returned array sizes
+
+---
+
+# Common Interview Pitfalls
+
+## 1. Assuming Deep Flattening
+
+Wrong expectation:
+
+```js
+flatMap(); // deep flatten
+```
+
+Reality:
+
+```js
+flatMap() === flat(1);
+```
+
+Only one level.
+
+---
+
+## 2. Returning Non-Arrays
+
+```js
+[1, 2, 3].flatMap((x) => x * 2);
+```
+
+Works fine.
+
+Output:
+
+```js
+[2, 4, 6];
+```
+
+Because non-array values are appended directly.
+
+---
+
+# Browser Support
+
+`flatMap()` was introduced in:
+
+- ES2019 (ES10)
+
+Supported in modern browsers and Node.js versions.
+
+---
+
+# Real-World Use Cases
+
+## API Data Transformation
+
+```js
+const orders = [
+  {
+    id: 1,
+    items: ["Phone", "Laptop"],
+  },
+  {
+    id: 2,
+    items: ["Tablet"],
+  },
+];
+
+const allItems = orders.flatMap((order) => order.items);
+```
+
+---
+
+## Routing/Menu Generation
+
+```js
+const menus = [
+  {
+    category: "Admin",
+    links: ["Users", "Settings"],
+  },
+  {
+    category: "User",
+    links: ["Profile"],
+  },
+];
+
+const routes = menus.flatMap((menu) => menu.links);
+```
+
+---
+
+# Senior-Level Interview Answer
+
+> “`flatMap()` combines mapping and flattening into a single operation. It transforms each element and then flattens the result by one level. It’s equivalent to `map().flat(1)` but cleaner and slightly more efficient. It’s especially useful when one input maps to zero, one, or many output elements, such as splitting strings, flattening nested API responses, or filtering while transforming data.”
+
 ## Question 3. How to implement a stack and queue using arrays
 
 ## Question 4. Difference between event.target and event.currentTarget
