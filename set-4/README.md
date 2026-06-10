@@ -167,6 +167,353 @@ Leads to bugs in shared references.
 
 ## Question 2. Explain destructuring of arrays and objects
 
+### Short Answer
+
+**Destructuring** is an ES6 feature that allows you to extract values from arrays or properties from objects and assign them to variables in a concise, readable way.
+
+```javascript
+// Array destructuring
+const [a, b] = [10, 20];
+
+// Object destructuring
+const { name, age } = { name: "John", age: 30 };
+```
+
+---
+
+# What is Destructuring?
+
+Before ES6, extracting values required multiple statements:
+
+```javascript
+const user = {
+  name: "John",
+  age: 30,
+};
+
+const name = user.name;
+const age = user.age;
+```
+
+With destructuring:
+
+```javascript
+const { name, age } = user;
+```
+
+This reduces boilerplate and improves readability.
+
+---
+
+# Array Destructuring
+
+Array destructuring extracts values based on their **position (index)**.
+
+### Basic Example
+
+```javascript
+const numbers = [10, 20, 30];
+
+const [first, second, third] = numbers;
+
+console.log(first); // 10
+console.log(second); // 20
+console.log(third); // 30
+```
+
+---
+
+## Skipping Elements
+
+```javascript
+const numbers = [10, 20, 30, 40];
+
+const [first, , third] = numbers;
+
+console.log(first); // 10
+console.log(third); // 30
+```
+
+---
+
+## Default Values
+
+```javascript
+const [a, b, c = 100] = [1, 2];
+
+console.log(c); // 100
+```
+
+Default values are used when the corresponding element is `undefined`.
+
+---
+
+## Swapping Variables
+
+A popular interview example:
+
+```javascript
+let x = 10;
+let y = 20;
+
+[x, y] = [y, x];
+
+console.log(x); // 20
+console.log(y); // 10
+```
+
+---
+
+## Rest Operator with Arrays
+
+```javascript
+const [first, ...rest] = [1, 2, 3, 4, 5];
+
+console.log(first); // 1
+console.log(rest); // [2, 3, 4, 5]
+```
+
+---
+
+# Object Destructuring
+
+Object destructuring extracts values based on **property names**, not positions.
+
+### Basic Example
+
+```javascript
+const user = {
+  name: "John",
+  age: 30,
+};
+
+const { name, age } = user;
+
+console.log(name); // John
+console.log(age); // 30
+```
+
+---
+
+## Renaming Variables
+
+Often used in interviews.
+
+```javascript
+const user = {
+  name: "John",
+};
+
+const { name: userName } = user;
+
+console.log(userName); // John
+```
+
+Here:
+
+- Property name → `name`
+- Variable name → `userName`
+
+---
+
+## Default Values
+
+```javascript
+const user = {
+  name: "John",
+};
+
+const { name, age = 25 } = user;
+
+console.log(age); // 25
+```
+
+---
+
+## Rest Operator with Objects
+
+```javascript
+const user = {
+  name: "John",
+  age: 30,
+  city: "Delhi",
+};
+
+const { name, ...others } = user;
+
+console.log(name); // John
+console.log(others); // { age: 30, city: "Delhi" }
+```
+
+---
+
+# Nested Destructuring
+
+### Objects Inside Objects
+
+```javascript
+const user = {
+  name: "John",
+  address: {
+    city: "Delhi",
+    country: "India",
+  },
+};
+
+const {
+  address: { city },
+} = user;
+
+console.log(city); // Delhi
+```
+
+---
+
+### Arrays Inside Objects
+
+```javascript
+const user = {
+  hobbies: ["Coding", "Reading"],
+};
+
+const {
+  hobbies: [firstHobby],
+} = user;
+
+console.log(firstHobby); // Coding
+```
+
+---
+
+# Function Parameter Destructuring
+
+Very common in modern JavaScript and React.
+
+### Without Destructuring
+
+```javascript
+function displayUser(user) {
+  console.log(user.name);
+  console.log(user.age);
+}
+```
+
+### With Destructuring
+
+```javascript
+function displayUser({ name, age }) {
+  console.log(name);
+  console.log(age);
+}
+```
+
+Usage:
+
+```javascript
+displayUser({
+  name: "John",
+  age: 30,
+});
+```
+
+---
+
+# Practical Real-World Example
+
+### API Response
+
+```javascript
+const response = {
+  data: {
+    id: 1,
+    title: "JavaScript Guide",
+  },
+};
+
+const {
+  data: { id, title },
+} = response;
+
+console.log(id);
+console.log(title);
+```
+
+This is common when working with APIs.
+
+---
+
+# Common Pitfalls
+
+## 1. Property Name Must Match
+
+```javascript
+const user = {
+  name: "John",
+};
+
+const { username } = user;
+
+console.log(username); // undefined
+```
+
+Because `username` property doesn't exist.
+
+---
+
+## 2. Destructuring Undefined Causes Error
+
+```javascript
+const user = undefined;
+
+const { name } = user; // TypeError
+```
+
+Safer approach:
+
+```javascript
+const { name } = user || {};
+```
+
+---
+
+## 3. Array Destructuring Depends on Order
+
+```javascript
+const [a, b] = [20, 10];
+
+console.log(a); // 20
+console.log(b); // 10
+```
+
+Arrays use positions, not names.
+
+---
+
+# Interview Comparison
+
+| Feature                | Array Destructuring      | Object Destructuring   |
+| ---------------------- | ------------------------ | ---------------------- |
+| Based on               | Position (index)         | Property name          |
+| Order matters          | Yes                      | No                     |
+| Supports defaults      | Yes                      | Yes                    |
+| Supports rest operator | Yes                      | Yes                    |
+| Common use             | Arrays, function returns | Objects, API responses |
+
+---
+
+# Best Practices
+
+- Use destructuring to make code cleaner and more readable.
+- Use default values when properties may be missing.
+- Use parameter destructuring in functions for clarity.
+- Avoid excessive nested destructuring when it hurts readability.
+
+---
+
+### Interview Summary
+
+> Destructuring is an ES6 feature that allows extracting values from arrays and properties from objects into variables. Array destructuring is position-based, while object destructuring is property-name-based. It improves readability, reduces boilerplate code, and is widely used in modern JavaScript, React, and API handling.
+
 ## Question 3. Difference between nullish coalescing operator ?? and logical OR ||
 
 ## Question 4. Difference between optional chaining ?. and normal property access
