@@ -340,6 +340,269 @@ Synchronous scripts block HTML parsing until downloaded and executed, which can 
 
 ## Question 2. How to defer or async load external scripts?
 
+## Short Answer
+
+You can load external scripts asynchronously or defer their execution using the HTML `<script>` tag attributes:
+
+- `async` → loads script in parallel and executes immediately when ready
+- `defer` → loads script in parallel but executes after HTML parsing is complete
+
+```html
+<script async src="app.js"></script>
+<script defer src="app.js"></script>
+```
+
+You can also dynamically load scripts using JavaScript for more control.
+
+---
+
+# 1. Using `async` Attribute
+
+## Syntax
+
+```html
+<script async src="https://example.com/script.js"></script>
+```
+
+## Behavior
+
+- Script downloads in parallel with HTML parsing
+- Executes immediately after download
+- Does NOT guarantee order
+
+## When to use
+
+Best for **independent scripts** like:
+
+- Analytics
+- Ads
+- Tracking tools
+
+## Example
+
+```html
+<head>
+  <script async src="https://www.google-analytics.com/analytics.js"></script>
+</head>
+```
+
+---
+
+## Key Interview Insight
+
+`async` is non-blocking but **unpredictable in execution order**, so it should never be used when script dependencies exist.
+
+---
+
+# 2. Using `defer` Attribute
+
+## Syntax
+
+```html
+<script defer src="app.js"></script>
+```
+
+## Behavior
+
+- Script downloads in parallel
+- Execution is delayed until HTML parsing is complete
+- Maintains script execution order
+
+---
+
+## Example with multiple scripts
+
+```html
+<script defer src="vendor.js"></script>
+<script defer src="main.js"></script>
+```
+
+Execution order is guaranteed:
+
+```text
+vendor.js → main.js
+```
+
+---
+
+## When to use
+
+Best for **main application scripts**:
+
+- DOM manipulation code
+- SPA frameworks (React, Angular, Vue bundles)
+- Dependent scripts
+
+---
+
+## Key Interview Insight
+
+`defer` behaves like:
+
+> “Download now, execute later after DOM is ready”
+
+It effectively aligns with `DOMContentLoaded`.
+
+---
+
+# 3. Dynamic Script Loading (JavaScript Approach)
+
+Sometimes you need to load scripts conditionally or at runtime.
+
+## Basic dynamic loading
+
+```javascript
+function loadScript(src, callback) {
+  const script = document.createElement("script");
+  script.src = src;
+
+  script.onload = () => callback?.();
+  script.onerror = () => console.error("Failed to load script:", src);
+
+  document.head.appendChild(script);
+}
+
+loadScript("https://example.com/app.js", () => {
+  console.log("Script loaded!");
+});
+```
+
+---
+
+## Async dynamic loading (default behavior)
+
+Dynamic scripts behave like `async` by default:
+
+```javascript
+const script = document.createElement("script");
+script.src = "app.js";
+document.head.appendChild(script);
+```
+
+👉 Executes as soon as it loads
+
+---
+
+## Forcing `defer`-like behavior
+
+There is no direct `defer` property in dynamic scripts, but you can control execution manually:
+
+```javascript
+const script = document.createElement("script");
+script.src = "app.js";
+
+script.onload = () => {
+  console.log("Executed after load");
+};
+
+document.head.appendChild(script);
+```
+
+To ensure sequencing:
+
+```javascript
+loadScript("vendor.js", () => {
+  loadScript("app.js");
+});
+```
+
+---
+
+# 4. Advanced Pattern: Promise-based Loader
+
+Modern approach using Promises:
+
+```javascript
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+
+    script.onload = () => resolve(src);
+    script.onerror = () => reject(new Error("Failed: " + src));
+
+    document.head.appendChild(script);
+  });
+}
+
+loadScript("vendor.js")
+  .then(() => loadScript("app.js"))
+  .then(() => console.log("All scripts loaded"));
+```
+
+---
+
+# 5. Comparison Table
+
+| Method                           | Blocking | Execution Timing      | Order Guarantee | Use Case                           |
+| -------------------------------- | -------- | --------------------- | --------------- | ---------------------------------- |
+| Normal `<script>`                | Yes      | Immediate             | Yes             | Legacy / critical blocking scripts |
+| `async`                          | No       | As soon as downloaded | No              | Independent scripts                |
+| `defer`                          | No       | After HTML parsing    | Yes             | App scripts                        |
+| Dynamic script (`createElement`) | No       | On load event         | Manual control  | Conditional loading                |
+
+---
+
+# 6. Common Pitfalls (Important for Interviews)
+
+## ❌ Using `async` for dependent scripts
+
+```html
+<script async src="jquery.js"></script>
+<script async src="plugin.js"></script>
+```
+
+Risk:
+
+```text
+plugin.js runs before jquery.js → errors
+```
+
+---
+
+## ❌ Assuming `defer` works on inline scripts
+
+```html
+<script defer>
+  console.log("Won't defer");
+</script>
+```
+
+`defer` only works on external scripts.
+
+---
+
+## ❌ Dynamic scripts without error handling
+
+Always include:
+
+```javascript
+script.onerror = () => handleFailure();
+```
+
+---
+
+# 7. Modern Best Practice (Real-world)
+
+### Recommended pattern:
+
+- Use `defer` for application code
+- Use `async` for third-party scripts
+- Use dynamic loading for conditional or lazy-loaded features
+
+Example:
+
+```html
+<script defer src="/bundle.js"></script>
+<script async src="https://ads.network.com/ad.js"></script>
+```
+
+---
+
+# 8. Interview Summary (Strong Answer)
+
+To defer or asynchronously load external scripts in the browser, we use the `defer` and `async` attributes on the `<script>` tag. `async` loads the script in parallel and executes it immediately after download, without guaranteeing order, making it suitable for independent scripts. `defer` also loads scripts in parallel but delays execution until the HTML document has been fully parsed, preserving execution order and making it ideal for application logic. Alternatively, scripts can be dynamically loaded using JavaScript by creating a `<script>` element and appending it to the DOM, which provides fine-grained control over execution timing, dependencies, and error handling.
+
 ## Question 3. How to prevent layout thrashing in the browser?
 
 ## Question 4. How to minimize repaint and reflow for DOM updates?
