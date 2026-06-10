@@ -312,6 +312,244 @@ You can summarize in an interview like this:
 
 ## Question 2. What is Promise chaining? (Implied from the content about chaining promises)
 
+## Concise Answer
+
+**Promise chaining** is a technique where multiple asynchronous operations are executed in sequence by linking multiple `.then()` handlers, where each `.then()` returns a new Promise.
+
+---
+
+# 1. What is Promise Chaining?
+
+Promise chaining allows you to perform a series of asynchronous tasks one after another, where each step depends on the result of the previous step.
+
+Instead of nesting callbacks, each `.then()` returns a new Promise, enabling a **flat and readable flow**.
+
+---
+
+# 2. Basic Example
+
+```js
+getUser()
+  .then((user) => {
+    return getOrders(user.id);
+  })
+  .then((orders) => {
+    return getOrderDetails(orders[0].id);
+  })
+  .then((details) => {
+    console.log(details);
+  })
+  .catch((err) => {
+    console.log("Error:", err);
+  });
+```
+
+### Key idea:
+
+Each `.then()`:
+
+- receives the previous result
+- returns a new Promise (or value)
+- passes output to the next `.then()`
+
+---
+
+# 3. How Promise Chaining Works Internally
+
+When you do:
+
+```js
+promise.then(fn1).then(fn2).then(fn3);
+```
+
+Internally:
+
+1. `fn1` runs after promise resolves
+2. Its return value becomes input to `fn2`
+3. `fn2` return value becomes input to `fn3`
+
+If any step returns a Promise, the chain **waits until it resolves**.
+
+---
+
+# 4. Important Rule of Chaining
+
+## 👉 A `.then()` always returns a new Promise
+
+Even if you return a simple value:
+
+```js
+Promise.resolve(10)
+  .then((num) => num * 2)
+  .then((result) => console.log(result)); // 20
+```
+
+Behind the scenes:
+
+- `num * 2` is wrapped in `Promise.resolve(20)`
+
+---
+
+# 5. Returning a Promise vs Value
+
+## Case 1: Returning a value
+
+```js
+.then(x => x + 1)
+```
+
+✔ Automatically wrapped in resolved Promise
+
+---
+
+## Case 2: Returning a Promise
+
+```js
+.then(x => fetchData(x))
+```
+
+✔ Next `.then()` waits for this Promise to resolve
+
+---
+
+# 6. Real-World Example
+
+```js
+fetchUser()
+  .then((user) => fetchPosts(user.id))
+  .then((posts) => fetchComments(posts[0].id))
+  .then((comments) => {
+    console.log("Comments:", comments);
+  })
+  .catch((error) => {
+    console.error("Something failed:", error);
+  });
+```
+
+### Flow:
+
+1. Get user
+2. Use user → get posts
+3. Use posts → get comments
+4. Handle all errors in one place
+
+---
+
+# 7. Why Promise Chaining is Important
+
+## a) Avoids Callback Hell
+
+Instead of:
+
+```js
+a(function () {
+  b(function () {
+    c(function () {});
+  });
+});
+```
+
+You get:
+
+```js
+a().then(b).then(c);
+```
+
+---
+
+## b) Linear Execution Flow
+
+Code reads top-to-bottom like synchronous logic.
+
+---
+
+## c) Centralized Error Handling
+
+Single `.catch()` handles entire chain.
+
+---
+
+# 8. Common Pitfalls in Promise Chaining
+
+## ❌ Forgetting to return a Promise
+
+```js
+getUser()
+  .then((user) => {
+    getOrders(user.id); // ❌ missing return
+  })
+  .then((orders) => {
+    console.log(orders); // undefined
+  });
+```
+
+### Fix:
+
+```js
+.then(user => {
+  return getOrders(user.id);
+});
+```
+
+---
+
+## ❌ Mixing async logic without return
+
+Always ensure each `.then()` returns something meaningful.
+
+---
+
+## ❌ Silent failures if `.catch()` is misplaced
+
+```js
+getUser()
+  .then(...)
+  .catch(...)
+  .then(...) // may still run unexpectedly
+```
+
+---
+
+# 9. Promise Chaining vs async/await
+
+| Feature        | Promise Chaining | async/await      |
+| -------------- | ---------------- | ---------------- |
+| Style          | Functional chain | Synchronous-like |
+| Readability    | Good             | Better           |
+| Error handling | `.catch()`       | `try/catch`      |
+| Debugging      | Slightly harder  | Easier           |
+
+Example:
+
+### Chain
+
+```js
+getUser()
+  .then((user) => getOrders(user.id))
+  .then(console.log)
+  .catch(console.error);
+```
+
+### async/await
+
+```js
+async function run() {
+  try {
+    const user = await getUser();
+    const orders = await getOrders(user.id);
+    console.log(orders);
+  } catch (err) {
+    console.error(err);
+  }
+}
+```
+
+---
+
+# 10. Interview One-Liner
+
+> Promise chaining is the process of linking multiple `.then()` calls where each step returns a Promise, allowing asynchronous operations to run sequentially in a clean and readable manner.
+
 ## Question 3. Difference between `Promise.all`, `Promise.race`, and `Promise.allSettled`
 
 ## Question 4. How to handle errors in `async/await`
