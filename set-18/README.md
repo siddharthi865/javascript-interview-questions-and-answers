@@ -325,6 +325,289 @@ It helps optimize performance by preventing unnecessary repeated function execut
 
 ## Question 2. How to implement a throttle function from scratch
 
+A **throttle function** ensures that a function is executed at most once in a specified time interval, no matter how many times it is triggered.
+
+---
+
+# ✅ Direct Answer
+
+A throttle function limits execution by allowing a function to run **once per fixed time window**, ignoring intermediate calls.
+
+---
+
+# 🧠 Core Idea (Interview Explanation)
+
+Unlike debounce (which waits for “quiet time”), throttle ensures:
+
+> “Execute immediately, then ignore subsequent calls until the cooldown period ends.”
+
+This is useful for:
+
+- scroll events
+- resize handlers
+- mouse move tracking
+- game loops / animations
+- analytics tracking
+
+---
+
+# 🧩 Basic Throttle Implementation (Time-Based)
+
+```javascript
+function throttle(fn, limit) {
+  let lastCall = 0;
+
+  return function (...args) {
+    const now = Date.now();
+
+    if (now - lastCall >= limit) {
+      lastCall = now;
+      fn.apply(this, args);
+    }
+  };
+}
+```
+
+---
+
+# 🧠 How It Works
+
+Every call:
+
+1. Current timestamp is checked
+2. Compare with `lastCall`
+3. If enough time passed:
+   - execute function
+   - update `lastCall`
+
+4. Otherwise ignore call
+
+---
+
+# 📌 Example Usage
+
+```javascript
+function onScroll() {
+  console.log("Scroll event fired");
+}
+
+const throttledScroll = throttle(onScroll, 1000);
+
+window.addEventListener("scroll", throttledScroll);
+```
+
+Even if scroll fires 100 times per second:
+
+👉 Function runs only once per 1 second
+
+---
+
+# ⚙️ Alternative Implementation (Using setTimeout)
+
+This version is often asked in interviews because it shows deeper async understanding:
+
+```javascript
+function throttle(fn, limit) {
+  let inThrottle = false;
+
+  return function (...args) {
+    if (!inThrottle) {
+      fn.apply(this, args);
+      inThrottle = true;
+
+      setTimeout(() => {
+        inThrottle = false;
+      }, limit);
+    }
+  };
+}
+```
+
+---
+
+# 🧠 Key Difference Between Two Approaches
+
+| Approach        | Mechanism                | Precision     |
+| --------------- | ------------------------ | ------------- |
+| timestamp-based | compares time difference | more accurate |
+| timeout-based   | locks execution window   | simpler       |
+
+---
+
+# 🔥 Advanced Throttle (Leading + Trailing Edge)
+
+Real-world throttle often supports both:
+
+```javascript
+function throttle(fn, limit) {
+  let lastCall = 0;
+  let timeout;
+
+  return function (...args) {
+    const now = Date.now();
+    const remaining = limit - (now - lastCall);
+
+    if (remaining <= 0) {
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+
+      lastCall = now;
+      fn.apply(this, args);
+    } else if (!timeout) {
+      timeout = setTimeout(() => {
+        lastCall = Date.now();
+        timeout = null;
+        fn.apply(this, args);
+      }, remaining);
+    }
+  };
+}
+```
+
+---
+
+# 🧠 What This Version Solves
+
+It ensures:
+
+- Immediate execution (leading edge)
+- Guaranteed final execution (trailing edge)
+- No event loss during high-frequency triggers
+
+---
+
+# ⚖️ Throttle vs Debounce (Critical Interview Concept)
+
+| Feature           | Throttle          | Debounce          |
+| ----------------- | ----------------- | ----------------- |
+| Execution         | Regular intervals | After inactivity  |
+| Frequency control | Fixed rate        | Reset timer       |
+| Use case          | scroll, resize    | search input      |
+| Behavior          | “Run every X ms”  | “Run after pause” |
+
+---
+
+# 🧪 Real Example Comparison
+
+### Scroll (Throttle)
+
+```javascript
+window.addEventListener(
+  "scroll",
+  throttle(() => console.log("scroll"), 500),
+);
+```
+
+Runs every 500ms while scrolling.
+
+---
+
+### Search (Debounce)
+
+```javascript
+input.addEventListener(
+  "input",
+  debounce((e) => console.log(e.target.value), 300),
+);
+```
+
+Runs only after user stops typing.
+
+---
+
+# ⚠️ Common Pitfalls
+
+## 1. Using Date incorrectly
+
+```javascript
+const now = new Date(); // ❌ avoid
+```
+
+Better:
+
+```javascript
+Date.now(); // ✅ faster and cleaner
+```
+
+---
+
+## 2. Losing `this`
+
+Always use:
+
+```javascript
+fn.apply(this, args);
+```
+
+Otherwise methods inside objects break.
+
+---
+
+## 3. Creating throttle inside render loops (React issue)
+
+Bad:
+
+```javascript
+onScroll={throttle(fn, 200)}
+```
+
+This recreates throttle every render.
+
+Fix:
+
+```javascript
+const throttledFn = useMemo(() => throttle(fn, 200), []);
+```
+
+---
+
+# 🧠 Closure Concept (Important Interview Insight)
+
+Throttle relies on closure:
+
+```javascript
+let lastCall = 0;
+```
+
+This variable persists between calls because:
+
+- returned function forms a closure
+- retains access to outer scope variables
+
+---
+
+# ⚙️ Event Loop Perspective
+
+- Function call → runs synchronously
+- `setTimeout` → moves callback to Web API
+- Callback → enters task queue
+- Event loop executes when stack is empty
+
+Throttle is basically controlling how often tasks enter execution.
+
+---
+
+# 📊 Complexity
+
+- Time complexity: **O(1) per call**
+- Space complexity: **O(1)**
+
+---
+
+# 🚀 Interview-Ready Summary
+
+A throttle function limits execution of a function to once every fixed interval. It uses timestamps or timers to ensure controlled execution during high-frequency events.
+
+Key concepts involved:
+
+- Closures
+- `Date.now()`
+- `setTimeout`
+- Function context (`this`)
+- Event loop behavior
+
 ## Question 3. Difference between `requestAnimationFrame` and `setTimeout` for animations
 
 ## Question 4. How to implement a promise-based delay function
