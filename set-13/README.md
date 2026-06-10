@@ -325,6 +325,355 @@ Use:
 
 ## Question 2. Difference between `Object.keys()`, `Object.values()`, and `Object.entries()`
 
+### Direct Answer
+
+`Object.keys()`, `Object.values()`, and `Object.entries()` are methods used to extract information from an object's **own enumerable properties**:
+
+| Method                | Returns                        |
+| --------------------- | ------------------------------ |
+| `Object.keys(obj)`    | Array of property names (keys) |
+| `Object.values(obj)`  | Array of property values       |
+| `Object.entries(obj)` | Array of `[key, value]` pairs  |
+
+Example:
+
+```js
+const user = {
+  name: "Alice",
+  age: 25,
+};
+
+console.log(Object.keys(user));
+console.log(Object.values(user));
+console.log(Object.entries(user));
+```
+
+Output:
+
+```js
+["name", "age"][("Alice", 25)][(["name", "Alice"], ["age", 25])];
+```
+
+---
+
+# 1. `Object.keys()`
+
+Returns an array containing all enumerable property names.
+
+```js
+const person = {
+  name: "John",
+  age: 30,
+  city: "Delhi",
+};
+
+console.log(Object.keys(person));
+```
+
+Output:
+
+```js
+["name", "age", "city"];
+```
+
+### Common Use Cases
+
+- Counting properties
+- Iterating over keys
+- Checking if a key exists
+
+```js
+const keys = Object.keys(person);
+
+console.log(keys.length); // 3
+```
+
+Looping:
+
+```js
+Object.keys(person).forEach((key) => {
+  console.log(key, person[key]);
+});
+```
+
+---
+
+# 2. `Object.values()`
+
+Returns an array of property values.
+
+```js
+const person = {
+  name: "John",
+  age: 30,
+  city: "Delhi",
+};
+
+console.log(Object.values(person));
+```
+
+Output:
+
+```js
+["John", 30, "Delhi"];
+```
+
+### Common Use Cases
+
+Summing values:
+
+```js
+const scores = {
+  math: 90,
+  science: 85,
+  english: 95,
+};
+
+const total = Object.values(scores).reduce((sum, score) => sum + score, 0);
+
+console.log(total);
+```
+
+Output:
+
+```js
+270;
+```
+
+---
+
+# 3. `Object.entries()`
+
+Returns an array of key-value pairs.
+
+```js
+const person = {
+  name: "John",
+  age: 30,
+};
+
+console.log(Object.entries(person));
+```
+
+Output:
+
+```js
+[
+  ["name", "John"],
+  ["age", 30],
+];
+```
+
+### Common Use Cases
+
+#### Iterating over key-value pairs
+
+```js
+for (const [key, value] of Object.entries(person)) {
+  console.log(key, value);
+}
+```
+
+Output:
+
+```js
+name John
+age 30
+```
+
+---
+
+# 4. Converting Objects to Arrays
+
+`Object.entries()` is useful when you want array methods like `map()`, `filter()`, or `reduce()`.
+
+```js
+const prices = {
+  apple: 100,
+  banana: 50,
+  mango: 120,
+};
+
+const expensive = Object.entries(prices).filter(([key, value]) => value > 80);
+
+console.log(expensive);
+```
+
+Output:
+
+```js
+[
+  ["apple", 100],
+  ["mango", 120],
+];
+```
+
+---
+
+# 5. Converting Back to an Object
+
+ES2019 introduced `Object.fromEntries()`.
+
+```js
+const entries = [
+  ["name", "Alice"],
+  ["age", 25],
+];
+
+const obj = Object.fromEntries(entries);
+
+console.log(obj);
+```
+
+Output:
+
+```js
+{
+  name: "Alice",
+  age: 25
+}
+```
+
+A common pattern:
+
+```js
+const user = {
+  name: "Alice",
+  age: 25,
+};
+
+const transformed = Object.fromEntries(
+  Object.entries(user).map(([key, value]) => [key, String(value)]),
+);
+
+console.log(transformed);
+```
+
+---
+
+# 6. Property Order
+
+All three methods return properties in the same order:
+
+```js
+const obj = {
+  a: 1,
+  b: 2,
+  c: 3,
+};
+
+Object.keys(obj);
+Object.values(obj);
+Object.entries(obj);
+```
+
+Results follow:
+
+```js
+a → b → c
+```
+
+---
+
+# 7. What Properties Are Included?
+
+These methods return only:
+
+- Own properties
+- Enumerable properties
+
+They do **not** include inherited properties.
+
+```js
+const parent = {
+  role: "admin",
+};
+
+const user = Object.create(parent);
+user.name = "John";
+
+console.log(Object.keys(user));
+```
+
+Output:
+
+```js
+["name"];
+```
+
+`role` is inherited, so it is excluded.
+
+---
+
+# 8. Difference from `for...in`
+
+```js
+for (const key in user) {
+  console.log(key);
+}
+```
+
+`for...in` iterates over inherited enumerable properties as well.
+
+```js
+Object.keys(user);
+```
+
+returns only own properties.
+
+### Interview Tip
+
+Prefer `Object.keys()`, `Object.values()`, or `Object.entries()` when you only want an object's own properties.
+
+---
+
+# 9. Common Interview Example
+
+Transform object values:
+
+```js
+const prices = {
+  apple: 10,
+  banana: 20,
+};
+
+const doubled = Object.fromEntries(
+  Object.entries(prices).map(([key, value]) => [key, value * 2]),
+);
+
+console.log(doubled);
+```
+
+Output:
+
+```js
+{
+  apple: 20,
+  banana: 40
+}
+```
+
+This demonstrates how `Object.entries()` enables functional programming patterns with objects.
+
+---
+
+# Interview Summary
+
+```js
+Object.keys(obj); // ["key1", "key2"]
+
+Object.values(obj); // ["value1", "value2"]
+
+Object.entries(obj); // [["key1", "value1"], ["key2", "value2"]]
+```
+
+- **`Object.keys()`** → returns property names.
+- **`Object.values()`** → returns property values.
+- **`Object.entries()`** → returns key-value pairs.
+- All return arrays of an object's **own enumerable properties**.
+- `Object.entries()` is especially useful with `map()`, `filter()`, and `reduce()`.
+- `Object.fromEntries()` can convert key-value pairs back into an object.
+
 ## Question 3. Difference between `for...of` and `forEach()` for arrays
 
 ## Question 4. How to remove duplicates from an array without using Set
