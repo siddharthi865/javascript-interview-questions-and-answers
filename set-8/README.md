@@ -284,6 +284,262 @@ console.log(obj);
 
 ## Question 2. Difference between object literal and constructor function
 
+## Direct Answer
+
+Both **object literals** and **constructor functions** are used to create objects in JavaScript, but they serve different purposes:
+
+- **Object Literal (`{}`)**: Best for creating a single object quickly.
+- **Constructor Function (`new`)**: Best for creating multiple objects with the same structure and behavior.
+
+---
+
+# 1. Object Literal
+
+An object literal creates a single object directly.
+
+```js
+const person = {
+  name: "John",
+  age: 30,
+  greet() {
+    console.log(`Hello, I'm ${this.name}`);
+  },
+};
+
+person.greet();
+```
+
+### Characteristics
+
+- Simple and concise.
+- Creates one object instance.
+- No need for `new`.
+- Suitable for configuration objects, JSON-like data, and one-off objects.
+
+### Memory Consideration
+
+If you create many similar objects using literals, methods get duplicated:
+
+```js
+const user1 = {
+  name: "John",
+  greet() {
+    console.log("Hello");
+  },
+};
+
+const user2 = {
+  name: "Alice",
+  greet() {
+    console.log("Hello");
+  },
+};
+```
+
+Each object has its own copy of `greet`.
+
+---
+
+# 2. Constructor Function
+
+A constructor function acts as a blueprint for creating objects.
+
+```js
+function Person(name, age) {
+  this.name = name;
+  this.age = age;
+}
+
+const p1 = new Person("John", 30);
+const p2 = new Person("Alice", 25);
+
+console.log(p1);
+console.log(p2);
+```
+
+### What `new` Does
+
+```js
+const p1 = new Person("John", 30);
+```
+
+Internally:
+
+1. Creates a new empty object.
+2. Sets its prototype to `Person.prototype`.
+3. Binds `this` to the new object.
+4. Executes the constructor.
+5. Returns the object.
+
+---
+
+# Sharing Methods via Prototype
+
+Instead of creating methods per object:
+
+```js
+function Person(name) {
+  this.name = name;
+}
+
+Person.prototype.greet = function () {
+  console.log(`Hello, I'm ${this.name}`);
+};
+```
+
+Now all instances share the same method:
+
+```js
+const p1 = new Person("John");
+const p2 = new Person("Alice");
+
+p1.greet();
+p2.greet();
+```
+
+This is more memory-efficient.
+
+---
+
+# Comparison Table
+
+| Feature           | Object Literal        | Constructor Function     |
+| ----------------- | --------------------- | ------------------------ |
+| Syntax            | `{}`                  | `function + new`         |
+| Purpose           | Single object         | Multiple similar objects |
+| Reusability       | Low                   | High                     |
+| Prototype support | Uses Object.prototype | Custom prototype chain   |
+| Memory efficiency | Methods duplicated    | Methods can be shared    |
+| Requires `new`    | No                    | Yes                      |
+| OOP suitability   | Limited               | Better                   |
+
+---
+
+# Example: Same Problem Solved Both Ways
+
+### Object Literal
+
+```js
+const car1 = {
+  brand: "Toyota",
+  drive() {
+    console.log("Driving...");
+  },
+};
+
+const car2 = {
+  brand: "Honda",
+  drive() {
+    console.log("Driving...");
+  },
+};
+```
+
+Method duplicated in each object.
+
+---
+
+### Constructor Function
+
+```js
+function Car(brand) {
+  this.brand = brand;
+}
+
+Car.prototype.drive = function () {
+  console.log("Driving...");
+};
+
+const car1 = new Car("Toyota");
+const car2 = new Car("Honda");
+```
+
+Single shared `drive` method.
+
+---
+
+# Modern Alternative: ES6 Classes
+
+Constructor functions are the foundation of ES6 classes.
+
+```js
+class Person {
+  constructor(name, age) {
+    this.name = name;
+    this.age = age;
+  }
+
+  greet() {
+    console.log(`Hello, I'm ${this.name}`);
+  }
+}
+```
+
+Equivalent to:
+
+```js
+function Person(name, age) {
+  this.name = name;
+  this.age = age;
+}
+
+Person.prototype.greet = function () {
+  console.log(`Hello, I'm ${this.name}`);
+};
+```
+
+Classes provide cleaner syntax but still use JavaScript's prototype system internally.
+
+---
+
+# Common Interview Questions
+
+### Q: Can an object literal be used as a constructor?
+
+No.
+
+```js
+const person = {
+  name: "John",
+};
+
+new person(); // TypeError
+```
+
+Only functions (or classes) can be used with `new`.
+
+---
+
+### Q: What happens if you forget `new`?
+
+```js
+function Person(name) {
+  this.name = name;
+}
+
+const p = Person("John");
+```
+
+In non-strict mode, `this` may refer to the global object, causing bugs.
+
+A safer pattern:
+
+```js
+function Person(name) {
+  if (!(this instanceof Person)) {
+    return new Person(name);
+  }
+
+  this.name = name;
+}
+```
+
+---
+
+# Interview-Friendly Summary
+
+> An object literal creates a single object directly using `{}` and is ideal for one-off objects. A constructor function acts as a blueprint for creating multiple similar objects using `new`. Constructor functions support prototype-based method sharing, making them more reusable and memory-efficient for object-oriented programming. ES6 classes are syntactic sugar over constructor functions and prototypes.
+
 ## Question 3. What are default parameters in functions?
 
 ## Question 4. How to swap two variables without using a third variable?
