@@ -179,6 +179,260 @@ An IIFE is:
 
 ## Question 2. Difference between shallow and deep copy of objects
 
+## Short Answer
+
+A **shallow copy** copies only the top-level properties of an object. If a property contains another object or array, the copy and the original still share the same reference.
+
+A **deep copy** recursively copies all nested objects and arrays, creating completely independent copies.
+
+---
+
+# Detailed Explanation
+
+JavaScript objects and arrays are **reference types**. When you assign one object to another variable, you're copying the reference, not the actual object.
+
+```javascript
+const original = {
+  name: "John",
+};
+
+const copy = original;
+
+copy.name = "Mike";
+
+console.log(original.name); // Mike
+```
+
+Both variables point to the same object in memory.
+
+---
+
+# What is a Shallow Copy?
+
+A shallow copy creates a new object, but nested objects are still shared.
+
+### Example
+
+```javascript
+const original = {
+  name: "John",
+  address: {
+    city: "Delhi",
+  },
+};
+
+const shallowCopy = { ...original };
+
+shallowCopy.name = "Mike";
+shallowCopy.address.city = "Mumbai";
+
+console.log(original.name); // John
+console.log(original.address.city); // Mumbai
+```
+
+### Memory Representation
+
+```text
+original
+ ├─ name → "John"
+ └─ address ─┐
+             ▼
+          { city: "Mumbai" }
+
+shallowCopy
+ ├─ name → "Mike"
+ └─ address ─┘
+```
+
+The `address` object is shared between both objects.
+
+---
+
+# Common Ways to Create a Shallow Copy
+
+### 1. Spread Operator
+
+```javascript
+const copy = { ...obj };
+```
+
+### 2. Object.assign()
+
+```javascript
+const copy = Object.assign({}, obj);
+```
+
+### 3. Array Spread
+
+```javascript
+const copy = [...arr];
+```
+
+### 4. Array.slice()
+
+```javascript
+const copy = arr.slice();
+```
+
+All of these perform **shallow copies**.
+
+---
+
+# What is a Deep Copy?
+
+A deep copy recursively copies all nested structures.
+
+### Example
+
+```javascript
+const original = {
+  name: "John",
+  address: {
+    city: "Delhi",
+  },
+};
+
+const deepCopy = structuredClone(original);
+
+deepCopy.address.city = "Mumbai";
+
+console.log(original.address.city); // Delhi
+console.log(deepCopy.address.city); // Mumbai
+```
+
+Now both objects are completely independent.
+
+---
+
+# Modern Deep Copy: structuredClone()
+
+The recommended modern approach is:
+
+```javascript
+const clone = structuredClone(original);
+```
+
+### Supports
+
+- Objects
+- Arrays
+- Maps
+- Sets
+- Dates
+- Typed Arrays
+- Circular references
+
+Example:
+
+```javascript
+const obj = {
+  user: {
+    name: "John",
+  },
+};
+
+const clone = structuredClone(obj);
+
+clone.user.name = "Mike";
+
+console.log(obj.user.name); // John
+```
+
+---
+
+# JSON-Based Deep Copy (Older Technique)
+
+```javascript
+const deepCopy = JSON.parse(JSON.stringify(obj));
+```
+
+### Works for
+
+```javascript
+const obj = {
+  name: "John",
+  age: 30,
+};
+```
+
+### Fails for
+
+```javascript
+const obj = {
+  date: new Date(),
+  fn: () => {},
+  map: new Map(),
+  set: new Set(),
+  undefinedValue: undefined,
+};
+```
+
+Problems:
+
+- Removes functions
+- Loses `Date` objects
+- Loses `Map` and `Set`
+- Removes `undefined`
+- Cannot handle circular references
+
+Therefore, `structuredClone()` is preferred in modern JavaScript.
+
+---
+
+# Interview Comparison
+
+| Feature                      | Shallow Copy        | Deep Copy           |
+| ---------------------------- | ------------------- | ------------------- |
+| Creates new top-level object | ✅                  | ✅                  |
+| Copies nested objects        | ❌ Reference shared | ✅ Fully copied     |
+| Faster                       | ✅                  | ❌ Usually slower   |
+| Uses less memory             | ✅                  | ❌ Uses more memory |
+| Safe for nested updates      | ❌                  | ✅                  |
+| Spread operator              | ✅                  | ❌                  |
+| Object.assign()              | ✅                  | ❌                  |
+| structuredClone()            | ❌                  | ✅                  |
+
+---
+
+# Common Interview Trap
+
+```javascript
+const obj1 = {
+  user: {
+    name: "John",
+  },
+};
+
+const obj2 = { ...obj1 };
+
+obj2.user.name = "Mike";
+
+console.log(obj1.user.name);
+```
+
+**Output:**
+
+```javascript
+Mike;
+```
+
+Many candidates expect `"John"`, but spread syntax performs only a **shallow copy**, so both objects share the same nested `user` object.
+
+---
+
+# Best Practices
+
+- Use **spread syntax** or **Object.assign()** when objects are flat.
+- Use **structuredClone()** for true deep cloning.
+- Be cautious when copying objects with nested arrays or objects.
+- Avoid `JSON.parse(JSON.stringify())` for complex data structures.
+
+---
+
+## Interview One-Liner
+
+**"A shallow copy duplicates only the first level of an object and shares references to nested objects, whereas a deep copy recursively clones all nested structures, making the copy completely independent from the original."**
+
 ## Question 3. Explain prototypes and prototype chain
 
 ## Question 4. Difference between classical inheritance and prototypal inheritance
