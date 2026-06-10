@@ -342,6 +342,225 @@ A strong interview answer would be:
 
 ## Question 2. How to create a revocable Proxy
 
+## Concise Answer
+
+You create a **revocable Proxy** using:
+
+```js
+Proxy.revocable(target, handler);
+```
+
+It returns an object containing:
+
+- `proxy` → the Proxy instance
+- `revoke` → a function that disables the proxy permanently
+
+Once revoked, any operation on the proxy throws a **TypeError**.
+
+---
+
+# Detailed Explanation (Interview-Friendly)
+
+## 1. What is a Revocable Proxy?
+
+A **revocable Proxy** is a special form of `Proxy` that can be **turned off at runtime**.
+
+Unlike a normal Proxy:
+
+- You can explicitly destroy its access
+- After revocation, it becomes unusable
+
+This is useful for:
+
+- security controls
+- temporary access
+- sandboxing
+- resource cleanup
+
+---
+
+## 2. Syntax
+
+```js
+const { proxy, revoke } = Proxy.revocable(target, handler);
+```
+
+- `proxy` → behaves like a normal Proxy
+- `revoke()` → disables it permanently
+
+---
+
+## 3. Basic Example
+
+```js
+const user = {
+  name: "Alice",
+};
+
+const { proxy, revoke } = Proxy.revocable(user, {
+  get(target, prop) {
+    return target[prop];
+  },
+});
+
+console.log(proxy.name); // Alice
+
+revoke();
+
+console.log(proxy.name); // TypeError
+```
+
+---
+
+## 4. What Happens After Revocation?
+
+Once `revoke()` is called:
+
+- Any `get`, `set`, or operation on proxy throws error
+
+```js
+TypeError: Cannot perform 'get' on a proxy that has been revoked
+```
+
+---
+
+## 5. Internal Behavior Concept
+
+Think of it like:
+
+- Proxy = controlled gateway to object
+- revoke() = closing the gateway permanently
+
+After revocation, the internal target binding is invalidated.
+
+---
+
+## 6. Practical Use Case: Temporary Access Control
+
+### Example: Secure API access
+
+```js
+function createSecureObject(data) {
+  const { proxy, revoke } = Proxy.revocable(data, {
+    get(target, prop) {
+      if (prop.startsWith("_")) {
+        throw new Error("Access denied");
+      }
+      return target[prop];
+    },
+  });
+
+  return { proxy, revoke };
+}
+
+const { proxy, revoke } = createSecureObject({
+  name: "John",
+  _secret: "12345",
+});
+
+console.log(proxy.name); // John
+// console.log(proxy._secret); // Error
+
+revoke();
+```
+
+---
+
+## 7. Real-World Use Cases
+
+### 1. Sandboxing
+
+Used in environments like:
+
+- plugin systems
+- iframe-like isolation
+- untrusted code execution
+
+### 2. Resource Cleanup
+
+Prevent memory leaks by disabling references:
+
+```js
+let { proxy, revoke } = Proxy.revocable(obj, handler);
+
+// later
+revoke();
+```
+
+### 3. Temporary Permissions
+
+Give time-limited access to an object.
+
+---
+
+## 8. Key Differences: Proxy vs Revocable Proxy
+
+| Feature          | Proxy         | Revocable Proxy     |
+| ---------------- | ------------- | ------------------- |
+| Can be disabled  | ❌ No         | ✅ Yes              |
+| Created using    | `new Proxy()` | `Proxy.revocable()` |
+| Lifetime control | Permanent     | Temporary           |
+| Security use     | Medium        | High                |
+
+---
+
+## 9. Important Pitfalls
+
+### ❌ Forgetting to store revoke function
+
+```js
+const { proxy } = Proxy.revocable(obj, handler);
+// no way to revoke later
+```
+
+---
+
+### ❌ Using proxy after revoke
+
+```js
+revoke();
+proxy.name; // Runtime TypeError
+```
+
+Always ensure lifecycle control.
+
+---
+
+## 10. Advanced Insight (Interview Gold)
+
+Internally:
+
+- `Proxy.revocable()` creates a Proxy with an internal “revocation slot”
+- After `revoke()`:
+  - internal target reference is invalidated
+  - all traps immediately fail
+
+This is enforced by the JS engine (not user-land logic).
+
+---
+
+## 11. Best Practice Pattern
+
+```js
+function createRevocableUser(user) {
+  const { proxy, revoke } = Proxy.revocable(user, {
+    get(target, prop, receiver) {
+      return Reflect.get(target, prop, receiver);
+    },
+  });
+
+  return { userProxy: proxy, revoke };
+}
+```
+
+---
+
+## 12. Interview Summary
+
+A strong answer:
+
+> “A revocable Proxy is created using `Proxy.revocable()`, which returns a proxy and a revoke function. Once revoke is called, the proxy becomes permanently unusable and any access throws a TypeError. It is useful for temporary access control, sandboxing, and secure resource management.”
+
 ## Question 3. How to validate object property access using Proxy
 
 ## Question 4. Difference between WeakMap and Map in garbage collection
