@@ -543,6 +543,584 @@ Long-lived leaked objects move into old space, making GC slower.
 
 ## Question 2. How to implement graceful shutdown in Node.js server
 
+Graceful shutdown in Node.js means **stopping a server safely without abruptly terminating active requests, database operations, or background jobs**.
+
+A proper graceful shutdown process typically:
+
+1. Stops accepting new requests
+2. Finishes ongoing requests
+3. Closes database/socket connections
+4. Cleans up resources
+5. Exits the process safely
+
+This is especially important in:
+
+- Production APIs
+- Docker/Kubernetes deployments
+- Microservices
+- Long-running Node.js processes
+
+---
+
+# Why Graceful Shutdown Matters
+
+Without graceful shutdown:
+
+- Active HTTP requests may fail
+- Database writes may be interrupted
+- File operations may corrupt data
+- Users may receive errors
+- Memory/resources may leak
+
+Example:
+
+- Kubernetes sends `SIGTERM`
+- Your app immediately exits
+- In-flight requests are lost
+
+Graceful shutdown prevents this.
+
+---
+
+# Common Shutdown Signals
+
+Node.js applications usually listen for OS signals.
+
+## Important Signals
+
+| Signal    | Meaning                                 |
+| --------- | --------------------------------------- |
+| `SIGINT`  | Ctrl+C in terminal                      |
+| `SIGTERM` | Termination request (Docker/Kubernetes) |
+| `SIGHUP`  | Terminal/session closed                 |
+
+---
+
+# Basic Graceful Shutdown Example
+
+```js id="sdc6dv"
+const http = require("http");
+
+const server = http.createServer((req, res) => {
+  setTimeout(() => {
+    res.end("Done");
+  }, 2000);
+});
+
+server.listen(3000, () => {
+  console.log("Server running on port 3000");
+});
+
+function gracefulShutdown(signal) {
+  console.log(`Received ${signal}`);
+
+  server.close(() => {
+    console.log("HTTP server closed");
+    process.exit(0);
+  });
+}
+
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+```
+
+---
+
+# How `server.close()` Works
+
+```js id="u24q8l"
+server.close(callback);
+```
+
+It:
+
+- Stops accepting new connections
+- Waits for existing requests to finish
+- Calls callback after all connections close
+
+Important:
+
+- Existing keep-alive connections may delay shutdown
+
+---
+
+# Handling Hanging Connections
+
+Some clients may keep sockets open forever.
+
+Track sockets manually.
+
+---
+
+# Advanced Socket Tracking
+
+```js id="zbbv18"
+const sockets = new Set();
+
+server.on("connection", (socket) => {
+  sockets.add(socket);
+
+  socket.on("close", () => {
+    sockets.delete(socket);
+  });
+});
+```
+
+Destroy remaining sockets during shutdown:
+
+```js id="tjlwm2"
+function gracefulShutdown() {
+  server.close(() => {
+    console.log("Server closed");
+  });
+
+  setTimeout(() => {
+    sockets.forEach((socket) => socket.destroy());
+  }, 5000);
+}
+```
+
+This prevents infinite shutdown hangs.
+
+---
+
+# Graceful Shutdown with Express
+
+```js id="m0vtbr"
+const express = require("express");
+
+const app = express();
+
+const server = app.listen(3000, () => {
+  console.log("Running");
+});
+
+async function shutdown() {
+  console.log("Shutdown started");
+
+  server.close(() => {
+    console.log("HTTP server closed");
+  });
+
+  process.exit(0);
+}
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
+```
+
+---
+
+# Proper Async Cleanup
+
+Real applications also close:
+
+- Databases
+- Redis
+- Queues
+- Kafka consumers
+- WebSockets
+
+---
+
+# Example with MongoDB
+
+```js id="ycdy8r"
+const mongoose = require("mongoose");
+
+async function shutdown() {
+  console.log("Graceful shutdown");
+
+  server.close(async () => {
+    console.log("HTTP closed");
+
+    await mongoose.connection.close();
+
+    console.log("MongoDB closed");
+
+    process.exit(0);
+  });
+}
+```
+
+---
+
+# Example with PostgreSQL
+
+```js id="tptiyv"
+const { Pool } = require("pg");
+
+const pool = new Pool();
+
+async function shutdown() {
+  server.close(async () => {
+    await pool.end();
+    process.exit(0);
+  });
+}
+```
+
+---
+
+# Shutdown Timeout Strategy
+
+Sometimes cleanup hangs forever.
+
+Use a force-exit timeout.
+
+```js id="f9hupm"
+async function shutdown() {
+  console.log("Shutdown initiated");
+
+  const forceTimeout = setTimeout(() => {
+    console.error("Force shutdown");
+    process.exit(1);
+  }, 10000);
+
+  try {
+    await closeResources();
+
+    clearTimeout(forceTimeout);
+
+    process.exit(0);
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
+}
+```
+
+Best practice:
+
+- 10–30 second timeout
+
+---
+
+# Prevent New Requests During Shutdown
+
+Sometimes you should reject new requests immediately.
+
+---
+
+# Example
+
+```js id="odc6uj"
+let isShuttingDown = false;
+
+app.use((req, res, next) => {
+  if (isShuttingDown) {
+    return res.status(503).send("Server restarting");
+  }
+
+  next();
+});
+```
+
+During shutdown:
+
+```js id="p8k8gh"
+isShuttingDown = true;
+```
+
+Useful in:
+
+- Load-balanced systems
+- Kubernetes rolling deployments
+
+---
+
+# Handling Background Jobs
+
+If using queues:
+
+- BullMQ
+- RabbitMQ
+- Kafka
+- Agenda
+
+Stop consuming new jobs first.
+
+---
+
+# Example
+
+```js id="ly4z0u"
+await worker.close();
+```
+
+Or:
+
+```js id="ngf7h5"
+consumer.disconnect();
+```
+
+Important:
+
+- Finish current jobs safely
+- Avoid duplicate processing
+
+---
+
+# Kubernetes Graceful Shutdown
+
+In Kubernetes:
+
+1. Pod receives `SIGTERM`
+2. Pod removed from load balancer
+3. Grace period begins
+4. App must shut down cleanly
+
+Default grace period:
+
+- 30 seconds
+
+---
+
+# Docker Graceful Shutdown
+
+Docker sends:
+
+```bash id="0bjh65"
+SIGTERM
+```
+
+Then after timeout:
+
+```bash id="38y9t2"
+SIGKILL
+```
+
+Your Node.js app should handle `SIGTERM`.
+
+---
+
+# Common Mistakes
+
+## 1. Calling `process.exit()` Immediately
+
+Bad:
+
+```js id="v04njf"
+process.on("SIGTERM", () => {
+  process.exit(0);
+});
+```
+
+This kills active requests instantly.
+
+---
+
+## 2. Forgetting Async Cleanup
+
+Bad:
+
+```js id="3j4a0n"
+mongoose.connection.close();
+process.exit(0);
+```
+
+The DB close may not complete.
+
+Always await cleanup.
+
+---
+
+## 3. Not Handling Open Connections
+
+WebSockets or keep-alive sockets may block shutdown forever.
+
+Track and close them.
+
+---
+
+# Using AbortController (Modern Approach)
+
+Modern Node.js supports `AbortController`.
+
+---
+
+# Example
+
+```js id="dybhav"
+const controller = new AbortController();
+
+process.on("SIGTERM", () => {
+  controller.abort();
+});
+```
+
+Useful for:
+
+- Fetch requests
+- Streams
+- Long-running async tasks
+
+---
+
+# Production-Grade Graceful Shutdown Pattern
+
+```js id="wwq5g6"
+const express = require("express");
+
+const app = express();
+
+const server = app.listen(3000);
+
+let shuttingDown = false;
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
+
+async function shutdown() {
+  if (shuttingDown) return;
+
+  shuttingDown = true;
+
+  console.log("Shutdown started");
+
+  const timeout = setTimeout(() => {
+    console.error("Forced shutdown");
+    process.exit(1);
+  }, 10000);
+
+  server.close(async () => {
+    try {
+      console.log("HTTP server closed");
+
+      // Close DB
+      // await mongoose.connection.close();
+
+      // Close queues
+      // await worker.close();
+
+      clearTimeout(timeout);
+
+      console.log("Shutdown complete");
+
+      process.exit(0);
+    } catch (err) {
+      console.error(err);
+      process.exit(1);
+    }
+  });
+}
+```
+
+---
+
+# Best Practices
+
+## Always Handle
+
+- `SIGINT`
+- `SIGTERM`
+
+---
+
+## Use Timeouts
+
+Prevent hanging shutdowns.
+
+---
+
+## Stop Accepting Traffic First
+
+Close HTTP server immediately.
+
+---
+
+## Await Resource Cleanup
+
+- DB pools
+- Redis
+- Queues
+- Streams
+
+---
+
+## Make Shutdown Idempotent
+
+Avoid running cleanup twice.
+
+```js id="kym5h4"
+if (shuttingDown) return;
+```
+
+---
+
+# Interview-Level Insights
+
+Senior-level discussion points:
+
+## 1. Zero-Downtime Deployments
+
+Graceful shutdown enables:
+
+- Rolling deployments
+- Blue-green deployments
+- Canary releases
+
+Without dropped requests.
+
+---
+
+## 2. Connection Draining
+
+Load balancers should stop routing traffic before termination.
+
+---
+
+## 3. HTTP Keep-Alive Considerations
+
+Persistent connections can delay shutdown.
+
+Modern Node.js APIs help:
+
+```js id="u0rq6f"
+server.closeIdleConnections();
+```
+
+and:
+
+```js id="x0vhf4"
+server.closeAllConnections();
+```
+
+(Available in newer Node.js versions.)
+
+---
+
+# Event Loop Consideration
+
+Node exits automatically when:
+
+- Event loop becomes empty
+- No active handles remain
+
+Leaks during shutdown often happen because:
+
+- Timers still exist
+- Sockets remain open
+- Streams are active
+
+---
+
+# Interview Summary
+
+A strong interview answer should mention:
+
+- Graceful shutdown safely terminates applications
+- Handle `SIGINT` and `SIGTERM`
+- Use `server.close()` to stop new requests
+- Finish in-flight requests
+- Close DBs, queues, streams, sockets
+- Add force-exit timeout
+- Handle keep-alive connections
+- Important for Docker/Kubernetes deployments
+- Avoid immediate `process.exit()`
+
+That demonstrates both Node.js internals knowledge and real production engineering experience.
+
 ## Question 3. How to implement a task queue with async workers
 
 ## Question 4. How to handle backpressure with streams in Node.js
