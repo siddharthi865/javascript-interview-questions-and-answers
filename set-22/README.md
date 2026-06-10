@@ -324,6 +324,256 @@ A debounced input handler delays execution until the user stops triggering event
 
 ## Question 2. How to use `requestIdleCallback` for low-priority tasks
 
+# ✅ Direct Answer
+
+`requestIdleCallback()` is used to schedule **low-priority work** (like analytics, logging, prefetching, or non-critical UI updates) during the browser’s **idle periods**, so it does not block rendering or user interactions.
+
+In short:
+
+> Run heavy or non-urgent tasks only when the browser is idle.
+
+---
+
+# 🧠 Interview-Level Explanation
+
+Browsers prioritize work like:
+
+1. User input
+2. Rendering (layout, paint)
+3. Animations
+4. JavaScript execution
+
+If the main thread is busy, low-priority work should wait.
+
+`requestIdleCallback()` allows you to:
+
+- execute code when the browser is idle
+- avoid jank in UI rendering
+- improve responsiveness
+
+---
+
+# 📌 1. Basic Syntax
+
+```js id="ric1"
+requestIdleCallback((deadline) => {
+  // low-priority work here
+});
+```
+
+---
+
+## `deadline` object:
+
+```js id="ric2"
+deadline.timeRemaining(); // how many ms left in idle time
+deadline.didTimeout; // whether callback was forced
+```
+
+---
+
+# 🚀 2. Basic Example
+
+```js id="ric3"
+requestIdleCallback((deadline) => {
+  console.log("Idle time available:", deadline.timeRemaining());
+
+  while (deadline.timeRemaining() > 0) {
+    console.log("Doing low-priority work...");
+    break;
+  }
+});
+```
+
+---
+
+# 📌 3. Real Use Case: Analytics Logging
+
+```js id="ric4"
+function logEvent(event) {
+  requestIdleCallback(() => {
+    sendToServer(event); // non-critical task
+  });
+}
+```
+
+---
+
+# 📌 4. Chunking Heavy Work (Important Pattern)
+
+Instead of blocking the main thread:
+
+---
+
+## ❌ Bad (blocking)
+
+```js id="ric5"
+for (let i = 0; i < 1000000; i++) {
+  processItem(i);
+}
+```
+
+---
+
+## ✅ Good (idle chunking)
+
+```js id="ric6"
+const tasks = Array.from({ length: 1000000 }, (_, i) => i);
+
+function processChunk(deadline) {
+  while (deadline.timeRemaining() > 0 && tasks.length > 0) {
+    const item = tasks.shift();
+    processItem(item);
+  }
+
+  if (tasks.length > 0) {
+    requestIdleCallback(processChunk);
+  }
+}
+
+requestIdleCallback(processChunk);
+```
+
+---
+
+# 📌 5. Prefetching Example (Very Common Interview Use Case)
+
+```js id="ric7"
+requestIdleCallback(() => {
+  import("./heavy-module.js").then((mod) => {
+    mod.init();
+  });
+});
+```
+
+---
+
+# 📌 6. DOM Pre-rendering Optimization
+
+```js id="ric8"
+requestIdleCallback(() => {
+  const images = document.querySelectorAll("img.lazy");
+
+  images.forEach((img) => {
+    img.src = img.dataset.src;
+  });
+});
+```
+
+---
+
+# ⚠️ 7. Important Limitation
+
+`requestIdleCallback` is:
+
+- not supported in all browsers (Safari partial support historically)
+- not guaranteed to run immediately
+- may be delayed indefinitely if main thread is busy
+
+---
+
+# 📌 8. Fallback Implementation (Important Interview Question)
+
+```js id="ric9"
+function safeRequestIdleCallback(cb) {
+  if ("requestIdleCallback" in window) {
+    return requestIdleCallback(cb);
+  }
+
+  return setTimeout(() => {
+    const start = Date.now();
+
+    cb({
+      timeRemaining: () => Math.max(0, 50 - (Date.now() - start)),
+      didTimeout: true,
+    });
+  }, 1);
+}
+```
+
+---
+
+# 📊 requestIdleCallback vs requestAnimationFrame
+
+| Feature  | requestIdleCallback | requestAnimationFrame |
+| -------- | ------------------- | --------------------- |
+| Purpose  | background tasks    | UI rendering          |
+| Timing   | idle time           | before repaint        |
+| Priority | low                 | high                  |
+| Use case | analytics, prefetch | animations            |
+
+---
+
+# 🧠 When to Use It
+
+## Best use cases:
+
+✔ analytics batching
+✔ logging
+✔ lazy loading modules
+✔ precomputing data
+✔ cache warming
+✔ non-critical DOM updates
+
+---
+
+## Avoid using for:
+
+❌ animations
+❌ input handling
+❌ layout-critical updates
+
+---
+
+# 🧠 Senior-Level Insight
+
+### 1. Idle time is unpredictable
+
+Browser may:
+
+- skip idle periods
+- deprioritize idle callbacks under load
+
+---
+
+### 2. Scheduling is cooperative
+
+Unlike Web Workers, this is:
+
+> cooperative scheduling, not parallel execution
+
+---
+
+### 3. Often combined with other APIs
+
+Modern apps combine:
+
+- `requestIdleCallback`
+- `requestAnimationFrame`
+- Web Workers
+
+for full performance layering.
+
+---
+
+# 📌 Best Practices
+
+✔ Always check `timeRemaining()`
+✔ Break work into chunks
+✔ Provide fallback (`setTimeout`)
+✔ Don’t rely on strict execution timing
+✔ Avoid long-running loops inside callback
+
+---
+
+# 🧾 Interview Summary
+
+`requestIdleCallback()` is a browser API that schedules low-priority tasks to run during idle periods, helping improve UI responsiveness by avoiding interference with critical rendering and input handling. It provides a `deadline` object to check remaining idle time and is best used for tasks like analytics, prefetching, and background processing. Since execution is not guaranteed immediately, it should be used with chunking strategies and fallback mechanisms.
+
+---
+
+If you want, I can next explain **how browsers schedule idle time internally and how this relates to the event loop, task queue, and rendering pipeline (very senior-level performance topic)**.
+
 ## Question 3. Difference between `clientX/clientY` and `pageX/pageY`
 
 ## Question 4. How to handle touch events and gestures in JS
