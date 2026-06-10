@@ -179,6 +179,252 @@ Number(true); // 1
 
 ## Question 2. What are template literals? Give examples with variables
 
+## Short Answer
+
+**Template literals** are a feature introduced in ES6 that allow you to create strings using **backticks (` `)** instead of quotes. They support:
+
+- **String interpolation** (embedding variables and expressions)
+- **Multi-line strings**
+- **Embedded expressions**
+- **Tagged templates**
+
+The most common use is inserting variables into strings using `${}`.
+
+---
+
+# Basic Syntax
+
+```js
+const name = "John";
+
+const message = `Hello, ${name}!`;
+
+console.log(message);
+```
+
+**Output:**
+
+```js
+Hello, John!
+```
+
+---
+
+# Why Use Template Literals?
+
+Before ES6, string concatenation was commonly done with `+`:
+
+```js
+const name = "John";
+const age = 25;
+
+const msg = "My name is " + name + " and I am " + age + " years old.";
+
+console.log(msg);
+```
+
+Using template literals:
+
+```js
+const name = "John";
+const age = 25;
+
+const msg = `My name is ${name} and I am ${age} years old.`;
+
+console.log(msg);
+```
+
+This is cleaner and easier to read.
+
+---
+
+# Example 1: Inserting Variables
+
+```js
+const firstName = "Alice";
+const city = "London";
+
+console.log(`Hello ${firstName}, welcome to ${city}!`);
+```
+
+**Output:**
+
+```js
+Hello Alice, welcome to London!
+```
+
+---
+
+# Example 2: Using Expressions
+
+Anything inside `${}` is evaluated as JavaScript.
+
+```js
+const a = 10;
+const b = 20;
+
+console.log(`Sum = ${a + b}`);
+```
+
+**Output:**
+
+```js
+Sum = 30;
+```
+
+---
+
+# Example 3: Calling Functions
+
+```js
+function greet(name) {
+  return `Hello ${name}`;
+}
+
+console.log(`${greet("David")}!`);
+```
+
+**Output:**
+
+```js
+Hello David!
+```
+
+---
+
+# Example 4: Accessing Object Properties
+
+```js
+const user = {
+  name: "Sarah",
+  age: 28,
+};
+
+console.log(`${user.name} is ${user.age} years old.`);
+```
+
+**Output:**
+
+```js
+Sarah is 28 years old.
+```
+
+---
+
+# Example 5: Multi-line Strings
+
+Before ES6:
+
+```js
+const text = "Line 1\n" + "Line 2\n" + "Line 3";
+```
+
+With template literals:
+
+```js
+const text = `
+Line 1
+Line 2
+Line 3
+`;
+
+console.log(text);
+```
+
+---
+
+# Example 6: HTML Generation
+
+A common frontend use case:
+
+```js
+const user = {
+  name: "John",
+  role: "Developer",
+};
+
+const html = `
+  <div>
+    <h2>${user.name}</h2>
+    <p>${user.role}</p>
+  </div>
+`;
+
+console.log(html);
+```
+
+---
+
+# Nested Template Literals
+
+```js
+const user = "Alice";
+const isAdmin = true;
+
+const message = `Welcome ${user}. ${
+  isAdmin ? "You have admin access." : "You are a regular user."
+}`;
+
+console.log(message);
+```
+
+**Output:**
+
+```js
+Welcome Alice. You have admin access.
+```
+
+---
+
+# Common Interview Question
+
+### What is the difference between template literals and string concatenation?
+
+| String Concatenation              | Template Literals                     |
+| --------------------------------- | ------------------------------------- |
+| Uses `+` operator                 | Uses backticks `` ` ` ``              |
+| Harder to read for long strings   | More readable                         |
+| Multi-line strings require `\n`   | Supports multi-line strings naturally |
+| Expressions require concatenation | Expressions inside `${}`              |
+
+---
+
+# Best Practices
+
+### ✅ Use template literals for dynamic strings
+
+```js
+const product = "Laptop";
+const price = 50000;
+
+const message = `${product} costs ₹${price}`;
+```
+
+### ✅ Use for HTML templates
+
+```js
+const card = `<div>${title}</div>`;
+```
+
+### ❌ Avoid unnecessary template literals
+
+```js
+// Not needed
+const name = `John`;
+```
+
+Prefer:
+
+```js
+const name = "John";
+```
+
+---
+
+# Interview-Friendly Summary
+
+> Template literals are ES6 string literals enclosed in backticks (`` ` ``). They allow string interpolation using `${}`, support multi-line strings, and improve readability compared to traditional string concatenation. They are commonly used for dynamic content generation, HTML templates, and embedding JavaScript expressions directly inside strings.
+
 ## Question 3. Difference between alert(), prompt(), and confirm()
 
 ## Question 4. What is the difference between innerHTML and textContent?
