@@ -284,6 +284,251 @@ window.setTimeout(() => {}, 1000);
 
 ## Question 2. How do you check if a variable is null or undefined?
 
+## Short Answer
+
+To check whether a variable is either `null` or `undefined`, the most common JavaScript pattern is:
+
+```js
+if (value == null) {
+  console.log("Value is null or undefined");
+}
+```
+
+Using loose equality (`==`) intentionally here works because:
+
+```js
+null == undefined; // true
+```
+
+but it does **not** match other falsy values like `0`, `false`, or `""`.
+
+---
+
+# Understanding `null` and `undefined`
+
+## `undefined`
+
+A variable is `undefined` when:
+
+- It has been declared but not assigned a value.
+- A function does not return anything.
+- A non-existent object property is accessed.
+
+```js
+let x;
+
+console.log(x); // undefined
+```
+
+---
+
+## `null`
+
+`null` is an intentional absence of a value.
+
+```js
+let user = null;
+
+console.log(user); // null
+```
+
+---
+
+# Different Ways to Check
+
+## 1. Check for Both (`null` or `undefined`)
+
+### Recommended
+
+```js
+if (value == null) {
+  console.log("null or undefined");
+}
+```
+
+Example:
+
+```js
+let a = null;
+let b;
+
+console.log(a == null); // true
+console.log(b == null); // true
+```
+
+### Why it works
+
+The only values for which this is true are:
+
+```js
+null == undefined; // true
+```
+
+No other values match.
+
+```js
+0 == null; // false
+false == null; // false
+"" == null; // false
+```
+
+---
+
+## 2. Check Only for `undefined`
+
+### Strict Equality
+
+```js
+if (value === undefined) {
+  console.log("undefined");
+}
+```
+
+Example:
+
+```js
+let x;
+
+console.log(x === undefined); // true
+```
+
+---
+
+## 3. Check Only for `null`
+
+```js
+if (value === null) {
+  console.log("null");
+}
+```
+
+Example:
+
+```js
+let user = null;
+
+console.log(user === null); // true
+```
+
+---
+
+## 4. Using `typeof` (Useful for Undeclared Variables)
+
+Normally:
+
+```js
+console.log(nonExistingVar);
+```
+
+throws:
+
+```text
+ReferenceError
+```
+
+But:
+
+```js
+console.log(typeof nonExistingVar);
+```
+
+returns:
+
+```text
+"undefined"
+```
+
+Check safely:
+
+```js
+if (typeof nonExistingVar === "undefined") {
+  console.log("Variable does not exist");
+}
+```
+
+### Interview Point
+
+`typeof` is useful when the variable may not even be declared.
+
+---
+
+# Comparing the Approaches
+
+| Check                          | Detects `null` | Detects `undefined` |
+| ------------------------------ | -------------- | ------------------- |
+| `value == null`                | ✅             | ✅                  |
+| `value === null`               | ✅             | ❌                  |
+| `value === undefined`          | ❌             | ✅                  |
+| `typeof value === "undefined"` | ❌             | ✅                  |
+
+---
+
+# Common Pitfall: Using Falsy Checks
+
+Many developers write:
+
+```js
+if (!value) {
+  console.log("No value");
+}
+```
+
+This also matches:
+
+```js
+0;
+false;
+("");
+NaN;
+null;
+undefined;
+```
+
+Example:
+
+```js
+console.log(!0); // true
+console.log(!false); // true
+console.log(!""); // true
+console.log(!null); // true
+console.log(!undefined); // true
+```
+
+So this is **not** a reliable way to specifically check for `null` or `undefined`.
+
+---
+
+# Modern JavaScript Alternative: Nullish Check
+
+JavaScript introduced the **nullish coalescing operator (`??`)**.
+
+```js
+const name = value ?? "Default";
+```
+
+It only falls back when:
+
+```js
+value === null || value === undefined;
+```
+
+Example:
+
+```js
+console.log(null ?? "Guest"); // Guest
+console.log(undefined ?? "Guest"); // Guest
+console.log(0 ?? "Guest"); // 0
+console.log("" ?? "Guest"); // ""
+```
+
+This avoids the problems of `||`.
+
+---
+
+# Interview-Friendly Summary
+
+> `undefined` means a value has not been assigned, while `null` represents an intentional absence of a value. To check for both, the most common pattern is `value == null`, because it returns `true` only for `null` and `undefined`. To check individually, use strict equality (`===`). If a variable might not even be declared, use `typeof variable === "undefined"` to avoid a `ReferenceError`.
+
 ## Question 3. Difference between for...in and for...of loops
 
 ## Question 4. How to find the type of an object in JavaScript?
