@@ -123,6 +123,190 @@ Understanding engines helps in:
 
 ## Question 2. What is the difference between client-side and server-side JavaScript?
 
+**Direct answer:**
+
+The main difference is **where the JavaScript code runs**:
+
+- **Client-side JavaScript** runs in the user's browser and is mainly used for UI interactions, DOM manipulation, form validation, and making API requests.
+- **Server-side JavaScript** runs on a server (typically using Node.js) and is used for handling requests, business logic, database operations, authentication, and generating responses.
+
+---
+
+# Detailed Explanation
+
+## Client-Side JavaScript
+
+Client-side JavaScript executes inside the browser's JavaScript engine (such as V8 in Chrome).
+
+### Responsibilities
+
+- Manipulating the DOM
+- Handling user interactions
+- Form validation
+- Animations
+- AJAX/Fetch API calls
+- Updating UI without page reloads
+
+### Example
+
+```javascript
+document.getElementById("btn").addEventListener("click", () => {
+  document.body.style.backgroundColor = "lightblue";
+});
+```
+
+When the user clicks the button, the browser immediately updates the page.
+
+### Browser APIs Available
+
+Client-side JavaScript can access:
+
+```javascript
+window;
+document;
+localStorage;
+sessionStorage;
+navigator;
+fetch;
+```
+
+Example:
+
+```javascript
+console.log(window.location.href);
+```
+
+---
+
+## Server-Side JavaScript
+
+Server-side JavaScript runs on a server, commonly using Node.js.
+
+### Responsibilities
+
+- Processing HTTP requests
+- Authentication and authorization
+- Database operations
+- File system access
+- Business logic
+- API creation
+
+### Example
+
+```javascript
+const http = require("http");
+
+http
+  .createServer((req, res) => {
+    res.end("Hello from server");
+  })
+  .listen(3000);
+```
+
+The code runs on the server and sends a response to clients.
+
+### Server APIs Available
+
+Node.js provides APIs such as:
+
+```javascript
+fs;
+http;
+https;
+path;
+crypto;
+stream;
+```
+
+Example:
+
+```javascript
+const fs = require("fs");
+
+const content = fs.readFileSync("data.txt", "utf8");
+console.log(content);
+```
+
+---
+
+# Comparison Table
+
+| Feature                  | Client-Side JavaScript | Server-Side JavaScript    |
+| ------------------------ | ---------------------- | ------------------------- |
+| Runs On                  | Browser                | Server                    |
+| Engine                   | Browser JS Engine      | Usually V8 via Node.js    |
+| Access DOM               | ✅ Yes                 | ❌ No                     |
+| Access Filesystem        | ❌ No                  | ✅ Yes                    |
+| Access Database          | ❌ Directly No         | ✅ Yes                    |
+| Visible to User          | ✅ Yes                 | ❌ No                     |
+| Security Sensitive Logic | ❌ Not recommended     | ✅ Yes                    |
+| Typical Use              | UI and interactions    | Backend services and APIs |
+
+---
+
+# Real-World Flow
+
+Consider a login form:
+
+### Client Side
+
+```javascript
+loginButton.addEventListener("click", async () => {
+  const response = await fetch("/login", {
+    method: "POST",
+    body: JSON.stringify(credentials),
+  });
+});
+```
+
+### Server Side
+
+```javascript
+app.post("/login", async (req, res) => {
+  const user = await db.findUser(req.body.email);
+
+  if (user) {
+    res.send("Login successful");
+  }
+});
+```
+
+The browser collects user input and sends it to the server. The server validates credentials and returns a response.
+
+---
+
+# Security Considerations
+
+### Never trust client-side validation
+
+Bad:
+
+```javascript
+if (age >= 18) {
+  allowAccess();
+}
+```
+
+A user can modify this code in browser developer tools.
+
+Always validate again on the server:
+
+```javascript
+if (user.age >= 18) {
+  grantAccess();
+}
+```
+
+Server-side validation is the authoritative check.
+
+---
+
+# Interview Tip
+
+A common interview answer is:
+
+> Client-side JavaScript runs in the browser and focuses on user interface and interaction. Server-side JavaScript runs on the server, typically with Node.js, and handles business logic, databases, authentication, and API responses. Client-side code can access the DOM but not server resources directly, while server-side code can access files, databases, and system resources but cannot manipulate the browser DOM.
+
 ## Question 3. How does typeof operator work? Give examples
 
 ## Question 4. Explain the difference between undefined and undeclared variables
