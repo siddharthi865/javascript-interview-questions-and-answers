@@ -237,6 +237,187 @@ because it is:
 
 ## Question 2. Difference between `Math.max.apply()` and `Math.max(...array)`
 
+## Short Answer
+
+Both `Math.max.apply()` and `Math.max(...array)` are used to pass array elements as individual arguments to `Math.max()`, but the spread operator (`...`) is the modern ES6+ approach and is generally preferred.
+
+```js
+const numbers = [10, 20, 30, 40];
+
+Math.max.apply(null, numbers); // 40
+Math.max(...numbers); // 40
+```
+
+---
+
+# Why Are They Needed?
+
+`Math.max()` expects individual arguments, not an array.
+
+```js
+Math.max(10, 20, 30); // 30
+
+Math.max([10, 20, 30]); // NaN
+```
+
+To use an array, you must expand its elements into separate arguments.
+
+---
+
+# 1. Using `Math.max.apply()`
+
+Before ES6, developers commonly used `apply()`.
+
+```js
+const arr = [5, 10, 15];
+
+const max = Math.max.apply(null, arr);
+
+console.log(max); // 15
+```
+
+### How it works
+
+`apply()` calls a function with:
+
+```js
+func.apply(thisArg, argsArray);
+```
+
+Example:
+
+```js
+Math.max.apply(null, [5, 10, 15]);
+```
+
+Internally behaves like:
+
+```js
+Math.max(5, 10, 15);
+```
+
+### Why `null`?
+
+`Math.max()` doesn't use `this`, so `null` is commonly passed.
+
+```js
+Math.max.apply(null, arr);
+```
+
+---
+
+# 2. Using Spread Operator (`...`)
+
+ES6 introduced the spread syntax.
+
+```js
+const arr = [5, 10, 15];
+
+const max = Math.max(...arr);
+
+console.log(max); // 15
+```
+
+Internally:
+
+```js
+Math.max(...arr);
+```
+
+becomes:
+
+```js
+Math.max(5, 10, 15);
+```
+
+---
+
+# Comparison
+
+| Feature              | `Math.max.apply()`    | `Math.max(...array)`  |
+| -------------------- | --------------------- | --------------------- |
+| Syntax               | Older ES5 style       | Modern ES6+ style     |
+| Readability          | Less readable         | More readable         |
+| Requires `thisArg`   | Yes                   | No                    |
+| Common today         | Rare                  | Preferred             |
+| Performance          | Similar in most cases | Similar in most cases |
+| Interview preference | Legacy knowledge      | Recommended approach  |
+
+---
+
+# Example Comparison
+
+### ES5
+
+```js
+const arr = [1, 2, 3];
+
+const max = Math.max.apply(null, arr);
+```
+
+### ES6+
+
+```js
+const arr = [1, 2, 3];
+
+const max = Math.max(...arr);
+```
+
+The second version is shorter and easier to understand.
+
+---
+
+# Large Array Consideration
+
+Both approaches pass every element as a function argument.
+
+For very large arrays, you may hit the JavaScript engine's maximum argument limit.
+
+```js
+const hugeArray = new Array(1000000).fill(1);
+
+Math.max(...hugeArray); // May throw RangeError
+```
+
+A safer approach:
+
+```js
+const max = hugeArray.reduce(
+  (currentMax, value) => Math.max(currentMax, value),
+  -Infinity,
+);
+```
+
+### Complexity
+
+- Time: **O(n)**
+- Space: **O(1)** (excluding array storage)
+
+---
+
+# Related: `call()` vs `apply()`
+
+```js
+Math.max.call(null, 1, 2, 3);
+
+Math.max.apply(null, [1, 2, 3]);
+```
+
+- `call()` accepts arguments individually.
+- `apply()` accepts an array of arguments.
+
+The spread operator often replaces `apply()`:
+
+```js
+Math.max(...[1, 2, 3]);
+```
+
+---
+
+# Interview Answer
+
+> `Math.max.apply(null, array)` and `Math.max(...array)` both expand an array into individual arguments for `Math.max()`. `apply()` was the traditional ES5 approach and requires a `this` value plus an array of arguments. The spread operator (`...`) introduced in ES6 provides a cleaner and more readable syntax, so it is generally preferred in modern JavaScript. Both can have issues with extremely large arrays because they pass all elements as function arguments. For very large datasets, a `reduce()`-based solution is often safer.
+
 ## Question 3. How to merge multiple arrays into one?
 
 ## Question 4. Difference between shallow copy and reference copy of arrays
