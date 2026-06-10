@@ -260,6 +260,240 @@ input:focus {
 
 ## Question 2. How to throttle scroll events for performance
 
+## Short answer
+
+You throttle scroll events by ensuring the scroll handler runs at most once every fixed interval (e.g., 100–200ms), instead of firing on every single scroll event. This reduces CPU work and improves UI responsiveness.
+
+---
+
+# Why scroll needs throttling
+
+The `scroll` event can fire **dozens of times per frame** while the user scrolls.
+
+Without throttling:
+
+- Heavy DOM work runs repeatedly
+- Layout recalculations (reflow/repaint) become expensive
+- Main thread gets blocked → janky scrolling
+
+So we control execution frequency.
+
+---
+
+# 1. Basic Throttle Implementation (Interview Standard)
+
+### Concept
+
+Allow function execution once every `delay` milliseconds.
+
+---
+
+## Throttle function
+
+```javascript
+function throttle(fn, delay) {
+  let lastCall = 0;
+
+  return function (...args) {
+    const now = Date.now();
+
+    if (now - lastCall >= delay) {
+      lastCall = now;
+      fn.apply(this, args);
+    }
+  };
+}
+```
+
+---
+
+## Using it with scroll
+
+```javascript
+function onScroll() {
+  console.log("Scroll event handled:", window.scrollY);
+}
+
+window.addEventListener("scroll", throttle(onScroll, 200));
+```
+
+---
+
+# 2. More Accurate Version (Using setTimeout + flag)
+
+This version ensures consistent timing behavior.
+
+```javascript
+function throttle(fn, delay) {
+  let isThrottled = false;
+  let savedArgs = null;
+  let savedThis = null;
+
+  return function (...args) {
+    if (isThrottled) {
+      savedArgs = args;
+      savedThis = this;
+      return;
+    }
+
+    fn.apply(this, args);
+    isThrottled = true;
+
+    setTimeout(() => {
+      isThrottled = false;
+
+      if (savedArgs) {
+        fn.apply(savedThis, savedArgs);
+        savedArgs = null;
+        savedThis = null;
+      }
+    }, delay);
+  };
+}
+```
+
+### Why this is better
+
+- Ensures last scroll event is not lost
+- Prevents “laggy trailing updates”
+- More predictable in UI updates
+
+---
+
+# 3. Throttling vs Debouncing (Important Interview Point)
+
+| Concept  | Behavior                                        |
+| -------- | ----------------------------------------------- |
+| Throttle | Runs at fixed intervals during continuous event |
+| Debounce | Runs only after event stops                     |
+
+---
+
+### Scroll use case:
+
+| Use case                | Technique |
+| ----------------------- | --------- |
+| Show sticky header      | Throttle  |
+| Infinite scroll trigger | Throttle  |
+| Search input            | Debounce  |
+| Resize handler          | Throttle  |
+
+---
+
+# 4. Real-world optimized scroll pattern
+
+### Example: lazy loading / infinite scroll
+
+```javascript
+function handleScroll() {
+  const scrollTop = window.scrollY;
+  const windowHeight = window.innerHeight;
+  const documentHeight = document.body.offsetHeight;
+
+  if (scrollTop + windowHeight >= documentHeight - 200) {
+    console.log("Load more content...");
+  }
+}
+
+window.addEventListener("scroll", throttle(handleScroll, 150));
+```
+
+---
+
+# 5. Even better optimization: `requestAnimationFrame`
+
+For UI updates tied to rendering, `requestAnimationFrame` is often better than manual throttling.
+
+```javascript
+let ticking = false;
+
+function onScroll() {
+  if (!ticking) {
+    window.requestAnimationFrame(() => {
+      console.log("Scroll position:", window.scrollY);
+      ticking = false;
+    });
+
+    ticking = true;
+  }
+}
+
+window.addEventListener("scroll", onScroll);
+```
+
+---
+
+## Why this is powerful
+
+- Syncs with browser paint cycle (~60fps)
+- Prevents unnecessary intermediate calculations
+- Ideal for animations, parallax, sticky UI
+
+---
+
+# 6. Common pitfalls
+
+### ❌ Mistake 1: No throttling
+
+```javascript
+window.addEventListener("scroll", heavyFunction);
+```
+
+Leads to performance degradation.
+
+---
+
+### ❌ Mistake 2: Using debounce for scroll tracking
+
+Debounce waits until scrolling stops → bad for:
+
+- Infinite scroll
+- Progress indicators
+
+---
+
+### ❌ Mistake 3: Expensive DOM reads/writes inside scroll
+
+Bad:
+
+```javascript
+window.addEventListener("scroll", () => {
+  const el = document.getElementById("box");
+  el.style.height = window.scrollY + "px";
+});
+```
+
+Better:
+
+- throttle + batch DOM updates
+- avoid forced reflow
+
+---
+
+# 7. Best practices (senior-level answer)
+
+- Prefer **throttle (100–200ms)** for scroll
+- Use **requestAnimationFrame** for visual updates
+- Minimize DOM access inside handler
+- Cache selectors outside scroll handler
+- Avoid layout thrashing (read + write separation)
+- Use passive listeners when possible:
+
+```javascript
+window.addEventListener("scroll", handler, { passive: true });
+```
+
+---
+
+# Final interview summary
+
+To throttle scroll events:
+
+- Use a throttle function to limit execution frequency
+- Or use `requestAnimationFrame` for render-based updates
+- Choose throttle over debounce for continuous scrolling behavior
+- Combine with performance best practices (passive listeners, minimal DOM work)
+
 ## Question 3. How to prevent text selection in a webpage using JS
 
 ## Question 4. Difference between keydown, keypress, and keyup
