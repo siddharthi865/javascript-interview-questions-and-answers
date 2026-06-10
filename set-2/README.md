@@ -164,6 +164,225 @@ A strong answer highlights:
 
 ## Question 2. How to add/remove classes dynamically in JS?
 
+### **Short Answer**
+
+You can add or remove CSS classes dynamically in JavaScript using the `classList` API:
+
+- `element.classList.add("className")` → add class
+- `element.classList.remove("className")` → remove class
+- `element.classList.toggle("className")` → add if missing, remove if present
+
+---
+
+## **Detailed Explanation (Interview Perspective)**
+
+In JavaScript, dynamically changing classes is one of the most common DOM manipulation tasks. Modern JavaScript provides the **`classList` interface**, which is cleaner and safer than manipulating `className` strings directly.
+
+---
+
+## 1. Using `classList.add()`
+
+### **Purpose**
+
+Adds one or more classes to an element.
+
+### **Syntax**
+
+```javascript
+element.classList.add("className");
+```
+
+### **Example**
+
+```html
+<div id="box"></div>
+```
+
+```javascript
+const box = document.getElementById("box");
+box.classList.add("active");
+```
+
+### **Multiple classes**
+
+```javascript
+box.classList.add("active", "highlight");
+```
+
+---
+
+## 2. Using `classList.remove()`
+
+### **Purpose**
+
+Removes one or more classes.
+
+### **Syntax**
+
+```javascript
+element.classList.remove("className");
+```
+
+### **Example**
+
+```javascript
+box.classList.remove("active");
+```
+
+### **Multiple classes**
+
+```javascript
+box.classList.remove("active", "highlight");
+```
+
+---
+
+## 3. Using `classList.toggle()`
+
+### **Purpose**
+
+Adds the class if it doesn't exist, removes it if it does.
+
+### **Syntax**
+
+```javascript
+element.classList.toggle("className");
+```
+
+### **Example**
+
+```javascript
+box.classList.toggle("active");
+```
+
+### **With force parameter**
+
+```javascript
+box.classList.toggle("active", true); // always add
+box.classList.toggle("active", false); // always remove
+```
+
+---
+
+## 4. Using `classList.contains()`
+
+### **Purpose**
+
+Checks if an element has a class.
+
+### **Example**
+
+```javascript
+if (box.classList.contains("active")) {
+  console.log("Active state enabled");
+}
+```
+
+---
+
+## 5. Older Approach: `className` (Not Recommended)
+
+Before `classList`, developers used string manipulation:
+
+### **Example**
+
+```javascript
+box.className = "active highlight";
+```
+
+### **Removing class manually (problematic)**
+
+```javascript
+box.className = box.className.replace("active", "");
+```
+
+### **Why it’s bad**
+
+- Easy to break existing classes
+- Hard to maintain
+- No built-in methods for safe manipulation
+
+---
+
+## **Key Differences: `classList` vs `className`**
+
+| Feature             | classList        | className              |
+| ------------------- | ---------------- | ---------------------- |
+| Ease of use         | High             | Low                    |
+| Safety              | Safe             | Error-prone            |
+| Multiple operations | Built-in methods | Manual string handling |
+| Modern standard     | Yes              | Legacy                 |
+
+---
+
+## **Real-world Example (UI Toggle)**
+
+```html
+<button id="btn">Toggle Dark Mode</button>
+<div id="app">Hello</div>
+```
+
+```javascript
+const btn = document.getElementById("btn");
+const app = document.getElementById("app");
+
+btn.addEventListener("click", () => {
+  app.classList.toggle("dark");
+});
+```
+
+---
+
+## **Common Pitfalls**
+
+### 1. Forgetting multiple class support
+
+```javascript
+element.classList.add("a b"); // ❌ wrong
+element.classList.add("a", "b"); // ✅ correct
+```
+
+---
+
+### 2. Confusing `classList` with `className`
+
+```javascript
+element.className.add("test"); // ❌ doesn't exist
+```
+
+---
+
+### 3. Overusing `className`
+
+Can accidentally overwrite existing classes:
+
+```javascript
+element.className = "new-class"; // removes all previous classes
+```
+
+---
+
+## **Best Practices**
+
+- Always prefer `classList` over `className`
+- Use `toggle()` for UI state changes (menus, themes, modals)
+- Use `contains()` before conditional logic when needed
+- Keep class names meaningful and state-driven (e.g., `is-active`, `hidden`, `open`)
+
+---
+
+## **Interview Tip**
+
+A strong senior-level answer should emphasize:
+
+- `classList` is a modern DOMTokenList API
+- It avoids string parsing issues of `className`
+- It supports atomic class operations (add/remove/toggle/contains)
+
+---
+
+If you want, I can next explain **event delegation vs direct event listeners**, which is a very common follow-up in DOM interviews.
+
 ## Question 3. What are JavaScript objects?
 
 ## Question 4. How to loop over object properties?
