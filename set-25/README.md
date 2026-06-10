@@ -426,6 +426,512 @@ Key points:
 
 ## Question 2. How to implement observer/observable pattern in JS frameworks
 
+The Observer pattern is a behavioral design pattern where an object (called the **subject** or **observable**) maintains a list of dependents (**observers**) and automatically notifies them when its state changes.
+
+In JavaScript frameworks, this pattern is fundamental to:
+
+- React state updates
+- Vue reactivity
+- Angular RxJS Observables
+- Event emitters in Node.js
+- Redux subscriptions
+- Signals/reactive systems
+
+It is one of the core patterns behind modern frontend reactivity systems.
+
+---
+
+# Core Idea
+
+```txt
+Observable (Subject)
+    ↓ notifies
+Observers (Subscribers)
+```
+
+Observers subscribe to changes and react automatically.
+
+---
+
+# Basic Observer Pattern Implementation
+
+---
+
+# 1. Simple Observable Class
+
+```js id="0yp2nm"
+class Observable {
+  constructor() {
+    this.observers = [];
+  }
+
+  subscribe(fn) {
+    this.observers.push(fn);
+
+    // Return unsubscribe function
+    return () => {
+      this.observers = this.observers.filter((observer) => observer !== fn);
+    };
+  }
+
+  notify(data) {
+    this.observers.forEach((observer) => observer(data));
+  }
+}
+```
+
+Usage:
+
+```js id="4oijzt"
+const observable = new Observable();
+
+const unsubscribe = observable.subscribe((data) => {
+  console.log("Observer 1:", data);
+});
+
+observable.subscribe((data) => {
+  console.log("Observer 2:", data);
+});
+
+observable.notify("Hello World");
+```
+
+Output:
+
+```txt id="sm23pw"
+Observer 1: Hello World
+Observer 2: Hello World
+```
+
+---
+
+# 2. Unsubscribing
+
+```js id="jtr7r5"
+unsubscribe();
+
+observable.notify("Second Event");
+```
+
+Only remaining observers receive updates.
+
+---
+
+# Real-World Example: Event System
+
+```js id="ddwkdn"
+class EventEmitter {
+  constructor() {
+    this.events = {};
+  }
+
+  on(event, listener) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+
+    this.events[event].push(listener);
+  }
+
+  emit(event, data) {
+    if (this.events[event]) {
+      this.events[event].forEach((listener) => {
+        listener(data);
+      });
+    }
+  }
+
+  off(event, listenerToRemove) {
+    this.events[event] = this.events[event].filter(
+      (listener) => listener !== listenerToRemove,
+    );
+  }
+}
+```
+
+Usage:
+
+```js id="4p2uv4"
+const emitter = new EventEmitter();
+
+function onLogin(user) {
+  console.log(`${user} logged in`);
+}
+
+emitter.on("login", onLogin);
+
+emitter.emit("login", "John");
+
+emitter.off("login", onLogin);
+```
+
+This is essentially how:
+
+- DOM events work
+- Node.js `EventEmitter`
+- many framework event systems work internally
+
+---
+
+# Observable Pattern in Modern Frameworks
+
+---
+
+# React
+
+React itself is not a classical observable framework, but state changes behave similarly.
+
+Example:
+
+```jsx id="nlp9rr"
+function Counter() {
+  const [count, setCount] = useState(0);
+
+  return <button onClick={() => setCount(count + 1)}>{count}</button>;
+}
+```
+
+Internally:
+
+- component subscribes to state
+- state changes trigger re-render
+- React reconciles UI updates
+
+React libraries using observables:
+
+- MobX
+- Redux store subscriptions
+- Zustand
+- RxJS integrations
+
+---
+
+# Vue Reactivity System
+
+Vue uses a true dependency-tracking observable system.
+
+Example:
+
+```js id="t5vg5t"
+const state = reactive({
+  count: 0,
+});
+
+watch(
+  () => state.count,
+  (newValue) => {
+    console.log("Count changed:", newValue);
+  },
+);
+```
+
+Internally Vue:
+
+1. Tracks dependencies
+2. Registers observers
+3. Re-runs effects automatically
+
+This is an advanced observer implementation using proxies.
+
+---
+
+# Angular + RxJS
+
+Angular heavily uses RxJS Observables.
+
+```ts id="x27b0l"
+import { Observable } from "rxjs";
+
+const observable = new Observable((subscriber) => {
+  subscriber.next(1);
+  subscriber.next(2);
+  subscriber.complete();
+});
+
+observable.subscribe({
+  next(value) {
+    console.log(value);
+  },
+});
+```
+
+RxJS extends observer pattern with:
+
+- async streams
+- operators
+- cancellation
+- multicasting
+- transformation pipelines
+
+---
+
+# Implementing Reactive Observable with Proxy
+
+Modern frameworks use `Proxy` for reactivity.
+
+---
+
+# Simple Reactive System
+
+```js id="x19zfw"
+function reactive(obj) {
+  const observers = new Set();
+
+  return {
+    observe(fn) {
+      observers.add(fn);
+    },
+
+    proxy: new Proxy(obj, {
+      set(target, key, value) {
+        target[key] = value;
+
+        observers.forEach((fn) => fn());
+
+        return true;
+      },
+    }),
+  };
+}
+```
+
+Usage:
+
+```js id="e1e3hn"
+const state = reactive({
+  count: 0,
+});
+
+state.observe(() => {
+  console.log("State changed");
+});
+
+state.proxy.count++;
+```
+
+---
+
+# Advanced Reactive Dependency Tracking
+
+Frameworks like Vue/SolidJS implement:
+
+- dependency collection
+- fine-grained subscriptions
+- computed properties
+- lazy evaluation
+- batching
+- scheduler queues
+
+Conceptually:
+
+```txt id="qphz8n"
+Effect runs
+   ↓
+Tracks accessed properties
+   ↓
+Registers dependency
+   ↓
+Property changes
+   ↓
+Only affected effects rerun
+```
+
+---
+
+# Push vs Pull Model
+
+## Push-Based (Observer)
+
+Observable pushes updates.
+
+```txt id="v6mh9j"
+observable -> observers
+```
+
+Example:
+
+- events
+- RxJS
+- subscriptions
+
+---
+
+## Pull-Based
+
+Observer checks manually.
+
+```txt id="1c8y7d"
+observer asks for latest state
+```
+
+Example:
+
+- polling
+- manual state reads
+
+Modern frameworks mostly use push-based reactivity.
+
+---
+
+# Common Pitfalls
+
+---
+
+# 1. Memory Leaks
+
+Observers that are never removed remain in memory.
+
+Bad:
+
+```js id="qk5x7s"
+observable.subscribe(fn);
+```
+
+Without cleanup.
+
+Good:
+
+```js id="5c4skq"
+const unsubscribe = observable.subscribe(fn);
+
+unsubscribe();
+```
+
+This is extremely important in React effects and Node.js servers.
+
+---
+
+# 2. Infinite Loops
+
+Observers triggering state changes recursively.
+
+```js id="zv2jtw"
+observer(() => {
+  state.count++;
+});
+```
+
+Can create endless updates.
+
+Frameworks solve this using:
+
+- batching
+- schedulers
+- dependency graphs
+
+---
+
+# 3. Too Many Re-renders
+
+Naive observable systems rerender everything.
+
+Modern frameworks optimize using:
+
+- virtual DOM
+- fine-grained reactivity
+- memoization
+
+---
+
+# Observer Pattern vs Pub/Sub
+
+Interviewers often ask this distinction.
+
+---
+
+# Observer Pattern
+
+- Direct relationship
+- Subject knows observers
+
+```txt id="8jj8vd"
+Subject -> Observers
+```
+
+---
+
+# Pub/Sub Pattern
+
+Uses message broker/event bus.
+
+```txt id="m7f4ku"
+Publisher -> Event Bus -> Subscribers
+```
+
+More decoupled.
+
+Example:
+
+- Redis Pub/Sub
+- Kafka
+- Event buses
+
+---
+
+# Best Practices
+
+---
+
+# Use Weak References When Needed
+
+Prevent leaks in long-running apps.
+
+---
+
+# Always Support Unsubscribe
+
+Critical for cleanup.
+
+---
+
+# Avoid Synchronous Notification Storms
+
+Use batching/microtasks if necessary.
+
+Example:
+
+```js id="y7mjlwm"
+queueMicrotask(() => {
+  notifyObservers();
+});
+```
+
+---
+
+# Keep Observers Pure
+
+Avoid mutating shared state unpredictably.
+
+---
+
+# Interview Summary
+
+The Observer pattern allows objects to subscribe to state changes and receive automatic notifications.
+
+Key ideas:
+
+- Observable maintains subscribers
+- Observers react to updates
+- Core foundation of frontend reactivity
+- Used in React, Vue, Angular, RxJS, MobX, Redux
+
+Modern frameworks extend it using:
+
+- Proxy
+- dependency tracking
+- schedulers
+- batching
+- async streams
+
+A strong interview answer should connect observer pattern to:
+
+- reactive programming
+- event-driven systems
+- UI rendering
+- RxJS observables
+- framework reactivity internals
+- memory management and cleanup
+
 ## Question 3. How to implement factory pattern in JavaScript
 
 ## Question 4. How to implement singleton pattern in Node.js modules
