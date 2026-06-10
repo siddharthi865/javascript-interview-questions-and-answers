@@ -411,6 +411,264 @@ A strong interview answer:
 
 ## Question 2. How to implement a simple HTTP server in Node.js
 
+## Short Answer
+
+You can create a simple HTTP server in Node.js using the built-in **`http` module** by calling `http.createServer()` and listening on a port.
+
+---
+
+# Detailed Interview-Style Explanation
+
+Node.js provides a core module called **`http`** that allows you to build web servers without any external framework like Express.
+
+At a high level, an HTTP server in Node.js works like this:
+
+1. Node creates a server using `http.createServer()`
+2. It registers a callback that runs for every incoming request
+3. The callback receives `request` and `response` objects
+4. You use these objects to read request data and send responses
+5. The server listens on a port using `.listen()`
+
+---
+
+# Basic HTTP Server Example
+
+```js
+const http = require("http");
+
+const server = http.createServer((req, res) => {
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "text/plain");
+  res.end("Hello, World!");
+});
+
+server.listen(3000, () => {
+  console.log("Server running on http://localhost:3000");
+});
+```
+
+---
+
+# What Happens Internally
+
+When a request comes in:
+
+1. OS receives TCP connection
+2. Node (via **libuv + OS event notification like epoll/kqueue/IOCP**) is notified
+3. Event loop picks up the request
+4. Callback passed to `createServer` is executed
+5. Response is written back to socket
+
+This is fully **non-blocking and event-driven**
+
+---
+
+# Understanding Request & Response Objects
+
+## 1. `req` (Incoming Request)
+
+Contains:
+
+- URL
+- Method (GET, POST, etc.)
+- Headers
+- Body (stream)
+
+Example:
+
+```js
+req.method; // "GET"
+req.url; // "/home"
+req.headers;
+```
+
+---
+
+## 2. `res` (Outgoing Response)
+
+Used to send data back:
+
+```js
+res.statusCode = 200;
+res.setHeader("Content-Type", "text/html");
+res.write("Hello ");
+res.end("World");
+```
+
+Important:
+
+- `res.end()` must be called to finish the response
+- Until then, connection stays open
+
+---
+
+# Handling Routes (Basic Routing Without Express)
+
+Node core does NOT provide routing, so you implement it manually:
+
+```js
+const http = require("http");
+
+const server = http.createServer((req, res) => {
+  if (req.url === "/" && req.method === "GET") {
+    res.end("Home Page");
+  } else if (req.url === "/about") {
+    res.end("About Page");
+  } else {
+    res.statusCode = 404;
+    res.end("Not Found");
+  }
+});
+
+server.listen(3000);
+```
+
+---
+
+# Handling JSON Response
+
+Very common in APIs:
+
+```js
+const http = require("http");
+
+const server = http.createServer((req, res) => {
+  const data = {
+    message: "Hello API",
+    success: true,
+  };
+
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(data));
+});
+
+server.listen(3000);
+```
+
+---
+
+# Handling POST Request (With Body Parsing)
+
+Request body is a stream, so you must collect it manually:
+
+```js
+const http = require("http");
+
+const server = http.createServer((req, res) => {
+  if (req.method === "POST") {
+    let body = "";
+
+    req.on("data", (chunk) => {
+      body += chunk.toString();
+    });
+
+    req.on("end", () => {
+      const parsed = JSON.parse(body);
+      res.end(`Received: ${parsed.name}`);
+    });
+  }
+});
+
+server.listen(3000);
+```
+
+---
+
+# Important Concept: Streams
+
+`req` is a **Readable Stream**
+
+Why?
+
+- Body may be large
+- Node avoids loading everything into memory at once
+- Data arrives in chunks
+
+This is critical for performance and scalability.
+
+---
+
+# Common Pitfalls
+
+## 1. Forgetting `res.end()`
+
+```js
+res.write("Hello");
+// missing res.end() → request hangs forever
+```
+
+---
+
+## 2. Blocking Event Loop
+
+```js
+while (true) {}
+```
+
+This freezes all requests.
+
+---
+
+## 3. Not handling errors
+
+```js
+req.on("error", () => {});
+res.on("error", () => {});
+```
+
+Important for production servers.
+
+---
+
+# Better Structure (Production Pattern)
+
+Even without Express, you can structure it better:
+
+```js
+const http = require("http");
+
+function handler(req, res) {
+  switch (req.url) {
+    case "/":
+      return res.end("Home");
+
+    case "/api":
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({ ok: true }));
+
+    default:
+      res.statusCode = 404;
+      return res.end("Not Found");
+  }
+}
+
+const server = http.createServer(handler);
+
+server.listen(3000, () => {
+  console.log("Server running");
+});
+```
+
+---
+
+# Comparison: http module vs Express
+
+| Feature          | http module | Express     |
+| ---------------- | ----------- | ----------- |
+| Built-in routing | ❌ manual   | ✅ built-in |
+| Middleware       | ❌          | ✅          |
+| Body parsing     | ❌ manual   | ✅          |
+| Flexibility      | high        | medium      |
+| Complexity       | high        | low         |
+
+---
+
+# Key Interview Takeaway
+
+A strong answer:
+
+> Node.js provides the built-in `http` module to create servers. The `http.createServer()` method registers a callback that receives request and response objects for each incoming request. The server listens on a port and handles requests asynchronously using Node’s event-driven architecture. Internally, requests are handled via the event loop and libuv, making it non-blocking and highly scalable.
+
 ## Question 3. Difference between CommonJS and ES modules in Node.js
 
 ## Question 4. How to implement a simple Express.js middleware
