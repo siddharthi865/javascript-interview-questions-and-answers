@@ -209,6 +209,496 @@ It is a core building block for **Progressive Web Apps (PWAs)** and modern web p
 
 ## Question 2. Explain how JS handles promises under the hood
 
+# How JavaScript Handles Promises Under the Hood
+
+### Short Answer
+
+Promises are handled through a combination of:
+
+1. **The JavaScript engine** (V8, SpiderMonkey, JavaScriptCore, etc.)
+2. **The Event Loop**
+3. **Microtask Queue**
+4. **Internal Promise states and reaction handlers**
+
+When a Promise settles (fulfilled or rejected), its `.then()`, `.catch()`, and `.finally()` callbacks are not executed immediately. Instead, they are placed into the **microtask queue**, which is processed before the next macrotask (such as `setTimeout`).
+
+---
+
+# Promise Internals
+
+A Promise has three internal states:
+
+```text
+Pending
+   ↓
+Fulfilled
+```
+
+or
+
+```text
+Pending
+   ↓
+Rejected
+```
+
+Once settled, the state cannot change.
+
+Example:
+
+```javascript
+const promise = new Promise((resolve, reject) => {
+  resolve("Success");
+});
+```
+
+Internally:
+
+```text
+Promise {
+  [[State]]: "fulfilled",
+  [[Result]]: "Success"
+}
+```
+
+These internal slots are part of the ECMAScript specification and are not directly accessible from JavaScript.
+
+---
+
+# Step-by-Step Execution
+
+Consider:
+
+```javascript
+console.log("Start");
+
+Promise.resolve("Done").then((value) => console.log(value));
+
+console.log("End");
+```
+
+Output:
+
+```text
+Start
+End
+Done
+```
+
+### What happens internally?
+
+### 1. Call Stack
+
+```javascript
+console.log("Start");
+```
+
+Prints:
+
+```text
+Start
+```
+
+---
+
+### 2. Create Resolved Promise
+
+```javascript
+Promise.resolve("Done");
+```
+
+Creates:
+
+```text
+Promise {
+  [[State]]: fulfilled,
+  [[Result]]: "Done"
+}
+```
+
+---
+
+### 3. Register `.then()`
+
+```javascript
+.then(...)
+```
+
+The callback is stored as a **Promise Reaction**.
+
+```text
+PromiseReactions:
+[
+  callback => console.log(value)
+]
+```
+
+Because the promise is already fulfilled, the callback is queued as a microtask.
+
+---
+
+### 4. Continue Execution
+
+```javascript
+console.log("End");
+```
+
+Prints:
+
+```text
+End
+```
+
+---
+
+### 5. Call Stack Becomes Empty
+
+Event Loop checks:
+
+```text
+Microtask Queue:
+[
+  console.log("Done")
+]
+```
+
+Executes it.
+
+Output:
+
+```text
+Done
+```
+
+---
+
+# Why Promises Use Microtasks
+
+Promises are intentionally designed to run asynchronously.
+
+Even:
+
+```javascript
+Promise.resolve().then(() => {
+  console.log("Promise");
+});
+
+console.log("Normal");
+```
+
+Output:
+
+```text
+Normal
+Promise
+```
+
+This guarantees predictable behavior.
+
+If callbacks ran synchronously:
+
+```javascript
+const p = Promise.resolve();
+
+p.then(() => console.log("A"));
+console.log("B");
+```
+
+The execution order could become inconsistent.
+
+The specification prevents this by always scheduling promise callbacks as microtasks.
+
+---
+
+# Microtask Queue vs Macrotask Queue
+
+Interviewers often ask this.
+
+Example:
+
+```javascript
+console.log("1");
+
+setTimeout(() => console.log("2"));
+
+Promise.resolve().then(() => console.log("3"));
+
+console.log("4");
+```
+
+Output:
+
+```text
+1
+4
+3
+2
+```
+
+Why?
+
+### Execution Flow
+
+```text
+Call Stack:
+1
+4
+```
+
+After stack empties:
+
+```text
+Microtask Queue:
+3
+```
+
+Runs first.
+
+Then:
+
+```text
+Macrotask Queue:
+2
+```
+
+Runs afterward.
+
+Priority:
+
+```text
+Current Stack
+     ↓
+Microtasks
+     ↓
+Macrotasks
+```
+
+---
+
+# Promise Chaining Internals
+
+Example:
+
+```javascript
+Promise.resolve(1)
+  .then((x) => x + 1)
+  .then((x) => x + 1)
+  .then(console.log);
+```
+
+Output:
+
+```text
+3
+```
+
+Internally:
+
+### First Promise
+
+```text
+Fulfilled → 1
+```
+
+### First `.then()`
+
+Creates a NEW Promise
+
+```text
+Promise2
+```
+
+Returns:
+
+```javascript
+1 + 1;
+```
+
+Promise2 becomes:
+
+```text
+Fulfilled → 2
+```
+
+### Second `.then()`
+
+Creates:
+
+```text
+Promise3
+```
+
+Returns:
+
+```javascript
+2 + 1;
+```
+
+Promise3:
+
+```text
+Fulfilled → 3
+```
+
+Every `.then()` returns a brand-new Promise.
+
+---
+
+# What Happens When a Promise Returns Another Promise
+
+Example:
+
+```javascript
+Promise.resolve(1)
+  .then(() => {
+    return Promise.resolve(100);
+  })
+  .then(console.log);
+```
+
+Output:
+
+```text
+100
+```
+
+Internally:
+
+```text
+Promise A
+   ↓
+returns Promise B
+```
+
+The engine performs **Promise Resolution Procedure**:
+
+Instead of:
+
+```text
+Promise<Promise<100>>
+```
+
+it automatically unwraps:
+
+```text
+Promise<100>
+```
+
+This process is called **Promise Flattening**.
+
+---
+
+# Error Handling Internals
+
+Example:
+
+```javascript
+Promise.resolve()
+  .then(() => {
+    throw new Error("Oops");
+  })
+  .catch((err) => {
+    console.log(err.message);
+  });
+```
+
+Output:
+
+```text
+Oops
+```
+
+Internally:
+
+```javascript
+throw new Error(...)
+```
+
+is transformed into:
+
+```javascript
+return Promise.reject(error);
+```
+
+Conceptually:
+
+```text
+then()
+   ↓
+throws
+   ↓
+rejected promise
+   ↓
+catch()
+```
+
+That's why errors propagate through chains automatically.
+
+---
+
+# How `async/await` Uses Promises
+
+Example:
+
+```javascript
+async function getData() {
+  const result = await Promise.resolve("Hello");
+  console.log(result);
+}
+```
+
+Under the hood, it behaves roughly like:
+
+```javascript
+function getData() {
+  return Promise.resolve("Hello").then((result) => {
+    console.log(result);
+  });
+}
+```
+
+`await` pauses the async function and resumes it later via the microtask queue.
+
+---
+
+# Simplified Internal Model
+
+Think of a Promise as:
+
+```javascript
+class FakePromise {
+  state = "pending";
+  value = undefined;
+  handlers = [];
+
+  resolve(value) {
+    this.state = "fulfilled";
+    this.value = value;
+
+    queueMicrotask(() => {
+      this.handlers.forEach((h) => h(value));
+    });
+  }
+
+  then(handler) {
+    this.handlers.push(handler);
+  }
+}
+```
+
+Real engines are far more complex, but this illustrates the core idea:
+
+- Store callbacks
+- Change state
+- Queue callbacks as microtasks
+- Execute them after current code finishes
+
+---
+
+# Interview-Ready Summary
+
+When a Promise is created, JavaScript stores its internal state (`pending`, `fulfilled`, or `rejected`) and any attached reaction handlers. When the Promise settles, its `.then()`, `.catch()`, or `.finally()` callbacks are scheduled in the **microtask queue**, not executed immediately. The **event loop** processes all microtasks after the current call stack is empty and before any macrotasks like `setTimeout`. Every `.then()` returns a new Promise, enabling chaining, automatic error propagation, and promise flattening. `async/await` is built on top of the same Promise and microtask mechanisms.
+
 ## Question 3. How to chain promises with error handling
 
 ## Question 4. Explain generator functions in JavaScript
