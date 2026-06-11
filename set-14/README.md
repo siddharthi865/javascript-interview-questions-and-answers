@@ -1628,6 +1628,375 @@ table.addEventListener("click", handleCellClick);
 
 ## Question 6. How to stop event propagation
 
+## Concise Answer
+
+Event propagation can be stopped using:
+
+```js
+event.stopPropagation();
+```
+
+This prevents the event from continuing through the DOM during the **capturing** or **bubbling** phases.
+
+To stop **all other handlers on the same element as well**, use:
+
+```js
+event.stopImmediatePropagation();
+```
+
+---
+
+# 1. What is Event Propagation?
+
+When an event occurs, it travels through the DOM in three phases:
+
+```text
+1. Capturing Phase
+2. Target Phase
+3. Bubbling Phase
+```
+
+Example:
+
+```html
+<div id="parent">
+  <button id="child">Click</button>
+</div>
+```
+
+Clicking the button causes the event to travel:
+
+```text
+document
+  ↓
+parent
+  ↓
+button
+  ↑
+parent
+  ↑
+document
+```
+
+---
+
+# 2. Default Behavior (Without Stopping)
+
+```js
+document.getElementById("parent").addEventListener("click", () => {
+  console.log("Parent");
+});
+
+document.getElementById("child").addEventListener("click", () => {
+  console.log("Child");
+});
+```
+
+### Click child
+
+Output:
+
+```js
+Child;
+Parent;
+```
+
+Because the event bubbles upward.
+
+---
+
+# 3. Using `stopPropagation()`
+
+```js
+document.getElementById("child").addEventListener("click", (event) => {
+  event.stopPropagation();
+  console.log("Child");
+});
+```
+
+### Click child
+
+Output:
+
+```js
+Child;
+```
+
+The event never reaches the parent.
+
+---
+
+# 4. Visual Explanation
+
+Without stopping:
+
+```text
+Child Click
+   ↓
+Child Handler
+   ↓
+Parent Handler
+   ↓
+Document Handler
+```
+
+With `stopPropagation()`:
+
+```text
+Child Click
+   ↓
+Child Handler
+   X
+Propagation Stops
+```
+
+---
+
+# 5. Capturing Phase Example
+
+Listeners can run during capture:
+
+```js
+parent.addEventListener("click", () => console.log("Parent Capture"), true);
+```
+
+```js
+child.addEventListener("click", (event) => {
+  event.stopPropagation();
+  console.log("Child");
+});
+```
+
+### Output
+
+```js
+Parent Capture
+Child
+```
+
+### Why?
+
+The capturing listener already executed before propagation was stopped.
+
+---
+
+# 6. `stopPropagation()` vs `preventDefault()`
+
+This is one of the most common interview questions.
+
+### `stopPropagation()`
+
+Stops event movement through the DOM.
+
+```js
+event.stopPropagation();
+```
+
+---
+
+### `preventDefault()`
+
+Stops the browser's default action.
+
+```js
+event.preventDefault();
+```
+
+Example:
+
+```html
+<a href="https://example.com">Link</a>
+```
+
+```js
+link.addEventListener("click", (e) => {
+  e.preventDefault();
+});
+```
+
+The link won't navigate.
+
+---
+
+### Comparison
+
+| Method              | Purpose             |
+| ------------------- | ------------------- |
+| `stopPropagation()` | Stop event travel   |
+| `preventDefault()`  | Stop browser action |
+
+---
+
+# 7. `stopImmediatePropagation()`
+
+Another favorite interview topic.
+
+Suppose:
+
+```js
+button.addEventListener("click", () => {
+  console.log("A");
+});
+
+button.addEventListener("click", () => {
+  console.log("B");
+});
+```
+
+Click button:
+
+```js
+A;
+B;
+```
+
+---
+
+Now:
+
+```js
+button.addEventListener("click", (event) => {
+  console.log("A");
+  event.stopImmediatePropagation();
+});
+
+button.addEventListener("click", () => {
+  console.log("B");
+});
+```
+
+### Output
+
+```js
+A;
+```
+
+`B` never executes.
+
+---
+
+# 8. Difference Between the Two
+
+| Method                       | Stops Bubbling | Stops Other Handlers on Same Element |
+| ---------------------------- | -------------- | ------------------------------------ |
+| `stopPropagation()`          | ✅             | ❌                                   |
+| `stopImmediatePropagation()` | ✅             | ✅                                   |
+
+---
+
+# 9. Event Delegation Interaction
+
+Consider delegated events:
+
+```js
+container.addEventListener("click", () => {
+  console.log("Container");
+});
+```
+
+```js
+button.addEventListener("click", (event) => {
+  event.stopPropagation();
+});
+```
+
+Clicking the button:
+
+```js
+Container ❌
+```
+
+The delegated handler won't run because bubbling was stopped.
+
+This is a common source of bugs in event delegation.
+
+---
+
+# 10. Real-World Example: Modal
+
+```html
+<div id="overlay">
+  <div id="modal">Content</div>
+</div>
+```
+
+Close modal when overlay is clicked:
+
+```js
+overlay.addEventListener("click", () => {
+  closeModal();
+});
+```
+
+Prevent closing when modal itself is clicked:
+
+```js
+modal.addEventListener("click", (event) => {
+  event.stopPropagation();
+});
+```
+
+Now clicks inside the modal don't reach the overlay.
+
+---
+
+# 11. Tricky Interview Output Question
+
+```js
+parent.addEventListener("click", () => {
+  console.log("Parent");
+});
+
+child.addEventListener("click", (event) => {
+  console.log("Child");
+  event.stopPropagation();
+});
+
+document.addEventListener("click", () => {
+  console.log("Document");
+});
+```
+
+### Click child
+
+Output:
+
+```js
+Child;
+```
+
+Neither parent nor document receive the event.
+
+---
+
+# 12. Best Practices
+
+### Use `stopPropagation()` sparingly
+
+Overusing it can:
+
+- Break event delegation
+- Make debugging difficult
+- Cause unexpected behavior in large applications
+
+---
+
+### Prefer component-level handling
+
+Instead of stopping every event, structure handlers carefully.
+
+---
+
+### Use `stopImmediatePropagation()` only when necessary
+
+It can prevent other code (including third-party libraries) from running.
+
+---
+
+# Interview Summary
+
+> Event propagation can be stopped using `event.stopPropagation()`, which prevents the event from continuing through the DOM's capturing or bubbling phases. If you also want to prevent other listeners on the same element from executing, use `event.stopImmediatePropagation()`. This differs from `event.preventDefault()`, which stops the browser's default behavior rather than the event's propagation.
+
 ## Question 7. How to use `JSON.stringify` and `JSON.parse` with reviver/replacer functions
 
 ## Question 8. How to detect if a browser supports a certain feature (feature detection)
