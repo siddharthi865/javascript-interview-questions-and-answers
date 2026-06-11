@@ -1974,6 +1974,469 @@ A Vue-like reactivity system is built around **dependency tracking** and **chang
 
 ## Question 6. How to implement observer pattern in JavaScript
 
+## Direct Answer
+
+The **Observer Pattern** is a behavioral design pattern where one object (the **Subject**) maintains a list of dependent objects (**Observers**) and automatically notifies them whenever its state changes.
+
+In JavaScript, it is commonly implemented using:
+
+- `subscribe()` → register observers
+- `unsubscribe()` → remove observers
+- `notify()` → inform all observers of changes
+
+---
+
+# Real-World Analogy
+
+Think of a YouTube channel:
+
+- **Channel** = Subject
+- **Subscribers** = Observers
+- **New Video Upload** = Event
+- **Notification** = Observer update
+
+```text
+Subject
+   ↓
+Observer A
+Observer B
+Observer C
+```
+
+When the subject changes, all observers are notified.
+
+---
+
+# 1. Basic Observer Pattern Implementation
+
+```js
+class Subject {
+  constructor() {
+    this.observers = [];
+  }
+
+  subscribe(observer) {
+    this.observers.push(observer);
+  }
+
+  unsubscribe(observer) {
+    this.observers = this.observers.filter((obs) => obs !== observer);
+  }
+
+  notify(data) {
+    this.observers.forEach((observer) => observer(data));
+  }
+}
+```
+
+---
+
+# Usage
+
+```js
+const subject = new Subject();
+
+function observer1(data) {
+  console.log("Observer 1:", data);
+}
+
+function observer2(data) {
+  console.log("Observer 2:", data);
+}
+
+subject.subscribe(observer1);
+subject.subscribe(observer2);
+
+subject.notify("Hello Observers!");
+```
+
+Output:
+
+```js
+Observer 1: Hello Observers!
+Observer 2: Hello Observers!
+```
+
+---
+
+# 2. Observer Pattern with State
+
+A more realistic implementation:
+
+```js
+class Subject {
+  constructor() {
+    this.observers = [];
+    this.state = null;
+  }
+
+  subscribe(observer) {
+    this.observers.push(observer);
+  }
+
+  unsubscribe(observer) {
+    this.observers = this.observers.filter((obs) => obs !== observer);
+  }
+
+  setState(newState) {
+    this.state = newState;
+    this.notify();
+  }
+
+  notify() {
+    this.observers.forEach((observer) => observer(this.state));
+  }
+}
+```
+
+Usage:
+
+```js
+const store = new Subject();
+
+store.subscribe((state) => {
+  console.log("Component A:", state);
+});
+
+store.subscribe((state) => {
+  console.log("Component B:", state);
+});
+
+store.setState({
+  user: "John",
+});
+```
+
+Output:
+
+```js
+Component A: { user: "John" }
+Component B: { user: "John" }
+```
+
+---
+
+# 3. Object-Oriented Observer Pattern
+
+Instead of functions, observers can be objects.
+
+```js
+class Observer {
+  constructor(name) {
+    this.name = name;
+  }
+
+  update(data) {
+    console.log(`${this.name} received: ${data}`);
+  }
+}
+```
+
+Subject:
+
+```js
+class Subject {
+  constructor() {
+    this.observers = [];
+  }
+
+  subscribe(observer) {
+    this.observers.push(observer);
+  }
+
+  notify(data) {
+    this.observers.forEach((observer) => observer.update(data));
+  }
+}
+```
+
+Usage:
+
+```js
+const subject = new Subject();
+
+const obs1 = new Observer("Alice");
+const obs2 = new Observer("Bob");
+
+subject.subscribe(obs1);
+subject.subscribe(obs2);
+
+subject.notify("New message");
+```
+
+Output:
+
+```js
+Alice received: New message
+Bob received: New message
+```
+
+---
+
+# 4. Event Emitter Style (Node.js)
+
+Node.js internally uses an Observer-like pattern.
+
+Simple implementation:
+
+```js
+class EventEmitter {
+  constructor() {
+    this.events = {};
+  }
+
+  on(event, listener) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+
+    this.events[event].push(listener);
+  }
+
+  emit(event, data) {
+    if (!this.events[event]) return;
+
+    this.events[event].forEach((listener) => listener(data));
+  }
+
+  off(event, listener) {
+    if (!this.events[event]) return;
+
+    this.events[event] = this.events[event].filter((l) => l !== listener);
+  }
+}
+```
+
+Usage:
+
+```js
+const emitter = new EventEmitter();
+
+emitter.on("login", (user) => {
+  console.log(`${user} logged in`);
+});
+
+emitter.emit("login", "John");
+```
+
+Output:
+
+```js
+John logged in
+```
+
+---
+
+# 5. Observer Pattern vs Pub/Sub Pattern
+
+Interviewers frequently ask this.
+
+## Observer Pattern
+
+```text
+Observer → Subject
+```
+
+Observers directly know the subject.
+
+```js
+subject.subscribe(observer);
+```
+
+---
+
+## Publish/Subscribe Pattern
+
+```text
+Publisher
+    ↓
+ Event Bus
+    ↓
+Subscribers
+```
+
+Publisher and subscribers don't know each other.
+
+```js
+eventBus.publish("login");
+eventBus.subscribe("login");
+```
+
+---
+
+### Comparison
+
+| Feature             | Observer         | Pub/Sub         |
+| ------------------- | ---------------- | --------------- |
+| Direct relationship | Yes              | No              |
+| Mediator            | No               | Yes             |
+| Coupling            | Higher           | Lower           |
+| Scalability         | Moderate         | High            |
+| Example             | UI state changes | Message brokers |
+
+---
+
+# 6. Real-World JavaScript Uses
+
+### DOM Events
+
+```js
+button.addEventListener("click", handleClick);
+```
+
+- Button = Subject
+- Handler = Observer
+
+---
+
+### Redux Store
+
+```js
+store.subscribe(() => {
+  console.log(store.getState());
+});
+```
+
+Observer pattern in action.
+
+---
+
+### React State Updates
+
+```js
+useEffect(() => {
+  console.log(count);
+}, [count]);
+```
+
+Conceptually similar dependency observation.
+
+---
+
+### Vue Reactivity
+
+```js
+watch(() => state.count, callback);
+```
+
+Observer-based change notification.
+
+---
+
+# Common Pitfalls
+
+## 1. Memory Leaks
+
+```js
+subject.subscribe(observer);
+```
+
+If observers are never removed:
+
+```js
+subject.unsubscribe(observer);
+```
+
+they remain in memory.
+
+---
+
+## 2. Duplicate Subscriptions
+
+```js
+subject.subscribe(fn);
+subject.subscribe(fn);
+```
+
+Now notifications occur twice.
+
+Possible fix:
+
+```js
+this.observers = new Set();
+```
+
+instead of an array.
+
+---
+
+## 3. Slow Notifications
+
+```js
+notify() {
+  observers.forEach(...)
+}
+```
+
+Thousands of observers can cause performance issues.
+
+Real frameworks often batch updates.
+
+---
+
+## 4. Observer Errors
+
+One observer throwing:
+
+```js
+observer();
+throw new Error();
+```
+
+can stop notification flow.
+
+Safer:
+
+```js
+notify(data) {
+  this.observers.forEach(obs => {
+    try {
+      obs(data);
+    } catch (err) {
+      console.error(err);
+    }
+  });
+}
+```
+
+---
+
+# Advanced Version Using Set
+
+```js
+class Subject {
+  constructor() {
+    this.observers = new Set();
+  }
+
+  subscribe(fn) {
+    this.observers.add(fn);
+  }
+
+  unsubscribe(fn) {
+    this.observers.delete(fn);
+  }
+
+  notify(data) {
+    for (const fn of this.observers) {
+      fn(data);
+    }
+  }
+}
+```
+
+Benefits:
+
+- No duplicates
+- Faster removal
+- Cleaner implementation
+
+---
+
+# Senior-Level Interview Summary
+
+The **Observer Pattern** defines a one-to-many dependency between objects so that when a subject changes state, all registered observers are automatically notified. In JavaScript, it is typically implemented with `subscribe`, `unsubscribe`, and `notify` methods. The pattern underpins many modern APIs and frameworks, including DOM events, Redux subscriptions, Vue watchers, and Node.js event emitters. While simple and powerful, production-grade implementations must handle duplicate listeners, memory leaks, error isolation, and performance concerns through cleanup, batching, and efficient data structures such as `Set`.
+
 ## Question 7. How to use `WeakRef` to prevent memory leaks
 
 ## Question 8. Difference between shallow and deep freezing an object
