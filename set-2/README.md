@@ -1156,6 +1156,324 @@ A strong answer should highlight:
 
 ## Question 6. Difference between for loop, for…of, and for…in
 
+### **Short Answer**
+
+- **`for` loop** → Iterates using an index; works with arrays, strings, or any sequence where you control the counter.
+- **`for...of`** → Iterates over **values** of an iterable (arrays, strings, maps, sets, etc.).
+- **`for...in`** → Iterates over **property keys** of an object.
+
+---
+
+# **Detailed Explanation (Interview Perspective)**
+
+These three loops serve different purposes and are often confused in interviews.
+
+---
+
+## **1. Traditional `for` Loop**
+
+### **Syntax**
+
+```javascript
+for (let i = 0; i < arr.length; i++) {
+  console.log(arr[i]);
+}
+```
+
+### **Example**
+
+```javascript
+const fruits = ["apple", "banana", "mango"];
+
+for (let i = 0; i < fruits.length; i++) {
+  console.log(i, fruits[i]);
+}
+```
+
+### **Output**
+
+```text
+0 apple
+1 banana
+2 mango
+```
+
+### **Advantages**
+
+- Full control over the loop.
+- Can access both index and value.
+- Supports `break`, `continue`, and custom step sizes.
+
+### **Use When**
+
+- You need the index.
+- You need to skip elements or iterate in reverse.
+
+---
+
+## **2. `for...of` Loop**
+
+### **Syntax**
+
+```javascript
+for (const value of iterable) {
+  console.log(value);
+}
+```
+
+### **Example**
+
+```javascript
+const fruits = ["apple", "banana", "mango"];
+
+for (const fruit of fruits) {
+  console.log(fruit);
+}
+```
+
+### **Output**
+
+```text
+apple
+banana
+mango
+```
+
+### **Works With**
+
+- Arrays
+- Strings
+- Sets
+- Maps
+- Other iterables
+
+```javascript
+for (const char of "Hello") {
+  console.log(char);
+}
+```
+
+### **Advantages**
+
+- Cleaner and more readable.
+- No need to manage indexes manually.
+- Supports `break` and `continue`.
+
+### **Use When**
+
+- You only need the values.
+- You're working with iterable objects.
+
+---
+
+## **3. `for...in` Loop**
+
+### **Syntax**
+
+```javascript
+for (const key in object) {
+  console.log(key);
+}
+```
+
+### **Example**
+
+```javascript
+const user = {
+  name: "Alice",
+  age: 25,
+};
+
+for (const key in user) {
+  console.log(key, user[key]);
+}
+```
+
+### **Output**
+
+```text
+name Alice
+age 25
+```
+
+### **Important**
+
+`for...in` iterates over **property names (keys)**, not values.
+
+### **Arrays with `for...in`**
+
+```javascript
+const fruits = ["apple", "banana", "mango"];
+
+for (const index in fruits) {
+  console.log(index);
+}
+```
+
+Output:
+
+```text
+0
+1
+2
+```
+
+Notice it returns the **indexes**, not the values.
+
+### **Why it's usually avoided for arrays**
+
+- Returns keys as strings.
+- Can include inherited enumerable properties.
+- Less predictable than `for...of`.
+
+---
+
+# **Comparison Table**
+
+| Feature                 | `for`   | `for...of`           | `for...in`           |
+| ----------------------- | ------- | -------------------- | -------------------- |
+| Iterates over           | Indexes | Values               | Keys/Property names  |
+| Works on arrays         | ✅      | ✅                   | ✅ (not recommended) |
+| Works on objects        | ❌      | ❌ (unless iterable) | ✅                   |
+| Access index directly   | ✅      | ❌                   | ✅                   |
+| Supports break/continue | ✅      | ✅                   | ✅                   |
+| Best for objects        | ❌      | ❌                   | ✅                   |
+| Best for arrays         | ✅      | ✅                   | ❌                   |
+
+---
+
+# **Example Showing All Three**
+
+```javascript
+const fruits = ["apple", "banana", "mango"];
+```
+
+### `for`
+
+```javascript
+for (let i = 0; i < fruits.length; i++) {
+  console.log(i, fruits[i]);
+}
+```
+
+Output:
+
+```text
+0 apple
+1 banana
+2 mango
+```
+
+### `for...of`
+
+```javascript
+for (const fruit of fruits) {
+  console.log(fruit);
+}
+```
+
+Output:
+
+```text
+apple
+banana
+mango
+```
+
+### `for...in`
+
+```javascript
+for (const index in fruits) {
+  console.log(index);
+}
+```
+
+Output:
+
+```text
+0
+1
+2
+```
+
+---
+
+# **Common Interview Pitfall**
+
+```javascript
+const arr = ["a", "b", "c"];
+
+for (const item in arr) {
+  console.log(item);
+}
+```
+
+Many candidates expect:
+
+```text
+a
+b
+c
+```
+
+Actual output:
+
+```text
+0
+1
+2
+```
+
+Because `for...in` returns **keys/indexes**, not values.
+
+---
+
+# **Best Practices**
+
+### Arrays
+
+Use:
+
+```javascript
+for (const item of array) {
+  // ...
+}
+```
+
+or
+
+```javascript
+array.forEach((item) => {
+  // ...
+});
+```
+
+### Objects
+
+Use:
+
+```javascript
+for (const key in object) {
+  console.log(key, object[key]);
+}
+```
+
+or modern alternatives:
+
+```javascript
+Object.entries(object).forEach(([key, value]) => {
+  console.log(key, value);
+});
+```
+
+---
+
+## **Interview Tip**
+
+A concise interview answer:
+
+> "`for` gives full control with an index, `for...of` iterates over values of iterable objects, and `for...in` iterates over property keys of objects. For arrays, `for...of` is generally preferred, while `for...in` is mainly used for objects."
+
 ## Question 7. Explain array methods like push, pop, shift, unshift
 
 ## Question 8. What is the difference between slice() and splice()?
