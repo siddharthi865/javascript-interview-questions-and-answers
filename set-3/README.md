@@ -1485,6 +1485,269 @@ Key points:
 
 ## Question 6. What is the difference between static and instance methods?
 
+## Short Answer
+
+**Instance methods** belong to objects created from a class and are called on instances.
+**Static methods** belong to the class itself and are called on the class, not on instances.
+
+---
+
+# Detailed Explanation (Interview Level)
+
+In JavaScript classes, methods can be defined in two ways:
+
+1. **Instance methods** → accessible via objects (instances)
+2. **Static methods** → accessible via the class itself
+
+---
+
+# 1. Instance Methods
+
+## Definition
+
+Instance methods are methods that operate on **individual objects created using `new`**.
+
+### Example
+
+```javascript id="a1b2c3"
+class Person {
+  constructor(name) {
+    this.name = name;
+  }
+
+  greet() {
+    console.log(`Hello, my name is ${this.name}`);
+  }
+}
+
+const p1 = new Person("John");
+
+p1.greet(); // Hello, my name is John
+```
+
+---
+
+## How it works internally
+
+Instance methods are stored on the **prototype**:
+
+```javascript id="d4e5f6"
+Person.prototype.greet = function () {
+  console.log(this.name);
+};
+```
+
+So all instances share the same method.
+
+---
+
+## Key points
+
+- Called on **objects (instances)**
+- Can access instance properties via `this`
+- Shared across all instances (memory efficient)
+
+---
+
+# 2. Static Methods
+
+## Definition
+
+Static methods belong to the **class itself**, not to instances.
+
+### Example
+
+```javascript id="g7h8i9"
+class MathUtils {
+  static add(a, b) {
+    return a + b;
+  }
+}
+
+console.log(MathUtils.add(2, 3)); // 5
+```
+
+---
+
+## Important rule
+
+❌ You cannot call static methods on instances:
+
+```javascript id="j1k2l3"
+const obj = new MathUtils();
+
+obj.add(2, 3); // ❌ TypeError
+```
+
+✔ Must call via class:
+
+```javascript id="m4n5o6"
+MathUtils.add(2, 3);
+```
+
+---
+
+## How it works internally
+
+Static methods are attached directly to the constructor function:
+
+```javascript id="p7q8r9"
+MathUtils.add = function (a, b) {
+  return a + b;
+};
+```
+
+They are **not part of the prototype chain**.
+
+---
+
+# 3. Key Differences
+
+| Feature                | Instance Method      | Static Method                                 |
+| ---------------------- | -------------------- | --------------------------------------------- |
+| Belongs to             | Object instance      | Class itself                                  |
+| Called using           | `object.method()`    | `Class.method()`                              |
+| Uses `this`            | Refers to instance   | Refers to class (or undefined in strict mode) |
+| Memory sharing         | Shared via prototype | Single copy on class                          |
+| Inherited by instances | Yes                  | No                                            |
+
+---
+
+# 4. Real-World Analogy
+
+### Instance Method
+
+Like actions performed by a specific person:
+
+```text id="s1t2u3"
+John can speak()
+Mary can speak()
+```
+
+Each person performs the action.
+
+---
+
+### Static Method
+
+Like a utility service:
+
+```text id="v4w5x6"
+MathUtils.add()
+MathUtils.multiply()
+```
+
+Not tied to any individual object.
+
+---
+
+# 5. When to Use Instance Methods
+
+Use instance methods when behavior depends on object state.
+
+```javascript id="y7z8a9"
+class User {
+  constructor(name) {
+    this.name = name;
+  }
+
+  getName() {
+    return this.name;
+  }
+}
+```
+
+Each user has its own name.
+
+---
+
+# 6. When to Use Static Methods
+
+Use static methods for **utility or helper logic** that does not depend on instance data.
+
+### Example: Factory method
+
+```javascript id="b1c2d3"
+class User {
+  constructor(name) {
+    this.name = name;
+  }
+
+  static createAnonymous() {
+    return new User("Anonymous");
+  }
+}
+
+const user = User.createAnonymous();
+console.log(user.name); // Anonymous
+```
+
+---
+
+### Example: Utility functions
+
+```javascript id="e4f5g6"
+class StringUtils {
+  static toUpper(str) {
+    return str.toUpperCase();
+  }
+}
+
+console.log(StringUtils.toUpper("hello"));
+```
+
+---
+
+# 7. Common Interview Pitfall
+
+## Static method cannot access instance properties
+
+```javascript id="h7i8j9"
+class Person {
+  constructor(name) {
+    this.name = name;
+  }
+
+  static greet() {
+    console.log(this.name);
+  }
+}
+
+Person.greet(); // undefined (or class context)
+```
+
+Because `this` refers to the class, not an instance.
+
+---
+
+# 8. Prototype Relationship Insight
+
+```javascript id="k1l2m3"
+class A {
+  instanceMethod() {}
+  static staticMethod() {}
+}
+
+console.log(A.prototype.instanceMethod); // function
+console.log(A.staticMethod); // function
+```
+
+- Instance methods → `A.prototype`
+- Static methods → `A`
+
+---
+
+# 9. Interview Summary
+
+**Instance methods** operate on object instances and use instance data via `this`.
+**Static methods** belong to the class itself and are used for utility or class-level operations.
+
+---
+
+## One-liner (Interview-ready)
+
+👉 _“Instance methods belong to objects created from a class and operate on instance data, while static methods belong to the class itself and are used for utility or class-level functionality, not tied to any specific instance.”_
+
 ## Question 7. Explain modules in JavaScript. How to export and import?
 
 ## Question 8. Explain modules in JavaScript. How to export and import?
