@@ -1638,6 +1638,464 @@ Memoization is a specific type of caching.
 
 ## Question 6. Difference between synchronous and asynchronous iterables
 
+## Concise Answer
+
+The difference is:
+
+- **Synchronous iterables** produce values immediately and are consumed using `for...of`.
+- **Asynchronous iterables** produce values over time (often involving Promises) and are consumed using `for await...of`.
+
+JavaScript uses different protocols for each:
+
+| Type                  | Protocol Method        |
+| --------------------- | ---------------------- |
+| Synchronous Iterable  | `Symbol.iterator`      |
+| Asynchronous Iterable | `Symbol.asyncIterator` |
+
+---
+
+# Understanding Iterables
+
+An iterable is any object that can provide values one at a time.
+
+Examples:
+
+```js
+Array;
+String;
+Map;
+Set;
+Generator;
+```
+
+All implement the iterable protocol.
+
+---
+
+# 1. Synchronous Iterables
+
+A synchronous iterable returns values immediately.
+
+## Example
+
+```js
+const numbers = [1, 2, 3];
+
+for (const num of numbers) {
+  console.log(num);
+}
+```
+
+Output:
+
+```js
+1;
+2;
+3;
+```
+
+---
+
+## Internal Protocol
+
+A synchronous iterable implements:
+
+```js
+Symbol.iterator;
+```
+
+Example:
+
+```js
+const obj = {
+  *[Symbol.iterator]() {
+    yield 1;
+    yield 2;
+    yield 3;
+  },
+};
+
+for (const value of obj) {
+  console.log(value);
+}
+```
+
+Output:
+
+```js
+1;
+2;
+3;
+```
+
+---
+
+## What Happens Internally?
+
+```js
+const iterator = obj[Symbol.iterator]();
+
+iterator.next();
+iterator.next();
+iterator.next();
+```
+
+Returns:
+
+```js
+{ value: 1, done: false }
+{ value: 2, done: false }
+{ value: 3, done: false }
+```
+
+Everything is available immediately.
+
+---
+
+# 2. Asynchronous Iterables
+
+An asynchronous iterable can produce values later.
+
+Useful for:
+
+- API streams
+- File streams
+- Database cursors
+- Web Streams
+- Real-time data
+
+---
+
+## Protocol
+
+Uses:
+
+```js
+Symbol.asyncIterator;
+```
+
+instead of:
+
+```js
+Symbol.iterator;
+```
+
+---
+
+## Example
+
+```js
+const asyncNumbers = {
+  async *[Symbol.asyncIterator]() {
+    yield 1;
+    yield 2;
+    yield 3;
+  },
+};
+
+(async () => {
+  for await (const num of asyncNumbers) {
+    console.log(num);
+  }
+})();
+```
+
+Output:
+
+```js
+1;
+2;
+3;
+```
+
+---
+
+# Why `for await...of`?
+
+Because each iteration may involve a Promise.
+
+Consider:
+
+```js
+async function getData() {
+  return 42;
+}
+```
+
+You can't do:
+
+```js
+for (const value of asyncIterable)
+```
+
+because values may not exist yet.
+
+Instead:
+
+```js
+for await (const value of asyncIterable)
+```
+
+which automatically awaits each value.
+
+---
+
+# Example with Delay
+
+```js
+const asyncCounter = {
+  async *[Symbol.asyncIterator]() {
+    for (let i = 1; i <= 3; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      yield i;
+    }
+  },
+};
+
+(async () => {
+  for await (const value of asyncCounter) {
+    console.log(value);
+  }
+})();
+```
+
+Output:
+
+```js
+(after 1 sec) 1
+(after 1 sec) 2
+(after 1 sec) 3
+```
+
+---
+
+# Generator vs Async Generator
+
+## Synchronous Generator
+
+```js
+function* generator() {
+  yield 1;
+  yield 2;
+}
+```
+
+Consumption:
+
+```js
+for (const x of generator()) {
+  console.log(x);
+}
+```
+
+---
+
+## Async Generator
+
+```js
+async function* generator() {
+  yield 1;
+  yield 2;
+}
+```
+
+Consumption:
+
+```js
+for await (const x of generator()) {
+  console.log(x);
+}
+```
+
+---
+
+# Internal Difference
+
+## Synchronous Iterator
+
+```js
+iterator.next();
+```
+
+Returns:
+
+```js
+{
+  value: 1,
+  done: false
+}
+```
+
+---
+
+## Async Iterator
+
+```js
+iterator.next();
+```
+
+Returns:
+
+```js
+Promise<{
+  value: 1,
+  done: false
+}>
+```
+
+Notice:
+
+```js
+Promise;
+```
+
+is the key difference.
+
+---
+
+# Interview Trick Question
+
+## What happens here?
+
+```js
+async function* gen() {
+  yield 1;
+}
+
+for (const x of gen()) {
+  console.log(x);
+}
+```
+
+### Answer
+
+```js
+TypeError;
+```
+
+Because:
+
+```js
+gen();
+```
+
+returns an **async iterable**, not a synchronous iterable.
+
+Must use:
+
+```js
+for await (const x of gen())
+```
+
+---
+
+# Another Trick
+
+```js
+for await (const x of [1, 2, 3]) {
+  console.log(x);
+}
+```
+
+### Does it work?
+
+✅ Yes.
+
+Output:
+
+```js
+1;
+2;
+3;
+```
+
+Why?
+
+`for await...of` can consume both:
+
+- async iterables
+- sync iterables
+
+It automatically wraps sync values in resolved Promises.
+
+---
+
+# Real-World Use Cases
+
+## Synchronous Iterables
+
+When data is already available:
+
+```js
+const users = [ ... ];
+const map = new Map();
+const set = new Set();
+```
+
+---
+
+## Asynchronous Iterables
+
+When data arrives over time:
+
+```js
+API pagination
+WebSocket messages
+Node.js streams
+Database cursors
+File streaming
+Large datasets
+```
+
+Example:
+
+```js
+for await (const chunk of readableStream) {
+  process(chunk);
+}
+```
+
+---
+
+# Event Loop Connection
+
+Async iterables integrate with:
+
+- Promises
+- async/await
+- microtask queue
+
+Each iteration can pause:
+
+```js
+await iterator.next();
+```
+
+allowing other tasks to run.
+
+Synchronous iterables block until iteration finishes.
+
+---
+
+# Comparison Table
+
+| Feature            | Synchronous Iterable | Asynchronous Iterable  |
+| ------------------ | -------------------- | ---------------------- |
+| Protocol           | `Symbol.iterator`    | `Symbol.asyncIterator` |
+| Loop               | `for...of`           | `for await...of`       |
+| Value availability | Immediate            | Future/async           |
+| `next()` returns   | Object               | Promise                |
+| Supports `await`   | No                   | Yes                    |
+| Generator type     | `function*`          | `async function*`      |
+| Common use         | Arrays, Sets, Maps   | Streams, APIs, cursors |
+
+---
+
+# Interview Summary
+
+> A synchronous iterable implements `Symbol.iterator` and produces values immediately, making it consumable with `for...of`. An asynchronous iterable implements `Symbol.asyncIterator` and produces values asynchronously, often involving Promises, so it must be consumed with `for await...of`. Internally, a synchronous iterator's `next()` returns an object, while an async iterator's `next()` returns a Promise that resolves to that object. This makes async iterables ideal for streams, paginated APIs, and other data sources that arrive over time.
+
 ## Question 7. How to use Symbol.iterator to make an object iterable
 
 ## Question 8. How to implement a reactive object (like Vue's reactivity system)
