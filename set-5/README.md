@@ -1494,6 +1494,286 @@ Generators and async functions both allow pausing and resuming execution, but th
 
 ## Question 6. How to use async iterators
 
+### Short Answer
+
+**Async iterators** let you iterate over asynchronous data sources (like streams, APIs, or timed events) using `for await...of`. They are built using `Symbol.asyncIterator` and `async function*`.
+
+---
+
+# Async Iterators in JavaScript (Interview-Ready Explanation)
+
+## 1. What is an Async Iterator?
+
+An **async iterator** is an object that:
+
+- Produces values asynchronously
+- Returns a **Promise for each value**
+- Works with `for await...of`
+
+It follows this contract:
+
+```javascript id="ai1"
+{
+  next(): Promise<{ value, done }>
+}
+```
+
+---
+
+## 2. Basic Syntax using `async function*`
+
+The easiest way to create an async iterator is using an **async generator function**.
+
+```javascript id="ai2"
+async function* asyncGenerator() {
+  yield 1;
+  yield 2;
+  yield 3;
+}
+```
+
+Each `yield` can also be asynchronous.
+
+---
+
+## 3. Consuming Async Iterators (`for await...of`)
+
+```javascript id="ai3"
+async function run() {
+  const gen = asyncGenerator();
+
+  for await (const value of gen) {
+    console.log(value);
+  }
+}
+
+run();
+```
+
+### Output:
+
+```text id="ai3out"
+1
+2
+3
+```
+
+👉 `for await...of` waits for each Promise to resolve before continuing.
+
+---
+
+## 4. Real Async Example (Simulating API calls)
+
+```javascript id="ai4"
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function* fetchPages() {
+  for (let i = 1; i <= 3; i++) {
+    await wait(1000);
+    yield `Page ${i}`;
+  }
+}
+
+async function run() {
+  for await (const page of fetchPages()) {
+    console.log(page);
+  }
+}
+
+run();
+```
+
+### Output (1 second delay each):
+
+```
+Page 1
+Page 2
+Page 3
+```
+
+---
+
+## 5. How Async Iterators Work Internally
+
+An async iterator is basically:
+
+```javascript id="ai5"
+{
+  next() {
+    return Promise.resolve({ value: 1, done: false });
+  }
+}
+```
+
+But when using `async function*`, JavaScript:
+
+- Wraps each `yield` in a Promise
+- Pauses execution until the Promise resolves
+- Resumes automatically
+
+---
+
+## 6. Manual Async Iterator Implementation
+
+You can implement one without generators:
+
+```javascript id="ai6"
+const asyncIterable = {
+  data: [1, 2, 3],
+
+  [Symbol.asyncIterator]() {
+    let index = 0;
+    const data = this.data;
+
+    return {
+      next() {
+        if (index < data.length) {
+          return Promise.resolve({
+            value: data[index++],
+            done: false,
+          });
+        }
+
+        return Promise.resolve({ done: true });
+      },
+    };
+  },
+};
+
+async function run() {
+  for await (const value of asyncIterable) {
+    console.log(value);
+  }
+}
+
+run();
+```
+
+---
+
+## 7. Key Concepts
+
+### 1. `Symbol.asyncIterator`
+
+Defines async iteration behavior.
+
+```javascript id="ai7"
+obj[Symbol.asyncIterator] = function () {
+  return asyncIterator;
+};
+```
+
+---
+
+### 2. `for await...of`
+
+Used to consume async iterables.
+
+```javascript id="ai8"
+for await (const item of asyncIterable) {
+  console.log(item);
+}
+```
+
+---
+
+## 8. Async Iterator vs Sync Iterator
+
+| Feature     | Iterator          | Async Iterator             |
+| ----------- | ----------------- | -------------------------- |
+| Method      | `next()`          | `next()`                   |
+| Return      | `{ value, done }` | `Promise<{ value, done }>` |
+| Loop        | `for...of`        | `for await...of`           |
+| Data source | Sync data         | Async data (API, streams)  |
+
+---
+
+## 9. Real-World Use Cases
+
+### 1. Streaming APIs
+
+- Reading chunks of data
+- File streams (Node.js)
+
+### 2. Pagination APIs
+
+```javascript id="ai9"
+async function* getPages() {
+  let page = 1;
+
+  while (page <= 3) {
+    const res = await fetch(`/api?page=${page}`);
+    const data = await res.json();
+
+    yield data;
+    page++;
+  }
+}
+```
+
+---
+
+### 3. Real-time data (WebSockets, events)
+
+```javascript id="ai10"
+async function* socketStream(socket) {
+  while (true) {
+    const msg = await new Promise((resolve) => {
+      socket.onmessage = (e) => resolve(e.data);
+    });
+
+    yield msg;
+  }
+}
+```
+
+---
+
+## 10. Common Pitfalls (Interview Focus)
+
+### ❌ Using `for...of` with async iterators
+
+```javascript id="ai11"
+for (const value of asyncGenerator()) {
+  console.log(value); // WRONG
+}
+```
+
+### ✔ Correct:
+
+```javascript id="ai12"
+for await (const value of asyncGenerator()) {
+  console.log(value);
+}
+```
+
+---
+
+### ❌ Forgetting async in generator
+
+```javascript id="ai13"
+function* gen() {
+  yield fetch("/api"); // returns Promise, not awaited
+}
+```
+
+---
+
+## 11. Relationship with Promises
+
+Async iterators are basically:
+
+- Promises for sequences of values
+- Not just one async result, but multiple over time
+
+---
+
+## 12. Interview-Ready Summary
+
+Async iterators in JavaScript allow you to work with asynchronous sequences of data using `for await...of`. They are created using `async function*` or objects implementing `Symbol.asyncIterator`. Each `yield` produces a Promise-resolved value, enabling sequential asynchronous processing. They are commonly used for streams, paginated APIs, and real-time data. Internally, async iterators combine generator-based pausing with Promise-based resolution, making them ideal for handling asynchronous data flows cleanly and efficiently.
+
 ## Question 7. What is Proxy in JavaScript? Give use case
 
 ## Question 8. What is Reflect API?
