@@ -961,6 +961,204 @@ If `user` is passed as an object, original data changes due to reference sharing
 
 ## Question 6. How does Infinity work in JavaScript?
 
+**Direct answer:**
+`Infinity` in JavaScript is a special numeric value representing **mathematical infinity**, used when a number exceeds the largest representable finite number or results from division by zero or overflow-like operations.
+
+---
+
+# Detailed Explanation (Interview Perspective)
+
+In JavaScript, `Infinity` is part of the **Number type** and represents an **unbounded value larger than any finite number**.
+
+It is defined in the global scope:
+
+```javascript
+Infinity === Number.POSITIVE_INFINITY; // true
+```
+
+And there is also:
+
+```javascript
+-Infinity === Number.NEGATIVE_INFINITY;
+```
+
+---
+
+# 1. When does `Infinity` occur?
+
+## 1. Division by zero
+
+```javascript id="i1"
+console.log(10 / 0); // Infinity
+console.log(-10 / 0); // -Infinity
+```
+
+👉 Unlike some languages, JavaScript does NOT throw an error.
+
+---
+
+## 2. Overflow beyond Number.MAX_VALUE
+
+```javascript id="i2"
+console.log(Number.MAX_VALUE); // largest finite number
+
+console.log(Number.MAX_VALUE * 2); // Infinity
+```
+
+👉 Once a number exceeds the representable range, it becomes `Infinity`.
+
+---
+
+## 3. Mathematical operations
+
+```javascript id="i3"
+console.log(Math.pow(10, 1000)); // Infinity
+```
+
+---
+
+## 4. Explicit assignment
+
+```javascript id="i4"
+let x = Infinity;
+console.log(x); // Infinity
+```
+
+---
+
+# 2. Types of Infinity
+
+JavaScript has two special values:
+
+| Value       | Meaning           |
+| ----------- | ----------------- |
+| `Infinity`  | Positive infinity |
+| `-Infinity` | Negative infinity |
+
+```javascript id="i5"
+console.log(1 / 0); // Infinity
+console.log(-1 / 0); // -Infinity
+```
+
+---
+
+# 3. Type of Infinity
+
+```javascript id="i6"
+console.log(typeof Infinity); // "number"
+```
+
+👉 Important interview point:
+Even though it represents “infinity”, it is still a **number type**.
+
+---
+
+# 4. Comparisons with Infinity
+
+```javascript id="i7"
+console.log(Infinity > 1000000); // true
+console.log(Infinity > Number.MAX_VALUE); // true
+console.log(-Infinity < -999999); // true
+```
+
+---
+
+# 5. Special edge cases
+
+## NaN vs Infinity
+
+```javascript id="i8"
+console.log(Infinity - Infinity); // NaN
+```
+
+👉 Any undefined mathematical operation results in `NaN`.
+
+---
+
+## Arithmetic with Infinity
+
+```javascript id="i9"
+console.log(Infinity + 1); // Infinity
+console.log(Infinity * 2); // Infinity
+console.log(Infinity / 2); // Infinity
+```
+
+👉 Infinity behaves like an absorbing value in most operations.
+
+---
+
+# 6. Checking for Infinity
+
+## Correct way:
+
+```javascript id="i10"
+Number.isFinite(10); // true
+Number.isFinite(Infinity); // false
+```
+
+## Simple check:
+
+```javascript id="i11"
+Infinity === value;
+```
+
+---
+
+# 7. Pitfall: `isFinite()` vs `Number.isFinite()`
+
+## Global `isFinite()` (coerces value):
+
+```javascript id="i12"
+isFinite("10"); // true (string coerced)
+```
+
+## Strict version:
+
+```javascript id="i13"
+Number.isFinite("10"); // false
+```
+
+---
+
+# 8. Real-world usage
+
+### 1. Initialization in algorithms
+
+```javascript id="i14"
+let min = Infinity;
+
+for (let num of [5, 2, 9]) {
+  if (num < min) min = num;
+}
+
+console.log(min); // 2
+```
+
+---
+
+### 2. Graph / distance problems
+
+Used as a placeholder for "very large value".
+
+---
+
+# 9. Internal behavior (engine-level insight)
+
+In engines like V8:
+
+- `Infinity` is a **special IEEE 754 floating-point value**
+- JavaScript numbers are 64-bit floating point (double precision)
+- This allows representation of:
+  - finite numbers
+  - `NaN`
+  - `Infinity` / `-Infinity`
+
+---
+
+# 10. Key interview summary
+
+> `Infinity` in JavaScript is a special numeric value representing values larger than the maximum finite number or results of operations like division by zero or overflow. It is of type "number", follows IEEE 754 standards, and has both positive and negative forms. Most arithmetic operations with Infinity return Infinity, except undefined operations like `Infinity - Infinity`, which result in `NaN`.
+
 ## Question 7. Difference between mutable and immutable objects
 
 ## Question 8. What is the difference between a function and a method?
