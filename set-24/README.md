@@ -3031,6 +3031,679 @@ That demonstrates understanding of:
 
 ## Question 6. How to use EventEmitter for pub/sub in Node.js
 
+`EventEmitter` is Node.js’s built-in implementation of the **publish/subscribe (pub/sub) pattern**.
+
+In pub/sub:
+
+- **Publishers** emit events
+- **Subscribers** listen for events
+- Publishers and subscribers are loosely coupled
+
+This enables:
+
+- Event-driven architectures
+- Decoupled modules
+- Async workflows
+- Real-time systems
+
+Node.js provides this through:
+
+```js id="7mjlwm"
+const EventEmitter = require("events");
+```
+
+The `EventEmitter` class is one of the core building blocks of Node.js internals.
+
+---
+
+# Basic Pub/Sub Concept
+
+```txt id="yo1j4q"
+Publisher ---> Event Bus ---> Subscribers
+```
+
+Example:
+
+- Order service emits `"orderCreated"`
+- Email service sends confirmation
+- Analytics service tracks purchase
+- Inventory service updates stock
+
+The publisher doesn’t know who is listening.
+
+---
+
+# Basic EventEmitter Example
+
+---
+
+# Step 1: Create Emitter
+
+```js id="3hjlwm"
+const EventEmitter = require("events");
+
+const emitter = new EventEmitter();
+```
+
+---
+
+# Step 2: Subscribe to Events
+
+```js id="zjlwm8"
+emitter.on("message", (data) => {
+  console.log("Received:", data);
+});
+```
+
+---
+
+# Step 3: Publish Event
+
+```js id="ljlwmc"
+emitter.emit("message", "Hello World");
+```
+
+Output:
+
+```txt id="rzbs7k"
+Received: Hello World
+```
+
+---
+
+# How It Works
+
+## `emit()`
+
+Publisher sends event:
+
+```js id="njlwmr"
+emitter.emit(eventName, payload);
+```
+
+---
+
+## `on()`
+
+Subscriber listens:
+
+```js id="4mjlwm"
+emitter.on(eventName, listener);
+```
+
+---
+
+# Multiple Subscribers
+
+One event can have many subscribers.
+
+```js id="mjlwmc"
+emitter.on("orderCreated", (order) => {
+  console.log("Send email");
+});
+
+emitter.on("orderCreated", (order) => {
+  console.log("Update analytics");
+});
+
+emitter.emit("orderCreated", {
+  id: 1,
+});
+```
+
+Output:
+
+```txt id="jlwm6v"
+Send email
+Update analytics
+```
+
+This is classic pub/sub behavior.
+
+---
+
+# Real-World Example: Order System
+
+---
+
+# Event Bus Module
+
+```js id="eg7p3j"
+const EventEmitter = require("events");
+
+class EventBus extends EventEmitter {}
+
+module.exports = new EventBus();
+```
+
+---
+
+# Publisher
+
+```js id="rjlwm3"
+const bus = require("./bus");
+
+function createOrder(order) {
+  console.log("Order created");
+
+  bus.emit("orderCreated", order);
+}
+```
+
+---
+
+# Subscriber 1
+
+```js id="jlwmfd"
+const bus = require("./bus");
+
+bus.on("orderCreated", (order) => {
+  console.log("Sending email for", order.id);
+});
+```
+
+---
+
+# Subscriber 2
+
+```js id="jlwm2m"
+const bus = require("./bus");
+
+bus.on("orderCreated", (order) => {
+  console.log("Updating inventory");
+});
+```
+
+This decouples modules cleanly.
+
+---
+
+# Important EventEmitter Methods
+
+| Method                 | Purpose                  |
+| ---------------------- | ------------------------ |
+| `on()`                 | Add listener             |
+| `once()`               | Listen once              |
+| `emit()`               | Publish event            |
+| `off()`                | Remove listener          |
+| `removeListener()`     | Remove specific listener |
+| `removeAllListeners()` | Remove all listeners     |
+
+---
+
+# Using `once()`
+
+Listener executes only once.
+
+```js id="jlwmwp"
+emitter.once("login", (user) => {
+  console.log("First login");
+});
+```
+
+Useful for:
+
+- Initialization
+- One-time events
+
+---
+
+# Removing Listeners
+
+Important for memory management.
+
+```js id="hjlwmz"
+function handler(data) {
+  console.log(data);
+}
+
+emitter.on("data", handler);
+
+emitter.off("data", handler);
+```
+
+---
+
+# Async Event Handlers
+
+EventEmitter itself is synchronous, but handlers can be async.
+
+---
+
+# Example
+
+```js id="2jlwmz"
+emitter.on("task", async (data) => {
+  await saveToDB(data);
+
+  console.log("Saved");
+});
+```
+
+---
+
+# Important Detail
+
+`emit()` does NOT await async listeners.
+
+```js id="6jlwmq"
+emitter.emit("task");
+console.log("Done");
+```
+
+Output may be:
+
+```txt id="jlwmkv"
+Done
+Saved
+```
+
+Because listeners run asynchronously internally.
+
+---
+
+# Error Handling
+
+Special event:
+
+```js id="jlwm8v"
+"error";
+```
+
+If emitted without a listener:
+
+- Node.js throws
+- Process may crash
+
+---
+
+# Proper Error Handling
+
+```js id="jlwmpt"
+emitter.on("error", (err) => {
+  console.error(err);
+});
+```
+
+---
+
+# Example
+
+```js id="jlwm0n"
+emitter.emit("error", new Error("Something failed"));
+```
+
+---
+
+# EventEmitter Is Synchronous
+
+Very important interview topic.
+
+When you call:
+
+```js id="5jlwmj"
+emitter.emit("event");
+```
+
+All listeners execute synchronously in registration order.
+
+---
+
+# Example
+
+```js id="jlwm63"
+emitter.on("test", () => {
+  console.log(1);
+});
+
+emitter.on("test", () => {
+  console.log(2);
+});
+
+emitter.emit("test");
+
+console.log(3);
+```
+
+Output:
+
+```txt id="jlwmx0"
+1
+2
+3
+```
+
+---
+
+# Making Events Async
+
+Use:
+
+- `setImmediate`
+- `process.nextTick`
+- Promises
+
+---
+
+# Example
+
+```js id="jlwm0y"
+emitter.on("event", (data) => {
+  setImmediate(() => {
+    console.log(data);
+  });
+});
+```
+
+---
+
+# Event-Driven Architecture Pattern
+
+Common backend architecture:
+
+```txt id="jlwm1d"
+API -> Emit Event -> Independent Consumers
+```
+
+Benefits:
+
+- Decoupling
+- Scalability
+- Modularity
+
+---
+
+# Example Use Cases
+
+| Use Case           | Example            |
+| ------------------ | ------------------ |
+| Logging            | `requestCompleted` |
+| Notifications      | `userRegistered`   |
+| Analytics          | `purchaseMade`     |
+| Cache invalidation | `dataUpdated`      |
+| WebSockets         | `messageReceived`  |
+
+---
+
+# Building a Simple Pub/Sub System
+
+---
+
+# Pub/Sub Wrapper
+
+```js id="jlwm4u"
+class PubSub extends EventEmitter {
+  publish(event, data) {
+    this.emit(event, data);
+  }
+
+  subscribe(event, listener) {
+    this.on(event, listener);
+  }
+}
+```
+
+Usage:
+
+```js id="4jlwmf"
+const bus = new PubSub();
+
+bus.subscribe("news", (data) => {
+  console.log(data);
+});
+
+bus.publish("news", "Breaking News");
+```
+
+---
+
+# Memory Leak Warnings
+
+By default:
+
+```txt id="jlwmhm"
+MaxListenersExceededWarning
+```
+
+Occurs after:
+
+- 10 listeners/event
+
+This warns about possible leaks.
+
+---
+
+# Example Leak
+
+```js id="3jlwm2"
+setInterval(() => {
+  emitter.on("data", () => {});
+}, 1000);
+```
+
+Listeners accumulate forever.
+
+---
+
+# Fix
+
+Remove listeners properly.
+
+Or increase limit cautiously:
+
+```js id="7jlwm5"
+emitter.setMaxListeners(20);
+```
+
+But increasing limits does NOT fix leaks.
+
+---
+
+# EventEmitter vs Message Queues
+
+Important distinction.
+
+---
+
+# EventEmitter
+
+- In-memory
+- Single process
+- Fast
+- No persistence
+
+Best for:
+
+- Internal app events
+
+---
+
+# Message Brokers
+
+Examples:
+
+- RabbitMQ
+- Kafka
+- Redis Pub/Sub
+
+Features:
+
+- Persistence
+- Distributed systems
+- Reliability
+- Cross-service communication
+
+---
+
+# EventEmitter vs Observer Pattern
+
+`EventEmitter` is essentially Node.js’s implementation of:
+
+- Observer pattern
+- Pub/sub pattern
+
+But with:
+
+- Named events
+- Multiple listeners
+- Event bus semantics
+
+---
+
+# Advanced Pattern: Namespaced Events
+
+```js id="0jlwm8"
+emitter.emit("user:created");
+emitter.emit("user:deleted");
+```
+
+Useful for:
+
+- Large systems
+- Event organization
+
+---
+
+# Typed Events (TypeScript)
+
+Common production pattern.
+
+```ts id="jlwmde"
+interface Events {
+  login: (userId: string) => void;
+  logout: () => void;
+}
+```
+
+Improves:
+
+- Safety
+- Autocomplete
+- Maintainability
+
+---
+
+# EventEmitter Internals
+
+Internally:
+
+- Listeners stored in hash map
+- Event names are keys
+- Arrays hold callbacks
+
+Conceptually:
+
+```js id="qjlwm8"
+{
+  eventName: [listener1, listener2];
+}
+```
+
+---
+
+# Performance Considerations
+
+EventEmitter is:
+
+- Extremely fast
+- Lightweight
+- Synchronous
+
+But:
+
+- Large listener counts can hurt performance
+- Heavy handlers block event loop
+
+---
+
+# Best Practices
+
+---
+
+# Use Events for Decoupling
+
+Good:
+
+- Notifications
+- Hooks
+- Async workflows
+
+Bad:
+
+- Core synchronous business logic
+
+---
+
+# Keep Listeners Small
+
+Heavy work should be delegated:
+
+- Queues
+- Worker threads
+- Async jobs
+
+---
+
+# Always Handle Errors
+
+Especially:
+
+- Async listeners
+- Unhandled rejections
+
+---
+
+# Remove Unused Listeners
+
+Prevent memory leaks.
+
+---
+
+# Avoid Event Chains That Become Hard to Trace
+
+Too many emitted events can create:
+
+- Debugging complexity
+- Hidden dependencies
+
+---
+
+# Interview-Level Insights
+
+A senior-level answer should mention:
+
+- EventEmitter implements pub/sub
+- `emit()` is synchronous
+- Listeners can be async
+- Memory leaks via listeners
+- Error event handling
+- Difference from distributed brokers
+- Event-driven architecture benefits
+- Event loop considerations
+
+---
+
+# Interview Summary
+
+A strong interview answer should explain:
+
+- `EventEmitter` provides pub/sub in Node.js
+- Publishers emit events with `emit()`
+- Subscribers listen using `on()`
+- Multiple listeners can subscribe to one event
+- EventEmitter is synchronous internally
+- Async listeners require careful handling
+- Remove listeners to avoid leaks
+- Best for in-process event-driven architecture
+- Distributed systems require brokers like Kafka or RabbitMQ
+
+That demonstrates understanding of:
+
+- Node.js internals
+- Async architecture
+- Design patterns
+- Production backend systems.
+
 ## Question 7. Difference between EventEmitter and Observables
 
 ## Question 8. How to implement a microservices architecture in Node.js
