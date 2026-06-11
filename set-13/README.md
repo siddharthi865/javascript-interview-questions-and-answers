@@ -1768,6 +1768,421 @@ true;
 
 ## Question 6. Difference between `some()` and `every()` in arrays
 
+### Direct Answer
+
+Both `some()` and `every()` test array elements against a condition, but they answer different questions:
+
+- **`some()`** → "Does **at least one** element satisfy the condition?"
+- **`every()`** → "Do **all** elements satisfy the condition?"
+
+Example:
+
+```js
+const numbers = [2, 4, 6, 8];
+
+console.log(numbers.some((num) => num > 5)); // true
+console.log(numbers.every((num) => num > 5)); // false
+```
+
+---
+
+# 1. `some()`
+
+Returns `true` if **at least one** element passes the test.
+
+### Syntax
+
+```js
+array.some((element, index, array) => {
+  return condition;
+});
+```
+
+### Example
+
+```js
+const numbers = [1, 3, 5, 8];
+
+const hasEven = numbers.some((num) => num % 2 === 0);
+
+console.log(hasEven);
+```
+
+Output:
+
+```js
+true;
+```
+
+Because `8` is even.
+
+---
+
+## How `some()` Works
+
+Think of it as a logical **OR (`||`)** across all elements.
+
+```js
+[1, 3, 5, 8];
+```
+
+Equivalent idea:
+
+```js
+false || false || false || true;
+```
+
+Result:
+
+```js
+true;
+```
+
+---
+
+## Short-Circuit Behavior
+
+`some()` stops as soon as it finds a match.
+
+```js
+const nums = [1, 2, 3, 4];
+
+nums.some((num) => {
+  console.log(num);
+  return num === 2;
+});
+```
+
+Output:
+
+```js
+1;
+2;
+```
+
+Iteration stops after finding `2`.
+
+---
+
+# 2. `every()`
+
+Returns `true` only if **all** elements pass the test.
+
+### Syntax
+
+```js
+array.every((element, index, array) => {
+  return condition;
+});
+```
+
+### Example
+
+```js
+const numbers = [2, 4, 6, 8];
+
+const allEven = numbers.every((num) => num % 2 === 0);
+
+console.log(allEven);
+```
+
+Output:
+
+```js
+true;
+```
+
+---
+
+## How `every()` Works
+
+Think of it as a logical **AND (`&&`)** across all elements.
+
+```js
+[2, 4, 6, 8];
+```
+
+Equivalent idea:
+
+```js
+true && true && true && true;
+```
+
+Result:
+
+```js
+true;
+```
+
+---
+
+## Short-Circuit Behavior
+
+`every()` stops as soon as it finds a failure.
+
+```js
+const nums = [2, 4, 5, 8];
+
+nums.every((num) => {
+  console.log(num);
+  return num % 2 === 0;
+});
+```
+
+Output:
+
+```js
+2;
+4;
+5;
+```
+
+Stops at `5` because the condition fails.
+
+---
+
+# 3. Key Differences
+
+| Feature              | `some()`           | `every()`               |     |            |
+| -------------------- | ------------------ | ----------------------- | --- | ---------- |
+| Meaning              | At least one match | All must match          |     |            |
+| Logical equivalent   | OR (`              |                         | `)  | AND (`&&`) |
+| Returns `true` when  | One element passes | All elements pass       |     |            |
+| Stops early          | First success      | First failure           |     |            |
+| No matching elements | `false`            | `true` only if all pass |     |            |
+
+---
+
+# 4. Empty Array Behavior (Common Interview Question)
+
+### `some()` on Empty Array
+
+```js
+console.log([].some((x) => x > 0));
+```
+
+Output:
+
+```js
+false;
+```
+
+No element satisfies the condition.
+
+---
+
+### `every()` on Empty Array
+
+```js
+console.log([].every((x) => x > 0));
+```
+
+Output:
+
+```js
+true;
+```
+
+This surprises many developers.
+
+### Why?
+
+Mathematically, this is called **vacuous truth**.
+
+There is no element that violates the condition.
+
+---
+
+# 5. Practical Examples
+
+## Check if User Has Any Admin Role
+
+```js
+const roles = ["user", "editor", "admin"];
+
+const isAdmin = roles.some((role) => role === "admin");
+
+console.log(isAdmin);
+```
+
+Output:
+
+```js
+true;
+```
+
+---
+
+## Check if All Users Are Active
+
+```js
+const users = [{ active: true }, { active: true }, { active: true }];
+
+const allActive = users.every((user) => user.active);
+
+console.log(allActive);
+```
+
+Output:
+
+```js
+true;
+```
+
+---
+
+# 6. Performance
+
+Both methods are:
+
+```text
+Worst Case: O(n)
+```
+
+However:
+
+### `some()`
+
+Best case:
+
+```text
+O(1)
+```
+
+if the first element matches.
+
+### `every()`
+
+Best case:
+
+```text
+O(1)
+```
+
+if the first element fails.
+
+Because both short-circuit.
+
+---
+
+# 7. Common Interview Patterns
+
+## Validation Using `every()`
+
+```js
+const ages = [20, 25, 30];
+
+const valid = ages.every((age) => age >= 18);
+
+console.log(valid);
+```
+
+Output:
+
+```js
+true;
+```
+
+---
+
+## Permission Check Using `some()`
+
+```js
+const permissions = ["read", "write", "delete"];
+
+const canDelete = permissions.some((p) => p === "delete");
+
+console.log(canDelete);
+```
+
+Output:
+
+```js
+true;
+```
+
+---
+
+# 8. Common Interview Trap
+
+### Question
+
+```js
+console.log([].every(() => false));
+```
+
+Output:
+
+```js
+true;
+```
+
+Many candidates answer:
+
+```js
+false;
+```
+
+Incorrect.
+
+---
+
+### Question
+
+```js
+console.log([].some(() => true));
+```
+
+Output:
+
+```js
+false;
+```
+
+Because there are no elements to satisfy the condition.
+
+---
+
+# Relationship with Other Array Methods
+
+```js
+find(); // Returns first matching element
+filter(); // Returns all matching elements
+some(); // Returns true if any match
+every(); // Returns true if all match
+findIndex(); // Returns index of first match
+```
+
+---
+
+# Interview Summary
+
+```js
+array.some(predicate);
+```
+
+- Returns `true` if **at least one** element matches.
+- Behaves like logical **OR**.
+- Stops on first success.
+
+```js
+array.every(predicate);
+```
+
+- Returns `true` if **all** elements match.
+- Behaves like logical **AND**.
+- Stops on first failure.
+
+### Quick Memory Trick
+
+```text
+some()  → ANY?
+every() → ALL?
+```
+
+- **`some()` = "Is there at least one?"**
+- **`every()` = "Do all satisfy the condition?"**
+
 ## Question 7. How to sort an array of objects by a key
 
 ## Question 8. How to flatten nested arrays using recursion
