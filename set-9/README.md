@@ -1435,6 +1435,267 @@ Common enterprise pattern.
 
 ## Question 6. How does new keyword work internally?
 
+## Short Answer (Interview-ready)
+
+The `new` keyword in JavaScript creates a new object, links it to a constructor’s prototype, binds `this` to that object, executes the constructor, and finally returns the object (unless the constructor explicitly returns another object).
+
+---
+
+# 🧠 Detailed Explanation (Senior Interview Level)
+
+When you write:
+
+```js id="n1"
+function Person(name) {
+  this.name = name;
+}
+
+const p = new Person("Alice");
+```
+
+JavaScript internally performs **4 main steps**.
+
+---
+
+# ⚙️ Internal Working of `new`
+
+## Step 1: Create a new empty object
+
+```js id="n2"
+const obj = {};
+```
+
+---
+
+## Step 2: Link the object to the constructor prototype
+
+```js id="n3"
+obj.__proto__ = Person.prototype;
+```
+
+👉 This creates the **prototype chain**
+
+---
+
+## Step 3: Bind `this` inside constructor to the new object
+
+```js id="n4"
+Person.call(obj, "Alice");
+```
+
+So inside constructor:
+
+```js id="n5"
+this === obj;
+```
+
+---
+
+## Step 4: Return the object
+
+If constructor does NOT return an object:
+
+```js id="n6"
+return obj;
+```
+
+---
+
+# 🧠 Final Equivalent Implementation of `new`
+
+This is exactly how it behaves internally:
+
+```js id="n7"
+function myNew(Constructor, ...args) {
+  const obj = Object.create(Constructor.prototype);
+
+  const result = Constructor.apply(obj, args);
+
+  return result !== null && typeof result === "object" ? result : obj;
+}
+```
+
+---
+
+# 🔥 Example Breakdown
+
+```js id="n8"
+function Person(name) {
+  this.name = name;
+}
+
+const p = new Person("John");
+```
+
+Internally becomes:
+
+```js id="n9"
+const obj = {};
+obj.__proto__ = Person.prototype;
+Person.call(obj, "John");
+return obj;
+```
+
+---
+
+# 🧠 Prototype Link (Very Important)
+
+```txt id="n10"
+p → Person.prototype → Object.prototype → null
+```
+
+So:
+
+```js id="n11"
+p instanceof Person; // true
+```
+
+---
+
+# ⚠️ Important Edge Cases (FAANG favorite)
+
+---
+
+## 1. Constructor returns primitive → ignored
+
+```js id="n12"
+function A() {
+  this.x = 10;
+  return 100;
+}
+
+const a = new A();
+console.log(a);
+```
+
+### Output:
+
+```txt id="n13"
+{ x: 10 }
+```
+
+👉 Primitive return is ignored
+
+---
+
+## 2. Constructor returns object → overrides `this`
+
+```js id="n14"
+function A() {
+  this.x = 10;
+  return { y: 20 };
+}
+
+const a = new A();
+console.log(a);
+```
+
+### Output:
+
+```txt id="n15"
+{ y: 20 }
+```
+
+👉 Returned object replaces `this`
+
+---
+
+## 3. Missing `new` causes bug
+
+```js id="n16"
+function Person(name) {
+  this.name = name;
+}
+
+const p = Person("Alice");
+```
+
+### Problem:
+
+- `this` becomes `window` (or undefined in strict mode)
+- leads to bugs
+
+---
+
+# 🔥 How `new` ties to Prototypes
+
+```js id="n17"
+function Animal() {}
+
+Animal.prototype.speak = function () {
+  console.log("sound");
+};
+
+const a = new Animal();
+a.speak();
+```
+
+### Lookup:
+
+```txt id="n18"
+a → Animal.prototype → Object.prototype
+```
+
+---
+
+# 🧠 Why `new` exists (Design reason)
+
+It enables:
+
+- object creation pattern
+- shared methods via prototype (memory efficient)
+- constructor-based modeling
+
+---
+
+# ⚖️ `new` vs Object.create
+
+| Feature               | new | Object.create |
+| --------------------- | --- | ------------- |
+| Constructor execution | Yes | No            |
+| Prototype linking     | Yes | Yes           |
+| Initialization logic  | Yes | No            |
+
+---
+
+# 🔥 Common Interview Traps
+
+## ❌ Thinking `new` only creates objects
+
+👉 It also:
+
+- sets prototype
+- binds `this`
+- handles return logic
+
+---
+
+## ❌ Forgetting prototype linkage
+
+Many assume:
+
+```js
+obj = {};
+```
+
+But actual:
+
+```js
+obj → Constructor.prototype
+```
+
+---
+
+## ❌ Misunderstanding return behavior
+
+Constructor return overrides `this` ONLY if it's an object.
+
+---
+
+# 🧠 Senior-Level Interview Answer
+
+> “The `new` keyword in JavaScript performs four operations: it creates a new empty object, sets its internal prototype to the constructor’s prototype, binds `this` inside the constructor to the new object, and finally returns the object unless the constructor explicitly returns another object. This mechanism enables prototype-based inheritance and is the foundation of constructor functions in JavaScript.”
+
 ## Question 7. Explain super() in classes
 
 ## Question 8. Difference between private and public fields in classes
