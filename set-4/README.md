@@ -1261,6 +1261,263 @@ const sessions = new Map();
 
 ## Question 6. Explain Set in JavaScript
 
+### Short Answer
+
+A **Set** in JavaScript is a built-in collection that stores **only unique values** (no duplicates) and maintains insertion order. It can hold values of any type (primitives or objects).
+
+---
+
+# 1. What is a Set?
+
+A Set is used when you want to store a collection of **unique items**.
+
+```javascript id="set1"
+const set = new Set();
+
+set.add(1);
+set.add(2);
+set.add(2);
+
+console.log(set); // Set {1, 2}
+```
+
+👉 Duplicate `2` is ignored automatically.
+
+---
+
+# 2. Key Features of Set
+
+| Feature         | Set                            |
+| --------------- | ------------------------------ |
+| Duplicates      | ❌ Not allowed                 |
+| Order           | Preserves insertion order      |
+| Value types     | Any type (primitive or object) |
+| Access by index | ❌ Not supported               |
+| Size            | `.size` property               |
+
+---
+
+# 3. Creating a Set
+
+### From array
+
+```javascript id="set2"
+const numbers = new Set([1, 2, 3, 3, 4]);
+
+console.log(numbers); // Set {1, 2, 3, 4}
+```
+
+---
+
+# 4. Common Set Methods
+
+## add()
+
+```javascript id="set3"
+const set = new Set();
+
+set.add(10);
+set.add(20);
+```
+
+---
+
+## has()
+
+Checks if value exists:
+
+```javascript id="set4"
+const set = new Set([1, 2, 3]);
+
+console.log(set.has(2)); // true
+console.log(set.has(5)); // false
+```
+
+---
+
+## delete()
+
+```javascript id="set5"
+const set = new Set([1, 2, 3]);
+
+set.delete(2);
+
+console.log(set); // Set {1, 3}
+```
+
+---
+
+## clear()
+
+```javascript id="set6"
+const set = new Set([1, 2, 3]);
+
+set.clear();
+
+console.log(set); // Set {}
+```
+
+---
+
+## size
+
+```javascript id="set7"
+const set = new Set([1, 2, 3]);
+
+console.log(set.size); // 3
+```
+
+---
+
+# 5. Iterating over a Set
+
+```javascript id="set8"
+const set = new Set(["a", "b", "c"]);
+
+for (let value of set) {
+  console.log(value);
+}
+```
+
+Output:
+
+```
+a
+b
+c
+```
+
+---
+
+# 6. Important Behavior: Object References
+
+Set checks uniqueness using **reference equality** for objects.
+
+```javascript id="set9"
+const set = new Set();
+
+set.add({ a: 1 });
+set.add({ a: 1 });
+
+console.log(set.size); // 2 ❗ different references
+```
+
+👉 Even though values look same, they are different objects in memory.
+
+---
+
+# 7. Real-world Use Cases
+
+## 1. Removing duplicates from array
+
+```javascript id="set10"
+const arr = [1, 2, 2, 3, 4, 4];
+
+const unique = [...new Set(arr)];
+
+console.log(unique); // [1, 2, 3, 4]
+```
+
+✔ Very common interview question
+
+---
+
+## 2. Tracking unique users
+
+```javascript id="set11"
+const activeUsers = new Set();
+
+activeUsers.add("user1");
+activeUsers.add("user2");
+activeUsers.add("user1");
+
+console.log(activeUsers.size); // 2
+```
+
+---
+
+## 3. Checking membership efficiently
+
+```javascript id="set12"
+const allowedIds = new Set([101, 102, 103]);
+
+if (allowedIds.has(101)) {
+  console.log("Access granted");
+}
+```
+
+---
+
+# 8. Set vs Array
+
+| Feature      | Array        | Set                  |
+| ------------ | ------------ | -------------------- |
+| Duplicates   | Allowed      | Not allowed          |
+| Lookup       | O(n)         | O(1) average (`has`) |
+| Index access | Yes          | No                   |
+| Use case     | Ordered list | Unique collection    |
+
+---
+
+# 9. Performance Insight
+
+- `Set.has()` is generally faster than `Array.includes()` for large datasets
+- Good for membership checks and deduplication
+
+---
+
+# 10. Common Pitfalls
+
+## ❌ Expecting index access
+
+```javascript id="pit1"
+const set = new Set([1, 2, 3]);
+
+console.log(set[0]); // undefined ❌
+```
+
+---
+
+## ❌ Thinking Set sorts values
+
+```javascript id="pit2"
+const set = new Set([3, 1, 2]);
+
+console.log([...set]); // [3, 1, 2] (not sorted)
+```
+
+---
+
+## ❌ Object uniqueness confusion
+
+```javascript id="pit3"
+set.add({});
+set.add({});
+
+console.log(set.size); // 2 ❗ different references
+```
+
+---
+
+# 11. When to use Set?
+
+Use Set when:
+
+- You need **unique values**
+- You want **fast lookup**
+- You want to remove duplicates
+- You are tracking **distinct items**
+
+```javascript id="use1"
+const visitedPages = new Set();
+```
+
+---
+
+# 12. Interview One-liner
+
+> A Set is a built-in JavaScript collection that stores only unique values, preserves insertion order, and provides efficient membership checking using the `.has()` method.
+
 ## Question 7. How to remove duplicates from an array using Set
 
 ## Question 8. What are WeakMap and WeakSet?
