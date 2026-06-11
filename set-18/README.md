@@ -1778,6 +1778,488 @@ Understanding these patterns is essential for building reliable asynchronous wor
 
 ## Question 6. How to handle errors in promise chains
 
+## ✅ Direct Answer
+
+Errors in promise chains are typically handled using `.catch()`. Any error thrown inside a `.then()` callback or any rejected promise in the chain will propagate down to the nearest `.catch()`.
+
+```javascript
+fetchData()
+  .then((data) => processData(data))
+  .then((result) => saveResult(result))
+  .catch((error) => {
+    console.error("Something went wrong:", error);
+  });
+```
+
+---
+
+# 🧠 How Error Propagation Works
+
+A promise chain automatically propagates errors downward.
+
+```javascript
+Promise.resolve()
+  .then(() => {
+    throw new Error("Boom!");
+  })
+  .catch((err) => {
+    console.log(err.message);
+  });
+```
+
+### Output
+
+```javascript
+Boom!
+```
+
+When an error is thrown inside a `.then()`, JavaScript automatically converts it into a rejected promise.
+
+Conceptually:
+
+```javascript
+.then(() => {
+  throw new Error("Boom");
+})
+```
+
+becomes:
+
+```javascript
+.then(() => {
+  return Promise.reject(new Error("Boom"));
+})
+```
+
+---
+
+# Error from a Rejected Promise
+
+```javascript
+Promise.reject("Network Error")
+  .then(() => {
+    console.log("Won't run");
+  })
+  .catch((err) => {
+    console.log(err);
+  });
+```
+
+### Output
+
+```javascript
+Network Error
+```
+
+The chain skips all subsequent `.then()` handlers until a `.catch()` is found.
+
+---
+
+# Chain Skipping Behavior
+
+```javascript
+Promise.resolve()
+  .then(() => {
+    console.log("Step 1");
+    throw new Error("Failed");
+  })
+  .then(() => {
+    console.log("Step 2");
+  })
+  .then(() => {
+    console.log("Step 3");
+  })
+  .catch((err) => {
+    console.log("Caught:", err.message);
+  });
+```
+
+### Output
+
+```javascript
+Step 1
+Caught: Failed
+```
+
+`Step 2` and `Step 3` never execute.
+
+---
+
+# Recovering from Errors
+
+A `.catch()` can recover by returning a value.
+
+```javascript
+Promise.resolve()
+  .then(() => {
+    throw new Error("Oops");
+  })
+  .catch((err) => {
+    console.log("Recovered");
+    return "default value";
+  })
+  .then((value) => {
+    console.log(value);
+  });
+```
+
+### Output
+
+```javascript
+Recovered
+default value
+```
+
+The chain continues because `.catch()` returned a resolved value.
+
+---
+
+# Multiple Catch Blocks
+
+```javascript
+Promise.resolve()
+  .then(() => {
+    throw new Error("First Error");
+  })
+  .catch((err) => {
+    console.log("Catch 1");
+    throw err;
+  })
+  .catch((err) => {
+    console.log("Catch 2");
+  });
+```
+
+### Output
+
+```javascript
+Catch 1
+Catch 2
+```
+
+The first catch rethrows the error, causing the next catch to handle it.
+
+---
+
+# Using `.then(success, failure)`
+
+Promises support:
+
+```javascript
+promise.then(successHandler, errorHandler);
+```
+
+Example:
+
+```javascript
+Promise.reject("Failed").then(
+  (value) => console.log(value),
+  (err) => console.log("Handled:", err),
+);
+```
+
+Output:
+
+```javascript
+Handled: Failed;
+```
+
+### Why `.catch()` is Preferred
+
+Consider:
+
+```javascript
+Promise.resolve()
+  .then(() => {
+    throw new Error("Boom");
+  })
+  .then(
+    (result) => console.log(result),
+    (err) => console.log("Error:", err),
+  );
+```
+
+The error occurs before this `.then()`, so behavior can become harder to reason about in larger chains.
+
+Best practice:
+
+```javascript
+Promise.resolve()
+  .then(...)
+  .then(...)
+  .catch(...);
+```
+
+---
+
+# Error Handling with Async Operations
+
+```javascript
+function fetchUser() {
+  return Promise.reject("User not found");
+}
+
+fetchUser()
+  .then((user) => {
+    console.log(user);
+  })
+  .catch((err) => {
+    console.error(err);
+  });
+```
+
+Output:
+
+```javascript
+User not found
+```
+
+---
+
+# Centralized Error Handling
+
+One of the biggest advantages of promises:
+
+```javascript
+task1()
+  .then(() => task2())
+  .then(() => task3())
+  .then(() => task4())
+  .catch((err) => {
+    console.error("Chain failed:", err);
+  });
+```
+
+A single `.catch()` handles failures from any previous step.
+
+---
+
+# Finally Block
+
+`finally()` runs regardless of success or failure.
+
+```javascript
+Promise.resolve("Success").finally(() => {
+  console.log("Cleanup");
+});
+```
+
+Output:
+
+```javascript
+Cleanup;
+```
+
+Error case:
+
+```javascript
+Promise.reject("Failed")
+  .catch((err) => console.log(err))
+  .finally(() => console.log("Cleanup"));
+```
+
+Output:
+
+```javascript
+Failed;
+Cleanup;
+```
+
+Useful for:
+
+- closing connections
+- hiding loaders
+- releasing resources
+
+---
+
+# Error Handling with Async/Await
+
+Promise chains:
+
+```javascript
+fetchData()
+  .then((data) => processData(data))
+  .catch((err) => console.error(err));
+```
+
+Equivalent:
+
+```javascript
+try {
+  const data = await fetchData();
+  const result = await processData(data);
+} catch (err) {
+  console.error(err);
+}
+```
+
+This is the modern preferred approach.
+
+---
+
+# Common Interview Pitfalls
+
+## 1. Forgetting to Return a Promise
+
+Wrong:
+
+```javascript
+fetchData()
+  .then(() => {
+    saveData();
+  })
+  .catch(console.error);
+```
+
+If `saveData()` returns a promise and rejects, the rejection may not be properly chained.
+
+Correct:
+
+```javascript
+fetchData()
+  .then(() => {
+    return saveData();
+  })
+  .catch(console.error);
+```
+
+Or:
+
+```javascript
+fetchData()
+  .then(() => saveData())
+  .catch(console.error);
+```
+
+---
+
+## 2. Throwing Inside Catch
+
+```javascript
+Promise.reject("A").catch((err) => {
+  throw new Error("B");
+});
+```
+
+Creates a new rejected promise.
+
+You need another catch:
+
+```javascript
+Promise.reject("A")
+  .catch((err) => {
+    throw new Error("B");
+  })
+  .catch((err) => {
+    console.log(err.message);
+  });
+```
+
+Output:
+
+```javascript
+B;
+```
+
+---
+
+## 3. Swallowing Errors
+
+```javascript
+Promise.reject("Error").catch(() => {});
+```
+
+The error disappears completely.
+
+Better:
+
+```javascript
+.catch(err => {
+  console.error(err);
+  throw err;
+});
+```
+
+when propagation is needed.
+
+---
+
+## 4. Unhandled Promise Rejections
+
+```javascript
+Promise.reject("Failure");
+```
+
+No catch handler:
+
+```text
+UnhandledPromiseRejectionWarning
+```
+
+(Behavior varies by environment, but it should always be handled.)
+
+---
+
+# Event Loop Perspective
+
+```javascript
+Promise.reject("Error").catch((err) => console.log(err));
+```
+
+The `.catch()` callback is scheduled as a **microtask**.
+
+Order:
+
+```javascript
+console.log("A");
+
+Promise.reject("Error").catch(() => console.log("B"));
+
+console.log("C");
+```
+
+Output:
+
+```javascript
+A;
+C;
+B;
+```
+
+because promise handlers execute after the current synchronous code finishes.
+
+---
+
+# 🚀 Interview-Ready Summary
+
+Errors in promise chains are handled using `.catch()`. Any:
+
+- thrown exception inside `.then()`
+- rejected promise returned from `.then()`
+
+automatically propagates down the chain until a `.catch()` is encountered.
+
+```javascript
+task1()
+  .then(() => task2())
+  .then(() => task3())
+  .catch((err) => {
+    console.error(err);
+  });
+```
+
+Key concepts interviewers expect:
+
+- Error propagation
+- Rejected promises
+- Chain skipping
+- Recovery by returning values from `.catch()`
+- `finally()`
+- Unhandled promise rejections
+- Relationship between promise handlers and the microtask queue
+- Equivalent `try...catch` handling with `async/await`
+
 ## Question 7. Difference between fetch API and XMLHttpRequest
 
 ## Question 8. How to cancel a fetch request using AbortController
