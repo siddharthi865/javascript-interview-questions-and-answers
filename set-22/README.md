@@ -1344,6 +1344,258 @@ Drag-and-drop in JavaScript is implemented using the Drag and Drop API with `dra
 
 ## Question 6. Difference between capturing, bubbling, and target phases
 
+# ✅ Direct Answer
+
+In JavaScript event propagation, events flow through **three phases**:
+
+1. **Capturing phase** → event travels from the root → target element
+2. **Target phase** → event reaches the actual element
+3. **Bubbling phase** → event travels from target → back up to the root
+
+The key difference is the **direction of event flow**:
+
+- Capturing = top → down
+- Bubbling = bottom → up
+- Target = event is at the element itself
+
+---
+
+# 🧠 Interview-Level Explanation
+
+When an event (like `click`) occurs on an element, it doesn't just fire on that element. It travels through the DOM in a **structured propagation model** defined by the Event Capturing & Bubbling system.
+
+This is part of the **DOM Event Propagation model**:
+
+```
+Document → HTML → Body → Parent → Target → Parent → Body → Document
+```
+
+---
+
+# 📌 1. Capturing Phase (Trickling Down)
+
+### 🔹 What happens?
+
+The event starts from the **window/document** and moves **down the DOM tree toward the target element**.
+
+### 🔹 Also called:
+
+- Event trickling
+
+### 🔹 How to listen in capturing phase:
+
+```js id="c1p9kd"
+element.addEventListener("click", handler, true);
+```
+
+The `true` enables capturing.
+
+---
+
+### 📌 Example
+
+```html id="a9x2lm"
+<div id="parent">
+  <button id="child">Click</button>
+</div>
+```
+
+```js id="q8m1nv"
+document
+  .getElementById("parent")
+  .addEventListener("click", () => console.log("Parent capture"), true);
+
+document
+  .getElementById("child")
+  .addEventListener("click", () => console.log("Child click"), true);
+```
+
+### Output:
+
+```
+Parent capture
+Child click
+```
+
+---
+
+# 🎯 2. Target Phase
+
+### 🔹 What happens?
+
+The event reaches the **actual element that was clicked**.
+
+### 🔹 Important points:
+
+- This phase is always executed
+- Capturing and bubbling both converge here
+- `event.target === actual clicked element`
+
+---
+
+### 📌 Example
+
+```js id="t4k9qp"
+button.addEventListener("click", () => {
+  console.log("Target phase: button clicked");
+});
+```
+
+---
+
+### 🧠 Key properties:
+
+```js id="z9x3lm"
+event.target; // original element clicked
+event.currentTarget; // element handling the event
+```
+
+---
+
+# 🔄 3. Bubbling Phase (Default Behavior)
+
+### 🔹 What happens?
+
+After reaching the target, the event moves **back up the DOM tree**.
+
+### 🔹 This is the default phase used in most apps.
+
+```js id="b7m2xn"
+element.addEventListener("click", handler, false); // default
+```
+
+---
+
+### 📌 Example
+
+```js id="p3k8lm"
+document
+  .getElementById("parent")
+  .addEventListener("click", () => console.log("Parent bubble"));
+
+document
+  .getElementById("child")
+  .addEventListener("click", () => console.log("Child bubble"));
+```
+
+### Output:
+
+```
+Child bubble
+Parent bubble
+```
+
+---
+
+# 📊 Full Flow Visualization
+
+```
+CAPTURING PHASE
+Document → Parent → Child
+
+TARGET PHASE
+Child
+
+BUBBLING PHASE
+Child → Parent → Document
+```
+
+---
+
+# ⚖️ Comparison Table
+
+| Phase     | Direction   | Default? | Use case             |
+| --------- | ----------- | -------- | -------------------- |
+| Capturing | Top → Down  | ❌       | Rare (interception)  |
+| Target    | At element  | ✔️       | Core event execution |
+| Bubbling  | Bottom → Up | ✔️       | Event delegation     |
+
+---
+
+# 🧠 Why Bubbling Is Most Important
+
+Because it enables **event delegation**:
+
+### Instead of:
+
+```js id="d1m8qp"
+document.querySelectorAll("button").forEach((btn) => {
+  btn.addEventListener("click", handler);
+});
+```
+
+### You can do:
+
+```js id="k2n9vx"
+document.body.addEventListener("click", (e) => {
+  if (e.target.tagName === "BUTTON") {
+    console.log("Button clicked");
+  }
+});
+```
+
+✔ Efficient
+✔ Fewer listeners
+✔ Works for dynamic elements
+
+---
+
+# ⚠️ Important Pitfalls (Interview Favorites)
+
+## ❌ 1. Confusing target vs currentTarget
+
+```js id="x9p2lm"
+parent.addEventListener("click", (e) => {
+  console.log(e.target); // actual clicked element
+  console.log(e.currentTarget); // parent element
+});
+```
+
+---
+
+## ❌ 2. Forgetting event propagation order
+
+Many assume:
+
+> child → parent always
+
+But actually:
+
+> capturing → target → bubbling
+
+---
+
+## ❌ 3. Not controlling propagation
+
+You can stop flow:
+
+```js id="m8k2qp"
+event.stopPropagation();
+```
+
+or stop all listeners:
+
+```js id="v2n9lm"
+event.stopImmediatePropagation();
+```
+
+---
+
+# 🧠 Advanced Insight (Senior-Level)
+
+- Events are implemented using a **tree traversal algorithm**
+- DOM is traversed twice:
+  - downward (capturing)
+  - upward (bubbling)
+
+- Target phase is a “logical stop point”
+
+---
+
+# 🧾 Interview Summary
+
+JavaScript event propagation has three phases: capturing (event moves from root to target), target (event reaches the actual element), and bubbling (event moves back up from target to root). By default, events use bubbling. Capturing is used rarely, while bubbling enables powerful patterns like event delegation. Understanding `target` vs `currentTarget` and propagation control methods like `stopPropagation()` is essential for real-world DOM event handling.
+
 ## Question 7. How to prevent memory leaks in long-lived event listeners
 
 ## Question 8. How to optimize scrolling performance for large tables/grids
