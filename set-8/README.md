@@ -1221,6 +1221,301 @@ arguments.push(10); // ❌ TypeError
 
 ## Question 6. Explain dynamic import in ES6
 
+## Direct Answer
+
+**Dynamic import in ES6** allows you to load JavaScript modules **on demand (at runtime)** using the `import()` function instead of static `import` statements at the top of the file.
+
+It returns a **Promise**, enabling lazy loading and code splitting.
+
+```js id="dyn1"
+import("./math.js").then((module) => {
+  console.log(module.add(2, 3));
+});
+```
+
+---
+
+# Detailed Interview Explanation
+
+Before ES6 modules were widely adopted, all dependencies were loaded upfront. Even with ES6 static imports:
+
+```js id="dyn2"
+import { add } from "./math.js";
+```
+
+👉 The module is loaded immediately when the file is executed.
+
+This is fine for small apps but problematic for large applications.
+
+---
+
+# 1. What is Dynamic Import?
+
+Dynamic import allows you to load modules **only when needed**, at runtime.
+
+```js id="dyn3"
+const modulePromise = import("./math.js");
+```
+
+- Returns a **Promise**
+- Resolves to a module object
+- Works in **modern browsers + Node.js**
+
+---
+
+# 2. Basic Example
+
+```js id="dyn4"
+async function loadMath() {
+  const math = await import("./math.js");
+
+  console.log(math.add(5, 10));
+}
+
+loadMath();
+```
+
+---
+
+# 3. Module Structure Returned
+
+Dynamic import returns a module namespace object:
+
+```js id="dyn5"
+import("./math.js").then((module) => {
+  console.log(module);
+});
+```
+
+Example output:
+
+```js
+{
+  add: [Function],
+  subtract: [Function],
+  default: [Function]
+}
+```
+
+---
+
+# 4. Named vs Default Exports
+
+### math.js
+
+```js id="dyn6"
+export function add(a, b) {
+  return a + b;
+}
+
+export default function multiply(a, b) {
+  return a * b;
+}
+```
+
+---
+
+### Dynamic import usage
+
+```js id="dyn7"
+const math = await import("./math.js");
+
+math.add(2, 3); // named export
+math.default(2, 3); // default export
+```
+
+---
+
+# 5. Why Dynamic Import Exists (Real Use Case)
+
+## 1. Code Splitting (Performance Optimization)
+
+Instead of loading everything upfront:
+
+```js
+// heavy module loaded immediately ❌
+import "./chartLibrary.js";
+```
+
+Load only when needed:
+
+```js id="dyn8"
+button.addEventListener("click", async () => {
+  const chart = await import("./chartLibrary.js");
+  chart.render();
+});
+```
+
+👉 Improves initial load time.
+
+---
+
+## 2. Lazy Loading Features
+
+```js id="dyn9"
+async function openEditor() {
+  const editor = await import("./editor.js");
+  editor.open();
+}
+```
+
+Used in:
+
+- React lazy loading
+- Webpack chunk splitting
+- Micro-frontends
+
+---
+
+## 3. Conditional Loading
+
+```js id="dyn10"
+if (user.isAdmin) {
+  const adminModule = await import("./admin.js");
+  adminModule.init();
+}
+```
+
+👉 Load only when required.
+
+---
+
+# 6. Dynamic Import vs Static Import
+
+| Feature             | Static Import     | Dynamic Import         |
+| ------------------- | ----------------- | ---------------------- |
+| Syntax              | `import ... from` | `import()`             |
+| Timing              | Compile time      | Runtime                |
+| Returns             | Direct binding    | Promise                |
+| Conditional loading | ❌ Not allowed    | ✅ Allowed             |
+| Tree-shaking        | Better            | Depends                |
+| Use case            | Core dependencies | Optional/large modules |
+
+---
+
+# 7. Important Characteristics
+
+## 1. Always returns a Promise
+
+```js id="dyn11"
+const mod = import("./file.js"); // Promise
+```
+
+---
+
+## 2. Works anywhere in code
+
+Unlike static imports:
+
+```js
+// ❌ not allowed conditionally
+if (true) {
+  import x from "./file.js";
+}
+```
+
+Dynamic import works:
+
+```js id="dyn12"
+if (true) {
+  const x = await import("./file.js");
+}
+```
+
+---
+
+## 3. Can be used in CommonJS-style environments (Node.js)
+
+```js id="dyn13"
+const module = await import("./utils.mjs");
+```
+
+---
+
+# 8. Error Handling
+
+Since it returns a Promise:
+
+```js id="dyn14"
+import("./math.js")
+  .then((m) => console.log(m.add(1, 2)))
+  .catch((err) => console.error("Failed to load module", err));
+```
+
+---
+
+# 9. Common Pitfalls
+
+## Pitfall 1: Forgetting async/await or then
+
+```js id="dyn15"
+const mod = import("./math.js");
+console.log(mod.add); // ❌ undefined (Promise not resolved)
+```
+
+---
+
+## Pitfall 2: Misunderstanding default export
+
+```js id="dyn16"
+const m = await import("./file.js");
+
+m(); // ❌ only works if default is function and accessed via m.default
+```
+
+Correct:
+
+```js
+m.default();
+```
+
+---
+
+## Pitfall 3: Overusing dynamic import
+
+Too many dynamic imports can:
+
+- Increase network requests
+- Add runtime complexity
+
+---
+
+# 10. Real-World Use Cases
+
+### React lazy loading
+
+```js id="dyn17"
+const Component = React.lazy(() => import("./Component"));
+```
+
+---
+
+### Feature toggles
+
+```js id="dyn18"
+if (featureEnabled) {
+  const feature = await import("./feature.js");
+  feature.run();
+}
+```
+
+---
+
+### Large libraries (charts, maps)
+
+```js id="dyn19"
+button.onclick = async () => {
+  const { Chart } = await import("chart.js");
+  new Chart(...);
+};
+```
+
+---
+
+# 11. Interview Summary
+
+> Dynamic import in ES6 allows modules to be loaded at runtime using `import()`, which returns a Promise. It enables lazy loading, code splitting, and conditional module loading, improving performance in large applications. Unlike static imports, dynamic imports can be used conditionally and inside functions, making them ideal for optimizing resource-heavy features.
+
 ## Question 7. What are JavaScript generators? How do they differ from regular functions?
 
 ## Question 8. Difference between for…of and forEach() for arrays
