@@ -2487,6 +2487,560 @@ A strong interview answer should also discuss:
 
 ## Question 6. How to implement command pattern in JavaScript
 
+The Command Pattern is a behavioral design pattern that encapsulates a request or operation as an object, allowing you to:
+
+- parameterize actions
+- queue operations
+- support undo/redo
+- log commands
+- decouple senders from receivers
+
+Instead of calling methods directly, you wrap actions inside command objects.
+
+---
+
+# Core Idea
+
+Without command pattern:
+
+```js id="exigj8"
+button.onclick = () => {
+  editor.copy();
+};
+```
+
+With command pattern:
+
+```js id="bnvjlwm"
+button.onclick = () => {
+  command.execute();
+};
+```
+
+The invoker does not know the implementation details.
+
+---
+
+# Main Participants
+
+```txt id="pxh5qs"
+Invoker → Command → Receiver
+```
+
+| Component | Responsibility        |
+| --------- | --------------------- |
+| Command   | Encapsulates action   |
+| Receiver  | Performs actual work  |
+| Invoker   | Triggers command      |
+| Client    | Configures everything |
+
+---
+
+# Basic Command Pattern Example
+
+---
+
+# 1. Receiver
+
+The object that performs the real action.
+
+```js id="z8nccq"
+class Light {
+  turnOn() {
+    console.log("Light ON");
+  }
+
+  turnOff() {
+    console.log("Light OFF");
+  }
+}
+```
+
+---
+
+# 2. Command Classes
+
+```js id="9jlwmr"
+class TurnOnCommand {
+  constructor(light) {
+    this.light = light;
+  }
+
+  execute() {
+    this.light.turnOn();
+  }
+}
+
+class TurnOffCommand {
+  constructor(light) {
+    this.light = light;
+  }
+
+  execute() {
+    this.light.turnOff();
+  }
+}
+```
+
+---
+
+# 3. Invoker
+
+```js id="7jw3ht"
+class RemoteControl {
+  submit(command) {
+    command.execute();
+  }
+}
+```
+
+---
+
+# 4. Usage
+
+```js id="3j4tf7"
+const light = new Light();
+
+const onCommand = new TurnOnCommand(light);
+const offCommand = new TurnOffCommand(light);
+
+const remote = new RemoteControl();
+
+remote.submit(onCommand);
+remote.submit(offCommand);
+```
+
+Output:
+
+```txt id="q7pjlwm"
+Light ON
+Light OFF
+```
+
+---
+
+# Why Use Command Pattern?
+
+Without command pattern:
+
+```js id="3ldokf"
+button.onclick = saveFile;
+```
+
+Tightly coupled.
+
+With command pattern:
+
+```js id="s6q1zz"
+button.onclick = () => command.execute();
+```
+
+Benefits:
+
+- loose coupling
+- centralized action handling
+- undo/redo support
+- command queues
+- macro commands
+
+---
+
+# Functional Command Pattern (Modern JS)
+
+Because functions are first-class citizens, JavaScript often uses functions directly as commands.
+
+```js id="k8gc6n"
+const turnOn = () => console.log("ON");
+const turnOff = () => console.log("OFF");
+
+function invoke(command) {
+  command();
+}
+
+invoke(turnOn);
+invoke(turnOff);
+```
+
+This is the most common lightweight implementation in modern JS apps.
+
+---
+
+# Undo/Redo Example
+
+A classic interview scenario.
+
+---
+
+# Text Editor Receiver
+
+```js id="hmjlwm"
+class TextEditor {
+  constructor() {
+    this.text = "";
+  }
+
+  write(text) {
+    this.text += text;
+  }
+
+  delete(length) {
+    this.text = this.text.slice(0, -length);
+  }
+}
+```
+
+---
+
+# Command with Undo
+
+```js id="0wghrm"
+class WriteCommand {
+  constructor(editor, text) {
+    this.editor = editor;
+    this.text = text;
+  }
+
+  execute() {
+    this.editor.write(this.text);
+  }
+
+  undo() {
+    this.editor.delete(this.text.length);
+  }
+}
+```
+
+---
+
+# Command Manager
+
+```js id="dhjlwm"
+class CommandManager {
+  constructor() {
+    this.history = [];
+  }
+
+  execute(command) {
+    command.execute();
+    this.history.push(command);
+  }
+
+  undo() {
+    const command = this.history.pop();
+
+    if (command) {
+      command.undo();
+    }
+  }
+}
+```
+
+Usage:
+
+```js id="78r3ae"
+const editor = new TextEditor();
+const manager = new CommandManager();
+
+const command = new WriteCommand(editor, "Hello");
+
+manager.execute(command);
+
+console.log(editor.text);
+
+manager.undo();
+
+console.log(editor.text);
+```
+
+Output:
+
+```txt id="4jlwm8"
+Hello
+""
+```
+
+---
+
+# Macro Commands
+
+Combine multiple commands.
+
+```js id="3xjlwm"
+class MacroCommand {
+  constructor(commands) {
+    this.commands = commands;
+  }
+
+  execute() {
+    this.commands.forEach((command) => {
+      command.execute();
+    });
+  }
+}
+```
+
+Usage:
+
+```js id="xjlwm9"
+const macro = new MacroCommand([onCommand, offCommand]);
+
+macro.execute();
+```
+
+---
+
+# Queueing Commands
+
+Very common in async systems.
+
+```js id="7zjlwm"
+class CommandQueue {
+  constructor() {
+    this.queue = [];
+  }
+
+  add(command) {
+    this.queue.push(command);
+  }
+
+  process() {
+    while (this.queue.length) {
+      const command = this.queue.shift();
+      command.execute();
+    }
+  }
+}
+```
+
+Useful for:
+
+- job queues
+- background tasks
+- retries
+- transactional systems
+
+---
+
+# Command Pattern in Real Frameworks
+
+---
+
+# Redux
+
+Redux actions resemble commands.
+
+```js id="l7jlwm"
+dispatch({
+  type: "ADD_TODO",
+  payload: todo,
+});
+```
+
+Action objects encapsulate operations.
+
+---
+
+# VSCode Command System
+
+```js id="q0jlwm"
+commands.registerCommand("extension.sayHello", () => {});
+```
+
+---
+
+# CLI Tools
+
+Each CLI operation acts like a command.
+
+---
+
+# Game Development
+
+Used heavily for:
+
+- undo systems
+- replay systems
+- AI action queues
+
+---
+
+# Event Sourcing
+
+Commands are often persisted:
+
+```txt id="6jlwm8"
+CreateOrderCommand
+CancelOrderCommand
+UpdateProfileCommand
+```
+
+Very common in enterprise architecture.
+
+---
+
+# Advantages
+
+| Benefit       | Explanation                    |
+| ------------- | ------------------------------ |
+| Decoupling    | Sender separated from receiver |
+| Undo/Redo     | Easy command reversal          |
+| Queuing       | Commands can execute later     |
+| Logging       | Store commands for auditing    |
+| Composition   | Combine commands               |
+| Extensibility | Add new commands easily        |
+
+---
+
+# Common Pitfalls
+
+---
+
+# 1. Too Many Command Classes
+
+In JavaScript, excessive classes can become verbose.
+
+Prefer function commands for simple cases.
+
+---
+
+# 2. Overengineering
+
+Simple button handlers do not always need commands.
+
+---
+
+# 3. Undo Complexity
+
+Some operations are difficult to reverse safely.
+
+Example:
+
+```txt id="jlwm77"
+network requests
+external APIs
+database deletes
+```
+
+---
+
+# 4. Memory Usage
+
+Command histories can grow large.
+
+Need cleanup strategies.
+
+---
+
+# Function-Based Command Pattern
+
+Very idiomatic modern JS approach.
+
+```js id="jlwm21"
+function createCommand(execute, undo) {
+  return {
+    execute,
+    undo,
+  };
+}
+```
+
+Usage:
+
+```js id="jlwm22"
+const command = createCommand(
+  () => console.log("Execute"),
+  () => console.log("Undo"),
+);
+```
+
+---
+
+# Command vs Strategy Pattern
+
+Interviewers often ask this.
+
+| Command                     | Strategy                         |
+| --------------------------- | -------------------------------- |
+| Encapsulates request/action | Encapsulates algorithm           |
+| Often supports undo/queue   | Chooses behavior                 |
+| Represents operation        | Represents interchangeable logic |
+
+---
+
+# Command vs Observer Pattern
+
+| Command             | Observer                  |
+| ------------------- | ------------------------- |
+| One-to-one action   | One-to-many notifications |
+| Explicit invocation | Event-driven updates      |
+
+---
+
+# Best Practices
+
+---
+
+# Prefer Functional Commands in JS
+
+Simpler and more idiomatic.
+
+---
+
+# Keep Commands Small
+
+Single responsibility per command.
+
+---
+
+# Add Undo Only When Needed
+
+Not every command requires reversal.
+
+---
+
+# Separate Receiver Logic
+
+Command should delegate actual work.
+
+---
+
+# Interview Summary
+
+The Command Pattern encapsulates operations as objects or functions, allowing actions to be executed, queued, logged, undone, or composed independently from the sender.
+
+Key concepts:
+
+- decouples invoker from receiver
+- encapsulates actions
+- supports undo/redo
+- enables queuing and macros
+
+Common JavaScript implementations:
+
+- class-based commands
+- function commands
+- Redux-like action objects
+- async job queues
+
+Widely used in:
+
+- editors
+- Redux
+- CLI tools
+- game engines
+- task queues
+- workflow systems
+
+A strong interview answer should also discuss:
+
+- undo/redo systems
+- macro commands
+- command queues
+- function-based implementations
+- command vs strategy
+- command vs observer
+- practical JS simplifications
+
 ## Question 7. How to implement middleware pattern in frontend or backend
 
 ## Question 8. How to implement a decorator pattern using higher-order functions
