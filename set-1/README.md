@@ -1077,6 +1077,284 @@ null == undefined; // true
 
 ## Question 6. Explain type coercion in JavaScript
 
+**Short answer:**
+Type coercion in JavaScript is the automatic or implicit conversion of values from one data type to another (e.g., string → number, number → boolean) during operations like comparisons, arithmetic, or logical expressions.
+
+---
+
+# 🔍 Detailed Interview Explanation
+
+JavaScript is a **dynamically typed language**, so when different data types interact, the engine often converts them internally to make the operation work. This behavior is called **type coercion**.
+
+It happens mainly in two ways:
+
+- **Implicit coercion** (automatic, by JavaScript engine)
+- **Explicit coercion** (manual, by developer)
+
+---
+
+# 1. 🔄 Implicit Type Coercion
+
+This happens automatically when JavaScript tries to “help” by converting types.
+
+---
+
+## 📌 String + Number (Concatenation wins)
+
+```js id="c1"
+console.log("5" + 2);
+// "52"
+```
+
+👉 Rule:
+
+- If `+` sees a string, it converts everything to string
+
+---
+
+## 📌 Other arithmetic operators convert to number
+
+```js id="c2"
+console.log("5" - 2); // 3
+console.log("10" * "2"); // 20
+console.log("10" / "2"); // 5
+```
+
+👉 Rule:
+
+- `- * /` force numeric conversion
+
+---
+
+## 📌 Boolean coercion in numbers
+
+```js id="c3"
+console.log(true + 1); // 2
+console.log(false + 1); // 1
+```
+
+👉 Rule:
+
+- `true → 1`, `false → 0`
+
+---
+
+# 2. ⚖️ Equality Coercion (== vs ===)
+
+## 📌 Loose equality (==) → performs coercion
+
+```js id="e1"
+console.log(5 == "5"); // true
+```
+
+👉 JavaScript converts string → number
+
+---
+
+## 📌 Strict equality (===) → no coercion
+
+```js id="e2"
+console.log(5 === "5"); // false
+```
+
+---
+
+## ⚠️ Famous tricky cases
+
+```js id="e3"
+console.log(null == undefined); // true
+console.log(0 == false); // true
+console.log("" == false); // true
+```
+
+👉 These happen because JS tries to normalize types before comparison.
+
+---
+
+# 3. 🧠 Truthy and Falsy Coercion
+
+JavaScript converts values to boolean in conditions.
+
+---
+
+## 📌 Falsy values:
+
+Only these are falsy:
+
+```js id="f1"
+false;
+0 - 0;
+0n;
+("");
+null;
+undefined;
+NaN;
+```
+
+---
+
+## 📌 Example:
+
+```js id="f2"
+if ("") {
+  console.log("Won't run");
+} else {
+  console.log("Falsy value");
+}
+```
+
+---
+
+## 📌 Truthy values:
+
+Everything else:
+
+```js id="f3"
+if ("hello") {
+  console.log("Truthy");
+}
+```
+
+---
+
+# 4. 🔥 Classic Interview Tricky Examples
+
+---
+
+## Example 1: String + Array
+
+```js id="t1"
+console.log([] + []);
+// ""
+```
+
+👉 Explanation:
+
+- Arrays convert to string → ""
+- "" + "" = ""
+
+---
+
+## Example 2: Array + Object
+
+```js id="t2"
+console.log([] + {});
+// "[object Object]"
+```
+
+---
+
+## Example 3: Object + Array
+
+```js id="t3"
+console.log({} + []);
+// 0 or "[object Object]" depending on context (quirk)
+```
+
+👉 This depends on parsing rules (block vs expression context)
+
+---
+
+## Example 4: Double negation (!!)
+
+```js id="t4"
+console.log(!!"hello"); // true
+console.log(!!0); // false
+```
+
+👉 Converts any value to boolean
+
+---
+
+# 5. 🔧 Explicit Type Coercion
+
+Done intentionally by developer.
+
+---
+
+## 📌 String conversion
+
+```js id="x1"
+String(123); // "123"
+(123).toString(); // "123"
+```
+
+---
+
+## 📌 Number conversion
+
+```js id="x2"
+Number("123"); // 123
+parseInt("123px"); // 123
+```
+
+---
+
+## 📌 Boolean conversion
+
+```js id="x3"
+Boolean(0); // false
+Boolean("hello"); // true
+```
+
+---
+
+# ⚠️ Common Pitfalls (Very Important in Interviews)
+
+## 1. Confusing == and ===
+
+```js id="p1"
+"5" == 5; // true (coercion)
+"5" === 5; // false (no coercion)
+```
+
+---
+
+## 2. Unexpected arithmetic behavior
+
+```js id="p2"
+"10" - 1; // 9
+"10" + 1; // "101"
+```
+
+---
+
+## 3. Falsy confusion
+
+```js id="p3"
+[] == false; // true
+```
+
+---
+
+# 📊 Summary Table
+
+| Case        | Result | Reason                  |
+| ----------- | ------ | ----------------------- |
+| "5" + 2     | "52"   | string concatenation    |
+| "5" - 2     | 3      | numeric coercion        |
+| true + 1    | 2      | boolean → number        |
+| "5" == 5    | true   | loose equality coercion |
+| "5" === 5   | false  | no coercion             |
+| [] == false | true   | both coerced            |
+
+---
+
+# 🎯 Final Summary
+
+- Type coercion = automatic type conversion in JavaScript
+- Happens in:
+  - Arithmetic operations
+  - Comparisons (==)
+  - Logical conditions (if, while)
+
+- Two types:
+  - Implicit (automatic)
+  - Explicit (manual using Number/String/Boolean)
+
+- `===` avoids coercion and is safer
+- Many JS interview trick questions come from coercion rules
+
 ## Question 7. What is the difference between == and ===?
 
 ## Question 8. What are JavaScript functions? How to declare them?
