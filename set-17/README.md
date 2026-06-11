@@ -1327,6 +1327,311 @@ A senior frontend answer is: **Use the `input` event to sanitize input, optional
 
 ## Question 6. How to create a countdown timer using JavaScript
 
+## Short answer
+
+A countdown timer can be created using `setInterval()` to repeatedly decrease the remaining time and update the UI every second. When the countdown reaches zero, clear the interval using `clearInterval()`.
+
+---
+
+# Basic Countdown Timer
+
+```html
+<div id="timer">10</div>
+
+<script>
+  let timeLeft = 10;
+
+  const timerId = setInterval(() => {
+    timeLeft--;
+
+    document.getElementById("timer").textContent = timeLeft;
+
+    if (timeLeft <= 0) {
+      clearInterval(timerId);
+      console.log("Time's up!");
+    }
+  }, 1000);
+</script>
+```
+
+### Output
+
+```text
+10
+9
+8
+7
+...
+1
+0
+Time's up!
+```
+
+---
+
+# How It Works
+
+1. `setInterval()` runs every 1000ms (1 second).
+2. The remaining time is decremented.
+3. The UI is updated.
+4. When time reaches `0`, `clearInterval()` stops the timer.
+
+```javascript
+const timerId = setInterval(callback, 1000);
+```
+
+Stop it:
+
+```javascript
+clearInterval(timerId);
+```
+
+---
+
+# Countdown in MM:SS Format
+
+A more realistic timer displays minutes and seconds.
+
+```html
+<div id="timer"></div>
+
+<script>
+  let totalSeconds = 125;
+
+  const timer = setInterval(() => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    document.getElementById("timer").textContent =
+      `${minutes}:${String(seconds).padStart(2, "0")}`;
+
+    totalSeconds--;
+
+    if (totalSeconds < 0) {
+      clearInterval(timer);
+      console.log("Finished");
+    }
+  }, 1000);
+</script>
+```
+
+### Output
+
+```text
+2:05
+2:04
+2:03
+...
+0:00
+```
+
+---
+
+# More Accurate Countdown (Recommended)
+
+A common interview discussion is that `setInterval()` is not perfectly accurate because:
+
+- Browser throttling can occur.
+- The event loop may be busy.
+- Delays accumulate over time.
+
+Instead, calculate the remaining time based on the actual end timestamp.
+
+```javascript
+const endTime = Date.now() + 10000; // 10 seconds
+
+const timer = setInterval(() => {
+  const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+
+  console.log(remaining);
+
+  if (remaining === 0) {
+    clearInterval(timer);
+    console.log("Done");
+  }
+}, 1000);
+```
+
+### Why this is better
+
+Even if a tick is delayed:
+
+```text
+Expected: 10 → 9 → 8 → 7
+Actual:   10 → 9 → (delay) → 7
+```
+
+The displayed time remains correct because it's calculated from the clock rather than from a counter.
+
+---
+
+# Countdown with Start/Stop Controls
+
+```html
+<button id="start">Start</button>
+<button id="stop">Stop</button>
+
+<script>
+  let timeLeft = 20;
+  let timerId;
+
+  document.getElementById("start").onclick = () => {
+    if (timerId) return;
+
+    timerId = setInterval(() => {
+      console.log(timeLeft--);
+
+      if (timeLeft < 0) {
+        clearInterval(timerId);
+        timerId = null;
+      }
+    }, 1000);
+  };
+
+  document.getElementById("stop").onclick = () => {
+    clearInterval(timerId);
+    timerId = null;
+  };
+</script>
+```
+
+---
+
+# Reusable Countdown Function
+
+```javascript
+function startCountdown(seconds, onTick, onComplete) {
+  let remaining = seconds;
+
+  const id = setInterval(() => {
+    onTick(remaining);
+
+    remaining--;
+
+    if (remaining < 0) {
+      clearInterval(id);
+      onComplete?.();
+    }
+  }, 1000);
+
+  return id;
+}
+```
+
+Usage:
+
+```javascript
+startCountdown(
+  5,
+  (time) => console.log(time),
+  () => console.log("Finished"),
+);
+```
+
+---
+
+# Async/Await Version
+
+Sometimes interviewers ask how to create delays without `setInterval`.
+
+```javascript
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function countdown(seconds) {
+  while (seconds > 0) {
+    console.log(seconds);
+    await sleep(1000);
+    seconds--;
+  }
+
+  console.log("Done");
+}
+
+countdown(5);
+```
+
+---
+
+# Common Pitfalls
+
+## 1. Forgetting `clearInterval`
+
+```javascript
+setInterval(() => {
+  console.log("Running forever");
+}, 1000);
+```
+
+This causes the timer to continue indefinitely and can lead to memory leaks.
+
+---
+
+## 2. Assuming `setInterval` is perfectly accurate
+
+```javascript
+setInterval(fn, 1000);
+```
+
+Intervals can drift due to:
+
+- Heavy CPU work
+- Background tabs
+- Event loop delays
+
+Use timestamp-based calculations for production timers.
+
+---
+
+## 3. Multiple Timers Running
+
+```javascript
+button.onclick = () => {
+  setInterval(...);
+};
+```
+
+Each click creates a new timer.
+
+Better:
+
+```javascript
+if (!timerId) {
+  timerId = setInterval(...);
+}
+```
+
+---
+
+# Event Loop Perspective (Interview Favorite)
+
+`setInterval()` callbacks are placed in the **macrotask queue**.
+
+Flow:
+
+```text
+Call Stack
+    ↓
+Web APIs (setInterval)
+    ↓
+Macrotask Queue
+    ↓
+Event Loop
+    ↓
+Callback Execution
+```
+
+If the main thread is busy, timer callbacks wait until the call stack becomes empty.
+
+---
+
+# Interview Summary
+
+A strong interview answer:
+
+> A countdown timer is typically implemented using `setInterval()` to update the remaining time every second and `clearInterval()` to stop the timer when it reaches zero. For production-quality timers, it's better to calculate the remaining time using timestamps (`Date.now()`) because `setInterval()` can drift due to event loop delays and browser throttling.
+
 ## Question 7. Difference between document.body and document.documentElement
 
 ## Question 8. How to get computed style of an element
