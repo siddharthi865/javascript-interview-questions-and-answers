@@ -1520,6 +1520,475 @@ typeof null === "object";
 
 ## Question 6. Difference between mutable and immutable data types
 
+## Short Answer
+
+- **Mutable** data can be changed after it is created.
+- **Immutable** data cannot be changed after it is created; any "modification" creates a new value instead.
+
+In JavaScript:
+
+- **Primitive types** are **immutable**.
+- **Objects, Arrays, Functions, Maps, Sets** are **mutable** by default.
+
+---
+
+# What is Mutability?
+
+Mutability refers to whether a value can be modified after creation.
+
+## Immutable Example
+
+```js
+let str = "hello";
+
+str[0] = "H";
+
+console.log(str);
+```
+
+Output:
+
+```js
+"hello";
+```
+
+The string remains unchanged because strings are immutable.
+
+To change it:
+
+```js
+str = "Hello";
+
+console.log(str);
+```
+
+Output:
+
+```js
+"Hello";
+```
+
+A new string is created and assigned to `str`.
+
+---
+
+# Immutable Data Types
+
+All JavaScript primitive values are immutable:
+
+```js
+string;
+number;
+boolean;
+undefined;
+null;
+symbol;
+bigint;
+```
+
+## Example: Number
+
+```js
+let a = 10;
+
+a += 5;
+
+console.log(a);
+```
+
+Output:
+
+```js
+15;
+```
+
+The original number wasn't modified; a new value was produced and assigned back to `a`.
+
+---
+
+## Example: String Methods
+
+```js
+const str = "javascript";
+
+const upper = str.toUpperCase();
+
+console.log(str); // javascript
+console.log(upper); // JAVASCRIPT
+```
+
+`toUpperCase()` returns a new string instead of changing the original.
+
+---
+
+# Mutable Data Types
+
+Objects are mutable.
+
+```js
+const user = {
+  name: "John",
+};
+
+user.name = "Alice";
+
+console.log(user.name);
+```
+
+Output:
+
+```js
+Alice;
+```
+
+The existing object was modified.
+
+---
+
+## Arrays are Mutable
+
+```js
+const arr = [1, 2, 3];
+
+arr.push(4);
+
+console.log(arr);
+```
+
+Output:
+
+```js
+[1, 2, 3, 4];
+```
+
+The original array changed.
+
+---
+
+# Common Mutable Types
+
+```js
+Object;
+Array;
+Function;
+Date;
+Map;
+Set;
+RegExp;
+```
+
+Example:
+
+```js
+const map = new Map();
+
+map.set("name", "John");
+```
+
+The Map itself is mutated.
+
+---
+
+# Array Methods: Mutable vs Immutable
+
+This is a very common interview topic.
+
+## Mutable Array Methods
+
+These modify the original array:
+
+```js
+push();
+pop();
+shift();
+unshift();
+splice();
+sort();
+reverse();
+fill();
+copyWithin();
+```
+
+Example:
+
+```js
+const arr = [1, 2, 3];
+
+arr.push(4);
+
+console.log(arr);
+```
+
+Output:
+
+```js
+[1, 2, 3, 4];
+```
+
+---
+
+## Immutable Array Methods
+
+These return a new array:
+
+```js
+map();
+filter();
+slice();
+concat();
+reduce();
+flat();
+flatMap();
+```
+
+Example:
+
+```js
+const arr = [1, 2, 3];
+
+const result = arr.map((x) => x * 2);
+
+console.log(arr);
+console.log(result);
+```
+
+Output:
+
+```js
+[1, 2, 3][(2, 4, 6)];
+```
+
+---
+
+# Objects and References
+
+Mutability becomes important because objects are passed by reference.
+
+```js
+const obj1 = {
+  name: "John",
+};
+
+const obj2 = obj1;
+
+obj2.name = "Alice";
+
+console.log(obj1.name);
+```
+
+Output:
+
+```js
+Alice;
+```
+
+Both variables point to the same object.
+
+---
+
+# `const` Does NOT Make Objects Immutable
+
+Common interview trick:
+
+```js
+const user = {
+  name: "John",
+};
+
+user.name = "Alice";
+```
+
+This works.
+
+Output:
+
+```js
+Alice;
+```
+
+Because:
+
+```js
+const
+```
+
+prevents reassignment, not mutation.
+
+The following fails:
+
+```js
+user = {};
+```
+
+Output:
+
+```js
+TypeError;
+```
+
+---
+
+# Creating Immutable Objects
+
+## Using `Object.freeze()`
+
+```js
+const user = Object.freeze({
+  name: "John",
+});
+
+user.name = "Alice";
+
+console.log(user.name);
+```
+
+Output:
+
+```js
+John;
+```
+
+The object cannot be modified.
+
+---
+
+## Limitation of `Object.freeze()`
+
+It is shallow.
+
+```js
+const user = Object.freeze({
+  address: {
+    city: "Delhi",
+  },
+});
+
+user.address.city = "Mumbai";
+
+console.log(user.address.city);
+```
+
+Output:
+
+```js
+Mumbai;
+```
+
+Nested objects remain mutable.
+
+---
+
+# Why Immutability is Important
+
+## Predictable State
+
+Easier debugging.
+
+```js
+const newState = {
+  ...oldState,
+  count: oldState.count + 1,
+};
+```
+
+No accidental mutations.
+
+---
+
+## React and State Management
+
+React relies heavily on immutable updates.
+
+```js
+setUsers([...users, newUser]);
+```
+
+instead of:
+
+```js
+users.push(newUser); // bad practice
+```
+
+---
+
+## Easier Change Detection
+
+```js
+oldState !== newState;
+```
+
+Simple reference comparison becomes possible.
+
+---
+
+# Interview Comparison Table
+
+| Feature                     | Mutable       | Immutable |
+| --------------------------- | ------------- | --------- |
+| Can change after creation   | ✅ Yes        | ❌ No     |
+| Original value modified     | ✅ Yes        | ❌ No     |
+| New value created on update | ❌ Usually No | ✅ Yes    |
+| Primitive types             | ❌            | ✅        |
+| Objects/Arrays              | ✅            | ❌        |
+| Safer for state management  | ❌            | ✅        |
+| Easier debugging            | ❌            | ✅        |
+
+---
+
+# Common Interview Questions
+
+## Are strings mutable?
+
+No.
+
+```js
+let str = "abc";
+
+str[0] = "x";
+
+console.log(str);
+```
+
+Output:
+
+```js
+abc;
+```
+
+---
+
+## Are arrays mutable?
+
+Yes.
+
+```js
+const arr = [1, 2];
+
+arr.push(3);
+```
+
+The original array changes.
+
+---
+
+## Does `const` make objects immutable?
+
+No.
+
+```js
+const obj = { a: 1 };
+
+obj.a = 2; // allowed
+```
+
+Only reassignment is blocked.
+
+---
+
+# Interview-Friendly Summary
+
+> Mutable data can be modified after creation, while immutable data cannot. In JavaScript, all primitive types (`string`, `number`, `boolean`, `null`, `undefined`, `symbol`, `bigint`) are immutable. Objects, arrays, functions, maps, and sets are mutable by default. Understanding mutability is important because object mutations affect all references to the same object, while immutable updates create new values, leading to safer and more predictable code, especially in modern frameworks like React.
+
 ## Question 7. How to concatenate arrays in JavaScript?
 
 ## Question 8. How to check if a string contains another string?
