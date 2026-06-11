@@ -1594,6 +1594,311 @@ event.stopImmediatePropagation();
 
 ## Question 6. How to check if an object has a property directly (not in prototype chain)
 
+## Direct Answer
+
+To check whether an object has a property **directly on itself** (and not inherited from its prototype chain), use:
+
+```javascript
+Object.hasOwn(obj, "property");
+```
+
+or the older approach:
+
+```javascript
+obj.hasOwnProperty("property");
+```
+
+`Object.hasOwn()` is the modern and recommended method.
+
+---
+
+# Why This Matters
+
+JavaScript objects inherit properties from their prototype chain.
+
+Example:
+
+```javascript
+const parent = {
+  role: "admin",
+};
+
+const user = Object.create(parent);
+
+user.name = "John";
+```
+
+Now:
+
+```javascript
+console.log(user.name); // John
+console.log(user.role); // admin
+```
+
+But:
+
+- `name` belongs directly to `user`
+- `role` comes from the prototype
+
+---
+
+# Using `Object.hasOwn()` (Recommended)
+
+```javascript
+console.log(Object.hasOwn(user, "name"));
+```
+
+Output:
+
+```text
+true
+```
+
+```javascript
+console.log(Object.hasOwn(user, "role"));
+```
+
+Output:
+
+```text
+false
+```
+
+Because `role` is inherited.
+
+---
+
+# Using `hasOwnProperty()`
+
+```javascript
+console.log(user.hasOwnProperty("name"));
+```
+
+Output:
+
+```text
+true
+```
+
+```javascript
+console.log(user.hasOwnProperty("role"));
+```
+
+Output:
+
+```text
+false
+```
+
+---
+
+# Difference from the `in` Operator
+
+Many interviewers ask this.
+
+```javascript
+console.log("name" in user);
+```
+
+Output:
+
+```text
+true
+```
+
+```javascript
+console.log("role" in user);
+```
+
+Output:
+
+```text
+true
+```
+
+### Why?
+
+The `in` operator checks:
+
+- own properties ✅
+- inherited properties ✅
+
+It searches the entire prototype chain.
+
+---
+
+# Comparison Table
+
+| Method                    | Own Property | Prototype Property |
+| ------------------------- | ------------ | ------------------ |
+| `Object.hasOwn(obj, key)` | ✅           | ❌                 |
+| `obj.hasOwnProperty(key)` | ✅           | ❌                 |
+| `key in obj`              | ✅           | ✅                 |
+
+---
+
+# Interview Trap #1
+
+```javascript
+const obj = Object.create({
+  x: 10,
+});
+
+console.log("x" in obj);
+console.log(Object.hasOwn(obj, "x"));
+```
+
+Output:
+
+```text
+true
+false
+```
+
+Explanation:
+
+- `x` exists in prototype chain
+- `obj` doesn't own it
+
+---
+
+# Interview Trap #2: Objects Without Prototypes
+
+```javascript
+const obj = Object.create(null);
+
+obj.name = "John";
+```
+
+Now:
+
+```javascript
+obj.hasOwnProperty("name");
+```
+
+Output:
+
+```text
+TypeError
+```
+
+Why?
+
+Because:
+
+```javascript
+Object.create(null);
+```
+
+creates an object with **no prototype**, so it doesn't inherit `hasOwnProperty`.
+
+---
+
+## Safe Solution
+
+```javascript
+Object.hasOwn(obj, "name");
+```
+
+or
+
+```javascript
+Object.prototype.hasOwnProperty.call(obj, "name");
+```
+
+---
+
+# Interview Trap #3
+
+```javascript
+const obj = {
+  hasOwnProperty() {
+    return false;
+  },
+  name: "John",
+};
+
+console.log(obj.hasOwnProperty("name"));
+```
+
+Output:
+
+```text
+false
+```
+
+The method was overwritten!
+
+Safe approach:
+
+```javascript
+Object.prototype.hasOwnProperty.call(obj, "name");
+```
+
+or
+
+```javascript
+Object.hasOwn(obj, "name");
+```
+
+---
+
+# Modern Best Practice
+
+Prefer:
+
+```javascript
+Object.hasOwn(obj, "key");
+```
+
+Example:
+
+```javascript
+const person = {
+  name: "Alice",
+};
+
+console.log(Object.hasOwn(person, "name"));
+```
+
+Output:
+
+```text
+true
+```
+
+This avoids issues with:
+
+- overwritten methods
+- null-prototype objects
+- prototype chain confusion
+
+---
+
+# Interview Summary
+
+### Check direct property only
+
+```javascript
+Object.hasOwn(obj, "prop");
+```
+
+### Older method
+
+```javascript
+obj.hasOwnProperty("prop");
+```
+
+### Check including prototype chain
+
+```javascript
+"prop" in obj;
+```
+
+### One-Line Interview Answer
+
+**To check whether a property exists directly on an object and not in its prototype chain, use `Object.hasOwn(obj, property)` (recommended) or `hasOwnProperty()`. Unlike the `in` operator, these methods do not consider inherited properties.**
+
 ## Question 7. Difference between `Object.create()` and `{}` object literal
 
 ## Question 8. How to use `instanceof` operator in JavaScript
