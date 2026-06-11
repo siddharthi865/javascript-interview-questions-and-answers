@@ -1024,6 +1024,272 @@ Because the original array object was emptied.
 
 ## Question 6. Difference between `Array.isArray()` and `instanceof Array`
 
+## Short Answer
+
+Both are used to check whether a value is an array, but **`Array.isArray()` is the recommended and more reliable approach**.
+
+```js id="x0w4d2"
+Array.isArray(value);
+```
+
+is preferred over:
+
+```js id="z9k7mp"
+value instanceof Array;
+```
+
+because `Array.isArray()` works correctly across different JavaScript execution contexts (e.g., iframes, workers).
+
+---
+
+# 1. Using `Array.isArray()`
+
+```js id="b4r8nc"
+const arr = [1, 2, 3];
+
+console.log(Array.isArray(arr));
+// true
+```
+
+### Examples
+
+```js id="m7p2kt"
+Array.isArray([]);
+Array.isArray([1, 2]);
+Array.isArray(new Array());
+```
+
+Output:
+
+```js id="f5q1uv"
+true;
+true;
+true;
+```
+
+### Non-arrays
+
+```js id="a8v3lr"
+Array.isArray({});
+Array.isArray("hello");
+Array.isArray(null);
+```
+
+Output:
+
+```js id="k2d6zs"
+false;
+false;
+false;
+```
+
+---
+
+# 2. Using `instanceof Array`
+
+```js id="w9n4bc"
+const arr = [1, 2, 3];
+
+console.log(arr instanceof Array);
+// true
+```
+
+### How it works
+
+`instanceof` checks the prototype chain.
+
+```js id="m3t7qp"
+arr instanceof Array;
+```
+
+is roughly asking:
+
+> "Does `Array.prototype` exist in the prototype chain of `arr`?"
+
+---
+
+# Why `instanceof` Can Fail
+
+The biggest interview point is **cross-realm objects**.
+
+A realm is a separate JavaScript environment:
+
+- iframe
+- worker
+- another browser window
+
+Each realm has its own global `Array` constructor.
+
+Example conceptually:
+
+```js id="n1k8yd"
+const iframeArray = iframe.contentWindow.Array;
+```
+
+Now:
+
+```js id="r6c2mx"
+const arr = new iframeArray();
+
+arr instanceof Array;
+```
+
+Result:
+
+```js id="u8j5we"
+false;
+```
+
+Why?
+
+Because:
+
+```js id="q4z7nf"
+arr.__proto__ === iframeArray.prototype;
+```
+
+not
+
+```js id="h2m9vk"
+Array.prototype;
+```
+
+So the prototype chain check fails.
+
+---
+
+# `Array.isArray()` Handles This Correctly
+
+```js id="t7v1pb"
+Array.isArray(arr);
+```
+
+Result:
+
+```js id="bg6w4n"
+true;
+```
+
+because it performs an internal array-brand check rather than checking constructors.
+
+---
+
+# Comparison
+
+| Feature                      | `Array.isArray()` | `instanceof Array` |
+| ---------------------------- | ----------------- | ------------------ |
+| Detects arrays               | ✅                | ✅                 |
+| Cross-frame safe             | ✅                | ❌                 |
+| Based on internal array type | ✅                | ❌                 |
+| Prototype-chain dependent    | ❌                | ✅                 |
+| Recommended                  | ✅                | ❌                 |
+
+---
+
+# Tricky Interview Examples
+
+## Example 1
+
+```js id="t4j8qk"
+const arr = [];
+
+console.log(Array.isArray(arr));
+console.log(arr instanceof Array);
+```
+
+Output:
+
+```js id="c9p2lv"
+true;
+true;
+```
+
+---
+
+## Example 2
+
+```js id="x5n1ub"
+const obj = {};
+
+console.log(Array.isArray(obj));
+console.log(obj instanceof Array);
+```
+
+Output:
+
+```js id="g8w6mr"
+false;
+false;
+```
+
+---
+
+## Example 3
+
+```js id="v2q7pd"
+const arr = [];
+
+console.log(typeof arr);
+```
+
+Output:
+
+```js id="r3k9mf"
+"object";
+```
+
+This is why neither `typeof` nor plain object checks are sufficient.
+
+---
+
+# Historical Alternative
+
+Before ES5:
+
+```js id="p6t4xd"
+Object.prototype.toString.call([]);
+```
+
+Output:
+
+```js id="s7w2qc"
+"[object Array]";
+```
+
+Used as:
+
+```js id="e1m8vb"
+Object.prototype.toString.call(value) === "[object Array]";
+```
+
+Today, `Array.isArray()` is preferred.
+
+---
+
+# Performance
+
+For practical applications:
+
+```js id="d4q7nz"
+Array.isArray(value);
+```
+
+and
+
+```js id="m9v1rk"
+value instanceof Array;
+```
+
+have negligible performance differences.
+
+Choose based on correctness, not speed.
+
+---
+
+# Interview-Ready Answer
+
+> `Array.isArray()` and `instanceof Array` can both detect arrays, but `Array.isArray()` is the recommended approach. `instanceof` works by checking whether `Array.prototype` exists in an object's prototype chain, which can fail for arrays created in different JavaScript realms such as iframes or workers. `Array.isArray()` performs an internal array-type check and correctly identifies arrays across realms, making it more reliable and the standard choice in modern JavaScript.
+
 ## Question 7. What is the difference between `document.createElement()` and `innerHTML`?
 
 ## Question 8. How to get attributes of an HTML element using JS?
