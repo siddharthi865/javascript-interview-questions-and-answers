@@ -1899,6 +1899,468 @@ This architecture scales well and keeps the event loop responsive.
 
 ## Question 6. How to implement streaming large files without blocking memory
 
+## ✅ Short Answer
+
+To stream large files without blocking memory in Node.js, use **streams** (`fs.createReadStream()` and `fs.createWriteStream()`) instead of reading the entire file into memory with `fs.readFile()`.
+
+Streams process data **chunk by chunk**, keeping memory usage low and allowing Node.js to remain responsive.
+
+```js
+const fs = require("fs");
+
+const readStream = fs.createReadStream("large-video.mp4");
+
+readStream.on("data", (chunk) => {
+  console.log(`Received ${chunk.length} bytes`);
+});
+```
+
+This approach can handle files that are much larger than the available RAM.
+
+---
+
+# 🧠 Why Not Use `fs.readFile()`?
+
+A common mistake is:
+
+```js
+const fs = require("fs");
+
+fs.readFile("large-video.mp4", (err, data) => {
+  console.log(data.length);
+});
+```
+
+### Problem
+
+`fs.readFile()`:
+
+1. Reads the **entire file**
+2. Stores it in memory
+3. Then invokes the callback
+
+For a 5 GB file:
+
+```txt
+File Size = 5 GB
+RAM Usage ≈ 5 GB
+```
+
+This can cause:
+
+- High memory consumption
+- Garbage collection pressure
+- Process crashes
+- Poor scalability
+
+---
+
+# How Streams Solve the Problem
+
+Streams process data incrementally:
+
+```txt
+Large File
+    │
+    ▼
+Chunk 1 (64 KB)
+Chunk 2 (64 KB)
+Chunk 3 (64 KB)
+...
+```
+
+Only a small portion of the file is held in memory at any time.
+
+Memory remains nearly constant:
+
+```txt
+File Size: 10 GB
+Memory Usage: ~64 KB–a few MB
+```
+
+---
+
+# Reading a Large File
+
+```js
+const fs = require("fs");
+
+const stream = fs.createReadStream("large.log");
+
+stream.on("data", (chunk) => {
+  console.log("Chunk received:", chunk.length);
+});
+
+stream.on("end", () => {
+  console.log("Finished");
+});
+```
+
+### Flow
+
+```txt
+Disk
+ ↓
+Read Stream
+ ↓
+Chunk
+ ↓
+Application
+```
+
+---
+
+# Writing Large Files
+
+```js
+const fs = require("fs");
+
+const writeStream = fs.createWriteStream("output.txt");
+
+writeStream.write("Hello\n");
+writeStream.write("World\n");
+
+writeStream.end();
+```
+
+---
+
+# Copying Large Files Efficiently
+
+### ❌ Bad
+
+```js
+fs.readFile("big.zip", (err, data) => {
+  fs.writeFile("copy.zip", data, () => {});
+});
+```
+
+Loads entire file into RAM.
+
+---
+
+### ✅ Good
+
+```js
+const fs = require("fs");
+
+const readStream = fs.createReadStream("big.zip");
+const writeStream = fs.createWriteStream("copy.zip");
+
+readStream.pipe(writeStream);
+```
+
+### Internal Flow
+
+```txt
+Read Stream
+     │
+     ▼
+   pipe()
+     │
+     ▼
+Write Stream
+```
+
+This is the preferred production approach.
+
+---
+
+# Streaming Files Over HTTP
+
+A very common interview question.
+
+### ❌ Bad
+
+```js
+const fs = require("fs");
+
+app.get("/video", (req, res) => {
+  fs.readFile("movie.mp4", (err, data) => {
+    res.send(data);
+  });
+});
+```
+
+Entire file enters memory.
+
+---
+
+### ✅ Good
+
+```js
+const fs = require("fs");
+
+app.get("/video", (req, res) => {
+  const stream = fs.createReadStream("movie.mp4");
+
+  stream.pipe(res);
+});
+```
+
+Now:
+
+```txt
+Disk
+ ↓
+Read Stream
+ ↓
+HTTP Response
+ ↓
+Browser
+```
+
+Memory usage stays low.
+
+---
+
+# Using `pipeline()` (Best Practice)
+
+Modern Node.js provides `stream.pipeline()`.
+
+```js
+const fs = require("fs");
+const { pipeline } = require("stream");
+
+pipeline(
+  fs.createReadStream("input.mp4"),
+  fs.createWriteStream("output.mp4"),
+  (err) => {
+    if (err) {
+      console.error(err);
+    } else {
+      console.log("Done");
+    }
+  },
+);
+```
+
+### Benefits
+
+- Automatic error handling
+- Cleans up streams
+- Prevents resource leaks
+
+---
+
+# Backpressure (Senior-Level Interview Topic)
+
+## The Problem
+
+Suppose:
+
+```txt
+Disk Read Speed = 500 MB/s
+Network Speed = 20 MB/s
+```
+
+Data arrives faster than it can be written.
+
+Without control:
+
+```txt
+Memory grows indefinitely
+```
+
+---
+
+## Solution: Backpressure
+
+Streams automatically pause and resume.
+
+```txt
+Readable Stream
+      ↓
+Write Buffer Full
+      ↓
+Pause Reading
+      ↓
+Buffer Drained
+      ↓
+Resume Reading
+```
+
+This prevents memory explosions.
+
+---
+
+# Example of Manual Backpressure Handling
+
+```js
+const fs = require("fs");
+
+const readable = fs.createReadStream("big.txt");
+const writable = fs.createWriteStream("copy.txt");
+
+readable.on("data", (chunk) => {
+  const canContinue = writable.write(chunk);
+
+  if (!canContinue) {
+    readable.pause();
+
+    writable.once("drain", () => {
+      readable.resume();
+    });
+  }
+});
+```
+
+Normally `pipe()` handles this automatically.
+
+---
+
+# Streaming Uploads
+
+Instead of:
+
+```txt
+Upload
+ ↓
+Memory
+ ↓
+Disk
+```
+
+Use:
+
+```txt
+Upload
+ ↓
+Stream
+ ↓
+Disk
+```
+
+Example:
+
+```js
+req.pipe(fs.createWriteStream("uploaded.bin"));
+```
+
+This scales much better for large uploads.
+
+---
+
+# Tuning Stream Performance
+
+Default chunk size:
+
+```txt
+64 KB
+```
+
+Can be customized:
+
+```js
+const stream = fs.createReadStream("big.dat", {
+  highWaterMark: 1024 * 1024,
+});
+```
+
+1 MB chunks.
+
+### Trade-off
+
+Larger chunks:
+
+✅ Fewer I/O operations
+
+❌ More memory
+
+Smaller chunks:
+
+✅ Lower memory
+
+❌ More overhead
+
+---
+
+# Async Iteration with Streams
+
+Modern Node.js supports:
+
+```js
+const fs = require("fs");
+
+async function readFile() {
+  const stream = fs.createReadStream("large.txt");
+
+  for await (const chunk of stream) {
+    console.log(chunk.length);
+  }
+}
+
+readFile();
+```
+
+This is often considered cleaner than event handlers.
+
+---
+
+# Common Interview Pitfalls
+
+### ❌ Using `readFile()` for large files
+
+```js
+fs.readFile(...)
+```
+
+Loads everything into RAM.
+
+---
+
+### ❌ Ignoring Stream Errors
+
+Always handle:
+
+```js
+stream.on("error", (err) => {
+  console.error(err);
+});
+```
+
+Or use `pipeline()`.
+
+---
+
+### ❌ Forgetting Backpressure
+
+Writing custom stream logic without pause/resume can exhaust memory.
+
+---
+
+### ❌ Buffering Uploads
+
+Avoid:
+
+```js
+let data = [];
+
+req.on("data", (chunk) => {
+  data.push(chunk);
+});
+```
+
+For large uploads.
+
+---
+
+# `pipe()` vs `pipeline()`
+
+| Feature                    | `pipe()` | `pipeline()` |
+| -------------------------- | -------- | ------------ |
+| Easy to use                | ✅       | ✅           |
+| Handles backpressure       | ✅       | ✅           |
+| Automatic cleanup          | ❌       | ✅           |
+| Centralized error handling | ❌       | ✅           |
+| Recommended today          | Good     | Best         |
+
+---
+
+# 🚀 Interview Summary
+
+> To stream large files efficiently in Node.js, use streams such as `fs.createReadStream()` and `fs.createWriteStream()` rather than loading the entire file into memory with `fs.readFile()`. Streams process data in chunks, keeping memory usage constant regardless of file size. Using `pipe()` or, preferably, `stream.pipeline()` allows data to flow efficiently between sources and destinations while automatically handling backpressure. This makes streams the standard solution for large file transfers, uploads, downloads, and media streaming in production Node.js applications.
+
 ## Question 7. Difference between Buffer and Stream in Node.js
 
 ## Question 8. How to implement rate limiting in Node.js APIs
