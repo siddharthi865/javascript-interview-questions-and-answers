@@ -2163,6 +2163,609 @@ function createCounter() {
 
 ## Question 6. Explain JavaScript memory model: stack vs heap
 
+# JavaScript Memory Model: Stack vs Heap
+
+## Short Answer
+
+JavaScript memory is broadly divided into:
+
+- **Stack Memory** → Stores primitive values and function execution contexts.
+- **Heap Memory** → Stores objects, arrays, functions, and other reference types.
+
+Primitive values are usually copied by value, while objects are accessed through references that point to heap memory.
+
+---
+
+# High-Level Overview
+
+When JavaScript code runs, the engine (e.g., V8) manages memory using:
+
+```txt
++----------------+
+| Call Stack     |
++----------------+
+| Execution Info |
+| Primitive Data |
+| References     |
++----------------+
+
++----------------+
+| Heap Memory    |
++----------------+
+| Objects        |
+| Arrays         |
+| Functions      |
+| Closures       |
++----------------+
+```
+
+Think of:
+
+- **Stack** = fast, organized memory for execution.
+- **Heap** = large, dynamic memory for complex data.
+
+---
+
+# Stack Memory
+
+The stack stores:
+
+- Function calls
+- Local variables
+- Primitive values
+- References to heap objects
+
+Example:
+
+```js
+let name = "John";
+let age = 25;
+```
+
+Conceptually:
+
+```txt
+STACK
+
+name → "John"
+age  → 25
+```
+
+Primitives are stored directly.
+
+---
+
+# Primitive Types
+
+These are typically stack-allocated values:
+
+```js
+String;
+Number;
+Boolean;
+Undefined;
+Null;
+BigInt;
+Symbol;
+```
+
+Example:
+
+```js
+let a = 10;
+let b = a;
+
+b = 20;
+
+console.log(a); // 10
+console.log(b); // 20
+```
+
+Why?
+
+Because primitives are copied by value.
+
+```txt
+STACK
+
+a → 10
+b → 10
+
+After b = 20
+
+a → 10
+b → 20
+```
+
+Each variable has its own independent value.
+
+---
+
+# Heap Memory
+
+The heap stores:
+
+- Objects
+- Arrays
+- Functions
+- Dates
+- Maps
+- Sets
+- Class instances
+
+Example:
+
+```js
+const user = {
+  name: "John",
+};
+```
+
+Conceptually:
+
+```txt
+STACK
+
+user ───────┐
+            │
+            ▼
+
+HEAP
+
+{
+  name: "John"
+}
+```
+
+The variable holds a reference (memory address) to the object.
+
+---
+
+# Reference Behavior
+
+```js
+const user1 = {
+  name: "John",
+};
+
+const user2 = user1;
+
+user2.name = "Alice";
+
+console.log(user1.name);
+```
+
+Output:
+
+```txt
+Alice
+```
+
+Memory:
+
+```txt
+STACK
+
+user1 ──────┐
+            │
+user2 ──────┘
+
+             ▼
+
+HEAP
+
+{
+  name: "Alice"
+}
+```
+
+Both variables point to the same object.
+
+---
+
+# Function Execution Context and the Stack
+
+Every function call creates a new stack frame.
+
+```js
+function first() {
+  second();
+}
+
+function second() {
+  third();
+}
+
+function third() {
+  console.log("Hello");
+}
+
+first();
+```
+
+Call Stack:
+
+```txt
+third()
+second()
+first()
+global()
+```
+
+Execution occurs from top to bottom.
+
+After completion:
+
+```txt
+global()
+```
+
+Frames are popped off the stack.
+
+---
+
+# Stack Overflow
+
+Because the stack is finite:
+
+```js
+function recurse() {
+  recurse();
+}
+
+recurse();
+```
+
+Output:
+
+```txt
+RangeError: Maximum call stack size exceeded
+```
+
+Too many stack frames cause stack overflow.
+
+---
+
+# Objects Inside Functions
+
+```js
+function createUser() {
+  const user = {
+    name: "John",
+  };
+
+  return user;
+}
+```
+
+Memory:
+
+```txt
+STACK
+
+user ──────┐
+           │
+           ▼
+
+HEAP
+
+{
+  name: "John"
+}
+```
+
+The reference lives on the stack.
+
+The actual object lives on the heap.
+
+---
+
+# Arrays in Heap
+
+```js
+const arr = [1, 2, 3];
+```
+
+```txt
+STACK
+
+arr ──────┐
+          │
+          ▼
+
+HEAP
+
+[1,2,3]
+```
+
+Arrays are objects internally.
+
+Therefore they live in heap memory.
+
+---
+
+# Functions in Heap
+
+Functions are objects too.
+
+```js
+function greet() {
+  console.log("Hello");
+}
+```
+
+Conceptually:
+
+```txt
+STACK
+
+greet ──────┐
+            │
+            ▼
+
+HEAP
+
+Function Object
+```
+
+---
+
+# Closures and Memory
+
+One of the most important interview topics.
+
+```js
+function counter() {
+  let count = 0;
+
+  return function () {
+    count++;
+    return count;
+  };
+}
+
+const increment = counter();
+```
+
+Normally:
+
+```txt
+counter() frame removed
+```
+
+But closure variables survive.
+
+```txt
+HEAP
+
+Closure Environment
+
+count = 0
+```
+
+Because the returned function still references `count`.
+
+---
+
+# Garbage Collection
+
+JavaScript automatically frees unused heap memory.
+
+Example:
+
+```js
+let user = {
+  name: "John",
+};
+
+user = null;
+```
+
+Now:
+
+```txt
+Object unreachable
+```
+
+Garbage collector eventually removes it.
+
+---
+
+# Reachability Principle
+
+Objects remain alive while reachable.
+
+```js
+let user = {
+  name: "John",
+};
+
+const admin = user;
+```
+
+Memory:
+
+```txt
+admin ──┐
+        │
+user ───┘
+
+   ▼
+
+Object
+```
+
+Even if:
+
+```js
+user = null;
+```
+
+the object survives because:
+
+```js
+admin;
+```
+
+still references it.
+
+---
+
+# Memory Leak Example
+
+```js
+let cache = [];
+
+function store() {
+  const bigData = new Array(1000000);
+
+  cache.push(bigData);
+}
+```
+
+Every call keeps references alive.
+
+```txt
+cache → bigData1
+cache → bigData2
+cache → bigData3
+```
+
+Garbage collector cannot reclaim them.
+
+This is a memory leak.
+
+---
+
+# Stack vs Heap Summary
+
+| Feature      | Stack                                      | Heap                       |
+| ------------ | ------------------------------------------ | -------------------------- |
+| Stores       | Primitives, execution contexts, references | Objects, arrays, functions |
+| Access Speed | Very fast                                  | Slower                     |
+| Size         | Small                                      | Large                      |
+| Allocation   | Automatic                                  | Dynamic                    |
+| Cleanup      | Automatic when function exits              | Garbage collection         |
+| Structure    | LIFO (Last In First Out)                   | Unstructured memory pool   |
+
+---
+
+# Common Interview Questions
+
+## Q1: Where are objects stored?
+
+```js
+const obj = {};
+```
+
+- Object → Heap
+- Reference → Stack
+
+---
+
+## Q2: Why does this happen?
+
+```js
+const a = { x: 1 };
+const b = a;
+
+b.x = 2;
+
+console.log(a.x);
+```
+
+Output:
+
+```txt
+2
+```
+
+Because both variables reference the same heap object.
+
+---
+
+## Q3: Why doesn't this happen with primitives?
+
+```js
+let a = 10;
+let b = a;
+
+b = 20;
+
+console.log(a);
+```
+
+Output:
+
+```txt
+10
+```
+
+Primitives are copied by value.
+
+---
+
+## Q4: Where are closures stored?
+
+Closure variables that outlive their function execution are typically retained in heap memory so they remain accessible to inner functions.
+
+---
+
+## Q5: What causes stack overflow?
+
+Too many nested function calls:
+
+```js
+function f() {
+  f();
+}
+```
+
+Eventually:
+
+```txt
+Maximum call stack size exceeded
+```
+
+---
+
+# Modern Engine Nuance
+
+For interview purposes:
+
+- **Primitives → Stack**
+- **Objects → Heap**
+
+is the correct mental model.
+
+However, modern engines such as V8 perform many optimizations:
+
+- Escape analysis
+- Inline caching
+- Hidden classes
+- Stack allocation of some objects
+
+So the actual implementation may differ internally.
+
+In interviews, focus on the conceptual model rather than engine-specific optimizations.
+
+---
+
+# Interview Summary
+
+> JavaScript uses a memory model consisting of a **stack** and a **heap**. The stack stores execution contexts, primitive values, and references, while the heap stores objects, arrays, functions, and closures. Primitive values are copied by value, whereas objects are accessed through references. Memory in the heap is automatically managed by the garbage collector using reachability analysis.
+
+```js
+const user = { name: "John" };
+```
+
+```txt
+Stack: user → reference
+Heap : { name: "John" }
+```
+
+This distinction explains object mutation behavior, closures, garbage collection, memory leaks, and stack overflow errors—all common JavaScript interview topics.
+
 ## Question 7. How to handle circular references in objects?
 
 ## Question 8. What are ES6 modules vs CommonJS modules?
